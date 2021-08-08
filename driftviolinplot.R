@@ -7,23 +7,32 @@ library(tidyr)
 library(ggplot2)
 drift <- readDB(gear = "Drift", type = "Sample", updater = T)
 
-drift <- readDB(gear = "Drift", type = "Sample", updater = T)
 # data from the upper thirds of the river
-LFdriftUpper <- drift[drift$RiverMile <= 75, ]
-LFdriftUpper <- sampspec(samp = LFdriftUpper)
-# data from lower third of the river
-LfdriftLower <- drift[drift$RiverMile >= 150, ]
-LfdriftLower <- sampspec(samp = LfdriftLower)
 
-# pull NZMS data
-LFdriftUpper_NZMS <- sampspec(samp = LFdriftUpper, species = "NZMS", stats = T)
+# NZMS = New Zealand Mudsnail
+# GAMM = Gammarus lacustris
+# 
+# SIML = Simuliidae
+# 
+species <- c("NZMS","GAMM", "SIML")
+
+
+upper <- drift[drift$RiverMile <= 75, ]
+upper <- sampspec(samp = upper)
+
+# data from lower third of the river
+lower <- drift[drift$RiverMile >= 150, ]
+lower <- sampspec(samp = lower)
+
+# pull species specific data
+upper <- sampspec(samp = upper, species = "NZMS", stats = T)
 # get species data
-LFdriftUpper_NZMS_SpecDel <- LFdriftUpper_NZMS$SpecDel
+upper_sp <-  upper$SpecDel
 # get rid of NAs
-LFdriftUpper_NZMS_SpecDel <- LFdriftUpper_NZMS_SpecDel[-which((is.na(LFdriftUpper_NZMS_SpecDel$CountTotal == "NA"))== T),] 
+upper_sp <- upper_sp[-which((is.na(upper_sp$CountTotal == "NA"))== T),] 
 
 # make columns rows and rows columns
-LFdriftUpper_NZMS_size <- gather(LFdriftUpper_NZMS_SpecDel[ , 3:17], key = "Size")
+LFdriftUpper_NZMS_size <- gather(upper_sp[ , 3:17], key = "Size")
 
 # remove counts of 0 (since they don't need to be in out distribution)
 LFdriftUpper_NZMS_size <- LFdriftUpper_NZMS_size[which(LFdriftUpper_NZMS_size$value != 0), ]
