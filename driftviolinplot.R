@@ -7,6 +7,9 @@ library(tidyr)
 library(ggplot2)
 drift <- readDB(gear = "Drift", type = "Sample", updater = T)
 
+
+t1 <- readDB(type = 'SpeciesList')
+
 # data from the upper thirds of the river
 
 # NZMS = New Zealand Mudsnail
@@ -32,11 +35,16 @@ upper_sp <-  upper$SpecDel
 upper_sp <- upper_sp[-which((is.na(upper_sp$CountTotal == "NA"))== T),] 
 
 # make columns rows and rows columns
-LFdriftUpper_NZMS_size <- gather(upper_sp[ , 3:17], key = "Size")
+upper_sp <- gather(upper_sp[ , 3:17], key = "Size")
 
 # remove counts of 0 (since they don't need to be in out distribution)
-LFdriftUpper_NZMS_size <- LFdriftUpper_NZMS_size[which(LFdriftUpper_NZMS_size$value != 0), ]
+upper_sp <- upper_sp[which(upper_sp$value != 0), ]
 
+size_bin <- c("B0", "B1", "B2", "B3", "B4", "B5",
+              "B6", "B7", "B8","B9", "B10", "B11",
+              "B12", "B13")
+size_list <- seq(-1:13)
+for(n in )
 # do this for all 13 size classes
 LFdriftUpper_NZMS_size$Size <- replace(LFdriftUpper_NZMS_size$Size, which(LFdriftUpper_NZMS_size$Size == "B0"), 0)
 LFdriftUpper_NZMS_size$Size <- replace(LFdriftUpper_NZMS_size$Size, which(LFdriftUpper_NZMS_size$Size == "B1"), 1)
