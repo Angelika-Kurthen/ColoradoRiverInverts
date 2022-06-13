@@ -10,6 +10,8 @@ library(dplyr)
 install.packages("dataRetrieval")
 library(dataRetrieval)
 
+source("EggMortalityIntegration.R")
+
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
 
