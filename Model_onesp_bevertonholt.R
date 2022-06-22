@@ -241,21 +241,29 @@ if (temps$Temperature[t-1] < mean_temp){
 output.N.list[t, 1:3, 1] <- output.N.list[t-1, 1:3,1] %*% ABAET
 
 # immediate mortality due to flows
+# assume that mortality 
 # mortality due to flooding follows N0 = Nz*e^-hQ
+# but what about using a sigmoidal logistic function so we can control the threshold point and rate of growth
+# following m = 1/1+e^-h*(x-xf)
+# where h is is shape value
+# x is Q, and xf is threshold point (100% of pop dies)
+#plot(x = Q, y = 1/(1+exp(-0.02*(Q-100000))))
+
 
 #s1
-#output.N.list[t, 1, 1] <- output.N.list[t, 1, 1]*exp(-0.02*Q[t-1])
+output.N.list[t, 1, 1] <- output.N.list[t, 1, 1] - Q[t-1] * 1/(1+exp(-0.02*(Q-100000)))
 #s2
-#output.N.list[t,2,1] <- output.N.list[t,2,1]*exp(-0.02*Q[t-1])
-#s3
-#output.N.list[t,3,1] <- output.N.list[t,3,1]*exp(-0.02*Q[t-1])
+output.N.list[t,2,1] <- output.N.list[t,2,1] - Q[t-1] * 1/(1+exp(-0.02*(Q-100000)))
+#3
+output.N.list[t,3,1] <- output.N.list[t,3,1] - Q[t-1] * 1/(1+exp(-0.02*(Q-100000)))
 #replist[[1]][,,1] <- output.N.list[[1]]
 Total.N[,iter] <- apply(output.N.list,1,sum)
 }
 }
 
 # take a look at results
-plot(timestep, Total.N[2:(length(timestep)+1)], type= "l")
+plot(timestep, Total.N[2:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
+
 plot(timestep, Q, type = "l")
 
 
