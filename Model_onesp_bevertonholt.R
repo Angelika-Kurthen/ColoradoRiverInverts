@@ -251,11 +251,11 @@ output.N.list[t, 1:3, 1] <- output.N.list[t-1, 1:3,1] %*% ABAET
 
 
 #s1
-output.N.list[t, 1, 1] <- output.N.list[t, 1, 1] - Q[t-1] * 1/(1+exp(-0.02*(Q-100000)))
+output.N.list[t, 1, 1] <- output.N.list[t, 1, 1] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
 #s2
-output.N.list[t,2,1] <- output.N.list[t,2,1] - Q[t-1] * 1/(1+exp(-0.02*(Q-100000)))
+output.N.list[t,2,1] <- output.N.list[t,2,1] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
 #3
-output.N.list[t,3,1] <- output.N.list[t,3,1] - Q[t-1] * 1/(1+exp(-0.02*(Q-100000)))
+output.N.list[t,3,1] <- output.N.list[t,3,1] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
 #replist[[1]][,,1] <- output.N.list[[1]]
 Total.N[,iter] <- apply(output.N.list,1,sum)
 }
