@@ -1,6 +1,8 @@
-#######
-# 
-#######
+##########################
+# Baetis 1 sp model
+###########################
+
+
 library(purrr)
 library(tidyverse)
 library(lubridate)
@@ -41,8 +43,8 @@ ID <- as.numeric(as.factor(temp$Date))-1
 ID <- ID %/% 14
 # aggregate over ID and TYPE for all numeric data.
 outs <- aggregate(temp[sapply(temp,is.numeric)],
-                 by=list(ID,temp$X_00010_00003),
-                 FUN=mean)
+                  by=list(ID,temp$X_00010_00003),
+                  FUN=mean)
 # format output
 names(outs)[1:2] <-c("dts","Temperature")
 # add the correct dates as the beginning of every period
@@ -68,10 +70,10 @@ iterations <- 1
 K = 10000
 
 # specify baseline transition probabilities for each species
-G1_BAET = 0.0306 # prob of transitioning 
-G2_BAET = 0.0306
-P1_BAET = 0.0306 # prob of staying the same
-P2_BAET = 0.0306
+G1_BAET = 0.0302
+G2_BAET = 0.0302
+P1_BAET = 0.0302
+P2_BAET = 0.0302
 # # transition probabilites when there is lowered flow (Q<8000)
 # DG1_BAET = 0.75
 # DG2_BAET = 0.7
@@ -129,7 +131,7 @@ reparray <- array(0,
 #}
 
 output.N.list <- reparray
-output.N.list[1,1,]<- 1000
+output.N.list[1,1,]<- 5000
 
 # Q is equal to average discharge over 14 days
 Q <- out$Discharge
@@ -153,7 +155,7 @@ b = 0.005
 
 for (iter in iterations){
   for (t in timestep){
-    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * H_BAET #Baetidae egg minima and maxima from Degrange, 1960
+    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) # * H_BAET #Baetidae egg minima and maxima from Degrange, 1960
     
     
     # Calculate the disturbance magnitude-K relationship. Sets to 0 if below the Qmin
@@ -163,7 +165,7 @@ for (iter in iterations){
       Qf <- (Q[t-1] - Qmin)/(a + Q[t-1]- Qmin)
     }
     
-
+    
     
     # Calculate K arrying capacity immediately following the disturbance
     K <- 10000 + (40000-10000)*Qf
@@ -197,119 +199,74 @@ for (iter in iterations){
     # F_BAET <- F_BAET*((1 - (K-1))/K)
     #}
     
- 
-#Baetidae
-
-# if drought
-# if (Q[t-1] < 8000){
-#   BAET1 <- c(DP1_BAET, 0, F_BAET)
-#   BAET2 <- c(DG1_BAET, DP2_BAET, 0)
-#   BAET3 <- c(0,DG2_BAET, 0)
-# }
-# 
- 
-BAET1 <- c(P1_BAET, 0, F_BAET)
-BAET2 <- c(G1_BAET, P2_BAET, 0)
-BAET3 <- c(0, G2_BAET, 0) 
-# 
-# if (Q[t-1] >= 10000 & Q[t-1] < 15000){
-#   BAET1 <- c(SP1_BAET, 0, F_BAET)
-#   BAET2 <- c(SG1_BAET, SP2_BAET, 0 )
-#   BAET3 <- c(0, SG2_BAET, 0)
-# }
-# 
-# if (Q[t-1] >= 15000){
-#   BAET1 <- c(LP1_BAET, 0, F_BAET)
-#   BAET2 <- c(LG1_BAET, LP2_BAET , 0)
-#   BAET3 <- c(0, LG2_BAET, 0)
-# }
-
-ABAET <- rbind( BAET1, BAET2, BAET3)
-
-# if the water temp is warmer than the average water temp, then development is favored over growth
-# if (temps$Temperature[t-1] > mean_temp){
-#   ABAET[3,2] = ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2]) + ABAET[3,2]
-#   ABAET[2,1] = ABAET[2,1] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[2,1]) 
-# }
-# 
-# # if the water temp is cooler than the average water temp, then growth is favored over development
-# if (temps$Temperature[t-1] < mean_temp){
-#   ABAET[2,1] = ((mean_temp - temps$Temperature[t-1])/mean_temp * ABAET[2,1]) + ABAET[2,1]
-#   ABAET[3,2] = ABAET[3,2] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2])
-#   }
-
-output.N.list[t, 1:3, 1] <- output.N.list[t-1, 1:3,1] %*% ABAET
-
-# immediate mortality due to flows
-# mortality due to flooding follows N0 = Nz*e^-hQ in McMullen model
-# but what about using a sigmoidal logistic function so we can control the threshold point and rate of growth
-# following m = 1/1+e^-h*(x-xf)
-# where h is is shape value
-# x is Q, and xf is threshold point (about 100% of pop dies)
-#plot(x = Q, y = 1/(1+exp(-0.02*(Q-100000))))
-
-
-#s1
-output.N.list[t, 1, 1] <- output.N.list[t, 1, 1] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
-#s2
-output.N.list[t,2,1] <- output.N.list[t,2,1] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
-#3
-output.N.list[t,3,1] <- output.N.list[t,3,1] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
-#replist[[1]][,,1] <- output.N.list[[1]]
-Total.N[,iter] <- apply(output.N.list,1,sum)
-}
+    
+    #Baetidae
+    
+    # if drought
+    # if (Q[t-1] < 8000){
+    #   BAET1 <- c(DP1_BAET, 0, F_BAET)
+    #   BAET2 <- c(DG1_BAET, DP2_BAET, 0)
+    #   BAET3 <- c(0,DG2_BAET, 0)
+    # }
+    # 
+    
+    BAET1 <- c(P1_BAET, 0, F_BAET)
+    BAET2 <- c(G1_BAET, P2_BAET, 0)
+    BAET3 <- c(0, G2_BAET, 0) 
+    # 
+    # if (Q[t-1] >= 10000 & Q[t-1] < 15000){
+    #   BAET1 <- c(SP1_BAET, 0, F_BAET)
+    #   BAET2 <- c(SG1_BAET, SP2_BAET, 0 )
+    #   BAET3 <- c(0, SG2_BAET, 0)
+    # }
+    # 
+    # if (Q[t-1] >= 15000){
+    #   BAET1 <- c(LP1_BAET, 0, F_BAET)
+    #   BAET2 <- c(LG1_BAET, LP2_BAET , 0)
+    #   BAET3 <- c(0, LG2_BAET, 0)
+    # }
+    
+    ABAET <- rbind( BAET1, BAET2, BAET3)
+    
+    # if the water temp is warmer than the average water temp, then development is favored over growth
+    # if (temps$Temperature[t-1] > mean_temp){
+    #   ABAET[3,2] = ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2]) + ABAET[3,2]
+    #   ABAET[2,1] = ABAET[2,1] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[2,1]) 
+    # }
+    # 
+    # # if the water temp is cooler than the average water temp, then growth is favored over development
+    # if (temps$Temperature[t-1] < mean_temp){
+    #   ABAET[2,1] = ((mean_temp - temps$Temperature[t-1])/mean_temp * ABAET[2,1]) + ABAET[2,1]
+    #   ABAET[3,2] = ABAET[3,2] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2])
+    # }
+    # 
+    output.N.list[t, 1:3, 1] <- output.N.list[t-1, 1:3,1] %*% ABAET
+    
+    # immediate mortality due to flows
+    # assume that mortality 
+    # mortality due to flooding follows N0 = Nz*e^-hQ
+    # but what about using a sigmoidal logistic function so we can control the threshold point and rate of growth
+    # following m = 1/1+e^-h*(x-xf)
+    # where h is is shape value
+    # x is Q, and xf is threshold point (100% of pop dies)
+    #plot(x = Q, y = 1/(1+exp(-0.02*(Q-100000))))
+    
+    
+    #s1
+    output.N.list[t, 1, 1] <- output.N.list[t, 1, 1] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
+    #s2
+    output.N.list[t,2,1] <- output.N.list[t,2,1] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
+    #3
+    output.N.list[t,3,1] <- output.N.list[t,3,1] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
+    #replist[[1]][,,1] <- output.N.list[[1]]
+    Total.N[,iter] <- apply(output.N.list,1,sum)
+  }
 }
 
 # take a look at results
-plot(timestep, Total.N[1:length(timestep)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight)")
 
-plot(timestep, Q, type = "l")
+plot(timestep, Total.N[2:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
 
+plot(timestep[200:length(timestep)], Total.N[201:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-repdf <- ldply(replist, function(x)
-  adply(x, c(1,2,3))
-})
-
-names(repdf) <- c('Species', 'Timestep', 'Stage', 'Rep', 'Abund')
-repdf$Timestep <- as.numeric(as.character(repdf$Timestep))
-
-totn <- adply(Total.N, c(1,2))
-names(totn) <- c('Timestep', 'Rep', 'Tot.abund')
-totn$Timestep <- as.numeric(as.character(totn$Timestep))
-
-## joining totn and repdf together
-repdf <- left_join(totn, repdf)
-
-## calculating relative abundance
-repdf <- mutate(repdf, rel.abund = Abund/Tot.abund)
-
-  }
-
-
-
-F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * H_BAET #Baetidae egg minima and maxima from Degrange, 1960
-if (Ntot < K){
-  F_BAET = F_BAET*((K - Ntot)/K)
-  } else {
-    F_BAET = F_BAET*((K - 1)/K)
-  }
-
-
-
-output.N <- N %*% ABAET
-Ntot = sum(output.N)
-
-output.N.list[[sp]][t,1:3] <- output.N.list[[sp]][t-1, 1:3] %*% get(paste0('A', sp))
+Total.N
