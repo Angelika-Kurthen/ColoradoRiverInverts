@@ -70,10 +70,10 @@ iterations <- 1
 K = 10000
 
 # specify baseline transition probabilities for each species
-G1_BAET = 0.0302
-G2_BAET = 0.0302
-P1_BAET = 0.0302
-P2_BAET = 0.0302
+G1_BAET = 0.031
+G2_BAET = 0.031
+P1_BAET = 0.031
+P2_BAET = 0.031
 # # transition probabilites when there is lowered flow (Q<8000)
 # DG1_BAET = 0.75
 # DG2_BAET = 0.7
@@ -168,10 +168,10 @@ for (iter in iterations){
     
     
     # Calculate K arrying capacity immediately following the disturbance
-    K <- 10000 + (40000-10000)*Qf
+    K <- 10000 + ((40000-10000)*Qf)
     
     # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
-    K <- 10000 + (40000 - 10000)*exp(-g*14)
+    K <- 10000 + ((K - 10000)*exp(-g*14))
     
     # Ricker model - pro = doesn't go negative
     #F_BAET <- F_BAET*exp(1.23*(1-(Total.N[t-1]/K)))
