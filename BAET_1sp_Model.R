@@ -7,6 +7,7 @@ library(purrr)
 library(tidyverse)
 library(lubridate)
 library(dplyr)
+library(demogR)
 
 # data retrieval tool from USGS
 install.packages("dataRetrieval")
@@ -33,6 +34,10 @@ out$dts <- as.POSIXct(flow$Date[(out$dts*14)+1])
 out <- out[order(out$dts),]
 # get mean Discharge data for every 14 days
 out <- aggregate(out, by = list(out$dts), FUN = mean)
+
+
+# we can also create a random flow scenario by sampleing flows
+out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
 
 # read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
@@ -70,10 +75,10 @@ iterations <- 1
 K = 10000
 
 # specify baseline transition probabilities for each species
-G1_BAET = 0.031
-G2_BAET = 0.031
-P1_BAET = 0.031
-P2_BAET = 0.031
+G1_BAET = 0.032
+G2_BAET = 0.032
+P1_BAET = 0.032
+P2_BAET = 0.032
 # # transition probabilites when there is lowered flow (Q<8000)
 # DG1_BAET = 0.75
 # DG2_BAET = 0.7
@@ -93,14 +98,14 @@ P2_BAET = 0.031
 
 
 # want to run this for one year, in 14 day timesteps 
-timestep <- seq(2, (length(out$Discharge) + 1), by = 1)
+timestep <- seq(2, (length(out$Discharge) + 1), by = 1) # OR
+timestep <- seq(2, (length(out_sample) + 1), by = 1)
 
 # create an array to put our output into
 #output.N.array <- array(0, dim = c(length(timestep) + 1, length(species)))
 output.N.array <- array(0, dim = c(length(timestep) + 1))
 
 output.N.list <- list(output.N.array)
-
 
 
 ## Assigning names to each array from sppnames vector
@@ -131,10 +136,12 @@ reparray <- array(0,
 #}
 
 output.N.list <- reparray
-output.N.list[1,1,]<- 5000
+output.N.list[1,1:3,]<- runif(3, min = 1, max = (0.5*K))
 
 # Q is equal to average discharge over 14 days
-Q <- out$Discharge
+Q <- out$Discharge #OR
+Q <- out_sample
+
 Qmin <- 20000
 a <- 100
 g <- 0.01
@@ -177,14 +184,14 @@ for (iter in iterations){
     #F_BAET <- F_BAET*exp(1.23*(1-(Total.N[t-1]/K)))
     
     #Ricker model from Mathmatica
-    #F_BAET <- F_BAET*exp(-b * Total.N[t-1])
+    F_BAET <- F_BAET*exp(-b * Total.N[t-1])
     
     # Beverton Holt from Mathmatica - can't go negative
-    if (Total.N[t-1] < K){
-      F_BAET <- F_BAET*((K - Total.N[t-1])/K)
-    } else{
-      F_BAET <- F_BAET*((K - (K-1))/K)
-    }
+    #if (Total.N[t-1] < K){
+    #  F_BAET <- F_BAET*((K - Total.N[t-1])/K)
+    #} else{
+    #  F_BAET <- F_BAET*((K - (K-1))/K)
+    #}
     # Beverton Holt - issue, can go negative
     #if (Total.N[t-1] < K){
     #F_BAET <- F_BAET*((r*Total.N[t-1])/(1 - (Total.N[t-1]*(r-1)/K)))
