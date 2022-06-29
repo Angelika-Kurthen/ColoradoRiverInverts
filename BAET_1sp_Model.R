@@ -72,10 +72,10 @@ iterations <- 1
 K = 10000
 
 # specify baseline transition probabilities for each species
-G1_BAET = 0.032
-G2_BAET = 0.032
-P1_BAET = 0.032
-P2_BAET = 0.032
+G1_BAET = 0.0322
+G2_BAET = 0.0322
+P1_BAET = 0.0322
+P2_BAET = 0.0322
 # # transition probabilites when there is lowered flow (Q<8000)
 # DG1_BAET = 0.75
 # DG2_BAET = 0.7
@@ -163,6 +163,12 @@ for (iter in iterations){
   output.N.list <- reparray
   output.N.list[1,1:3,]<- runif(3, min = 1, max = (0.5*K))
   
+  # list to input Ks
+  Klist <- vector()
+  
+  # list to imput flow morts
+  flowmortlist <- vector()
+  
   for (t in timestep){
     F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) # * H_BAET #Baetidae egg minima and maxima from Degrange, 1960
     
@@ -182,6 +188,7 @@ for (iter in iterations){
     # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
     K <- 10000 + ((K - 10000)*exp(-g*14))
     
+    Klist <- append(Klist, K)
     # Ricker model - pro = doesn't go negative
     #F_BAET <- F_BAET*exp(1.23*(1-(Total.N[t-1]/K)))
     
@@ -267,6 +274,8 @@ for (iter in iterations){
     output.N.list[t,2,1] <- output.N.list[t,2,1] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
     #3
     output.N.list[t,3,1] <- output.N.list[t,3,1] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
+    
+    flowmortlist <- append(flowmortlist, (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000)))))
     #replist[[1]][,,1] <- output.N.list[[1]]
     Total.N[,iter] <- apply(output.N.list,1,sum)
   }
@@ -279,3 +288,8 @@ plot(timestep, Total.N[2:(length(timestep)+1)], type= "l", ylab = "Baetis spp. T
 plot(timestep[200:length(timestep)], Total.N[201:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
 
 Total.N
+
+r <- Total.N[1:length(timestep)]/Total.N[2:(length(timestep)+1)]
+plot(timestep, r, type = "l")
+
+plot(Klist, r)
