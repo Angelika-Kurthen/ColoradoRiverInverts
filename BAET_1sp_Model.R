@@ -36,9 +36,6 @@ out <- out[order(out$dts),]
 out <- aggregate(out, by = list(out$dts), FUN = mean)
 
 
-# we can also create a random flow scenario by sampleing flows
-out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
-
 # read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
 
@@ -128,19 +125,9 @@ reparray <- array(0,
 #replist <- rep(list(reparray), 3)
 #names(replist) <- species
 
-# need to assign starting value
-# in the future, we can pull these #s from a randomly selected date in the Colorado River data
-# for now, will start with 10 S1 individuals for each species
-#for (sp in species){
-#  output.N.list[[sp]][1,1] <- 10
-#}
-
-output.N.list <- reparray
-output.N.list[1,1:3,]<- runif(3, min = 1, max = (0.5*K))
 
 # Q is equal to average discharge over 14 days
 Q <- out$Discharge #OR
-Q <- out_sample
 
 Qmin <- 20000
 a <- 100
@@ -161,6 +148,21 @@ e = 2.71828
 b = 0.005
 
 for (iter in iterations){
+  
+  # we can also create a random flow scenario by sampleing flows
+  out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
+  Q <- out_sample
+  
+  # need to assign starting value
+  # in the future, we can pull these #s from a randomly selected date in the Colorado River data
+  # for now, will start with 10 S1 individuals for each species
+  #for (sp in species){
+  #  output.N.list[[sp]][1,1] <- 10
+  #}
+  
+  output.N.list <- reparray
+  output.N.list[1,1:3,]<- runif(3, min = 1, max = (0.5*K))
+  
   for (t in timestep){
     F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) # * H_BAET #Baetidae egg minima and maxima from Degrange, 1960
     
