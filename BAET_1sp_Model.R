@@ -72,10 +72,10 @@ iterations <- 1
 K = 10000
 
 # specify baseline transition probabilities for each species
-G1_BAET = 0.0322
-G2_BAET = 0.0322
-P1_BAET = 0.0322
-P2_BAET = 0.0322
+G1_BAET = 0.8
+G2_BAET = 0.8
+P1_BAET = 0.8
+P2_BAET = 0.8
 # # transition probabilites when there is lowered flow (Q<8000)
 # DG1_BAET = 0.75
 # DG2_BAET = 0.7
@@ -170,7 +170,7 @@ for (iter in iterations){
   flowmortlist <- vector()
   
   for (t in timestep){
-    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) # * H_BAET #Baetidae egg minima and maxima from Degrange, 1960
+    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 *0.5 assuming 50% female and * 0.5 assuming 50% mort.
     
     
     # Calculate the disturbance magnitude-K relationship. Sets to 0 if below the Qmin
@@ -283,13 +283,15 @@ for (iter in iterations){
 
 # take a look at results
 
+
+plot(timestep, output.N.list[2:941, 3, 1], type = "l")
 plot(timestep, Total.N[2:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
 
 plot(timestep[200:length(timestep)], Total.N[201:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
 
 Total.N
 
-r <- Total.N[1:length(timestep)]/Total.N[2:(length(timestep)+1)]
+r <-Total.N[2:(length(timestep)+1)]/Total.N[1:length(timestep)]
 plot(timestep, r, type = "l")
 
-plot(Klist, r)
+plot(Q, Klist)
