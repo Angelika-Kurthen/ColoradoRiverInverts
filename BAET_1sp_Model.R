@@ -8,6 +8,7 @@ library(tidyverse)
 library(lubridate)
 library(dplyr)
 library(demogR)
+library(ggplot2)
 
 # data retrieval tool from USGS
 install.packages("dataRetrieval")
@@ -16,7 +17,7 @@ library(dataRetrieval)
 source("EggMortalityIntegration.R")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
-flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
+flow <- readNWISdv("09380000", "00060", "2007-10-01", "2021-09-30")
 
 # Make an index to be used for aggregating
 ID <- as.numeric(as.factor(flow$Date))-1
@@ -72,10 +73,10 @@ iterations <- 1
 K = 10000
 
 # specify baseline transition probabilities for each species
-G1_BAET = 0.8
-G2_BAET = 0.8
-P1_BAET = 0.8
-P2_BAET = 0.8
+G1_BAET = 0.32
+G2_BAET = 0.32
+P1_BAET = 0.32
+P2_BAET = 0.32
 # # transition probabilites when there is lowered flow (Q<8000)
 # DG1_BAET = 0.75
 # DG2_BAET = 0.7
@@ -96,7 +97,7 @@ P2_BAET = 0.8
 
 # want to run this for one year, in 14 day timesteps 
 timestep <- seq(2, (length(out$Discharge) + 1), by = 1) # OR
-timestep <- seq(2, (length(out_sample) + 1), by = 1)
+#timestep <- seq(2, (length(out_sample) + 1), by = 1)
 
 # create an array to put our output into
 #output.N.array <- array(0, dim = c(length(timestep) + 1, length(species)))
@@ -150,8 +151,8 @@ b = 0.005
 for (iter in iterations){
   
   # we can also create a random flow scenario by sampleing flows
-  out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
-  Q <- out_sample
+  #out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
+  #Q <- out_sample
   
   # need to assign starting value
   # in the future, we can pull these #s from a randomly selected date in the Colorado River data
@@ -165,6 +166,12 @@ for (iter in iterations){
   
   # list to input Ks
   Klist <- vector()
+  
+  # list of transitions to next change
+  Glist <- vector()
+  
+  # list of probability of remaining in stage
+  Plist <- vector()
   
   # list to imput flow morts
   flowmortlist <- vector()
@@ -244,18 +251,34 @@ for (iter in iterations){
     
     ABAET <- rbind( BAET1, BAET2, BAET3)
     
-    # if the water temp is warmer than the average water temp, then development is favored over growth
+    
+    # proportional (linear) relationship between temp and growth/development (maximum parsimony)
+    #if the water temp is warmer than the average water temp, then development is favored over growth
+    #P1 = A[1,1] = prob of staying in stage 1
+    #G1 = A[2,1] = prob of going to stage 2
+    #P2 = A[2,2] = prob of staying in stage 2
+    #G1 = A[3,2] = prob of going to stage 3
     # if (temps$Temperature[t-1] > mean_temp){
-    #   ABAET[3,2] = ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2]) + ABAET[3,2]
-    #   ABAET[2,1] = ABAET[2,1] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[2,1]) 
+    #   ABAET[3,2]= ABAET[2,1] = ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2]) + ABAET[3,2]
+    #   ABAET[1,1] = ABAET[2,2] = ABAET[2,2] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[2,2])
     # }
     # 
     # # if the water temp is cooler than the average water temp, then growth is favored over development
     # if (temps$Temperature[t-1] < mean_temp){
-    #   ABAET[2,1] = ((mean_temp - temps$Temperature[t-1])/mean_temp * ABAET[2,1]) + ABAET[2,1]
-    #   ABAET[3,2] = ABAET[3,2] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2])
+    #   ABAET[2,2] = ABAET [1,1] = ((mean_temp - temps$Temperature[t-1])/mean_temp * ABAET[2,2]) + ABAET[2,2]
+    #   ABAET[3,2]= ABAET[2,1] = ABAET[3,2] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2])
     # }
     # 
+    # 
+
+    
+    # using two y = sqrt(x) to model change
+    ABAET[3,2] = ABAET[2,1] = 0.656*sqrt(temps$Temperature[t-1]) - 1.79
+     ABAET[2,2] = ABAET[1,1] = -0.4051*sqrt(temps$Temperature[t-1]) + 1.62
+    
+    Glist <-append(Glist, ABAET[3,2])
+    Plist <- append(Plist, ABAET[2,2])
+    
     output.N.list[t, 1:3, 1] <- output.N.list[t-1, 1:3,1] %*% ABAET
     
     # immediate mortality due to flows
@@ -284,10 +307,45 @@ for (iter in iterations){
 # take a look at results
 
 
-plot(timestep, output.N.list[2:941, 3, 1], type = "l")
+
+plot(timestep[3:367], output.N.list[3:367, 3, 1], type = "l", ylab = "Baetis spp. Adults", xlab = "Timstep (1 fortnight)")
+
 plot(timestep, Total.N[2:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
 
-plot(timestep[200:length(timestep)], Total.N[201:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
+
+
+# creating plots to analyze how temp relationship is working
+# create dataframe with timestemp, s1, s2, and s3 abundances, and tempterature
+
+data <- as.data.frame(cbind(timestep, output.N.list[2:(length(timestep)+1) ,1, 1], output.N.list[2:(length(timestep)+1) ,2, 1], output.N.list[2:(length(timestep)+1) ,3, 1], temps$Temperature))
+colnames(data) <- c("timestep", "Stage1", "Stage2", "Stage3", "Temperature")
+
+data <- data[10:37, ]
+ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
+  geom_path()+
+  geom_path(aes(x = timestep, y = Stage2, color = "Stage2"))+
+  geom_path(aes(x = timestep, y = Stage3, color = "Stage3"))+
+  geom_path(aes(x = timestep, y = Temperature*250, color = "Temperature"))+
+  scale_y_continuous(
+    
+    # Features of the first axis
+    name = "Abundance",
+    
+    # Add a second axis and specify its features
+    sec.axis = sec_axis( ~.*0.004, name="Temperature C")
+  )
+
+
+par(mfrow = c(1,2))
+plot(timestep[10:37], Glist[10:37], type = "l", col = "blue")
+lines(timestep[10:37], Plist[10:37], type = "l", col = "black")
+legend(18, 0.1, legend=c("Growth (remain)", "Development (transition)"),
+       col=c("Black", "Blue"), lty=1, cex=0.8)
+plot(timestep[10:37], temps$Temperature[10:37], type = "l", col = "red")
+
+plot(timestep[200:210], Total.N[201:211], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
+par(new=TRUE)
+lines(timestep[200:210],temps$Temperature[201:211],col="green")
 
 Total.N
 
