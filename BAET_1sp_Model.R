@@ -259,27 +259,27 @@ for (iter in iterations){
     #P2 = A[2,2] = prob of staying in stage 2
     #G1 = A[3,2] = prob of going to stage 3
     # if (temps$Temperature[t-1] > mean_temp){
-    #   ABAET[3,2]= ABAET[2,1] = ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2]) + ABAET[3,2]
-    #   ABAET[1,1] = ABAET[2,2] = ABAET[2,2] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[2,2])
+    #   ABAET[3,2]= ABAET[2,1] = ((temps$Temperature[t-1] - mean_temp)/mean_temp * 0.32) + 0.32
+    #   ABAET[1,1] = ABAET[2,2] = 0.32 - ((temps$Temperature[t-1] - mean_temp)/mean_temp * 0.32)
     # }
     # 
     # # if the water temp is cooler than the average water temp, then growth is favored over development
     # if (temps$Temperature[t-1] < mean_temp){
-    #   ABAET[2,2] = ABAET [1,1] = ((mean_temp - temps$Temperature[t-1])/mean_temp * ABAET[2,2]) + ABAET[2,2]
-    #   ABAET[3,2]= ABAET[2,1] = ABAET[3,2] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2])
+    #   ABAET[2,2] = ABAET [1,1] = ((mean_temp - temps$Temperature[t-1])/mean_temp * 0.32) + 0.32
+    #   ABAET[3,2]= ABAET[2,1] = 0.32 - ((temps$Temperature[t-1] - mean_temp)/mean_temp * 0.32)
     # }
-    # 
+
     # 
 
     
     # using two y = sqrt(x) to model change
     ABAET[3,2] = ABAET[2,1] = 0.656*sqrt(temps$Temperature[t-1]) - 1.79
-     ABAET[2,2] = ABAET[1,1] = -0.4051*sqrt(temps$Temperature[t-1]) + 1.62
+    ABAET[2,2] = ABAET[1,1] = -0.4051*sqrt(temps$Temperature[t-1]) + 1.62
     
     Glist <-append(Glist, ABAET[3,2])
     Plist <- append(Plist, ABAET[2,2])
     
-    output.N.list[t, 1:3, 1] <- output.N.list[t-1, 1:3,1] %*% ABAET
+    output.N.list[t, 1:3, 1] <- ABAET %*% output.N.list[t-1, 1:3,1] 
     
     # immediate mortality due to flows
     # assume that mortality 
