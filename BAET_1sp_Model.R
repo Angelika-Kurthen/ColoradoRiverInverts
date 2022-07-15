@@ -17,7 +17,7 @@ library(dataRetrieval)
 source("EggMortalityIntegration.R")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
-flow <- readNWISdv("09380000", "00060", "2007-10-01", "2021-09-30")
+flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
 
 # Make an index to be used for aggregating
 ID <- as.numeric(as.factor(flow$Date))-1
@@ -73,10 +73,10 @@ iterations <- 1
 K = 10000
 
 # specify baseline transition probabilities for each species
-G1_BAET = 0.32
-G2_BAET = 0.32
-P1_BAET = 0.32
-P2_BAET = 0.32
+G1_BAET = 0.8
+G2_BAET = 0.8
+P1_BAET = 0.8
+P2_BAET = 0.8
 # # transition probabilites when there is lowered flow (Q<8000)
 # DG1_BAET = 0.75
 # DG2_BAET = 0.7
@@ -151,8 +151,8 @@ b = 0.005
 for (iter in iterations){
   
   # we can also create a random flow scenario by sampleing flows
-  #out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
-  #Q <- out_sample
+  out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
+  Q <- out_sample
   
   # need to assign starting value
   # in the future, we can pull these #s from a randomly selected date in the Colorado River data
@@ -273,11 +273,11 @@ for (iter in iterations){
 
     
     # using two y = sqrt(x) to model change
-    ABAET[3,2] = ABAET[2,1] = 0.656*sqrt(temps$Temperature[t-1]) - 1.79
-    ABAET[2,2] = ABAET[1,1] = -0.4051*sqrt(temps$Temperature[t-1]) + 1.62
-    
-    Glist <-append(Glist, ABAET[3,2])
-    Plist <- append(Plist, ABAET[2,2])
+    # ABAET[3,2] = ABAET[2,1] = 0.656*sqrt(temps$Temperature[t-1]) - 1.79
+    # ABAET[2,2] = ABAET[1,1] = -0.4051*sqrt(temps$Temperature[t-1]) + 1.62
+    # 
+    # Glist <-append(Glist, ABAET[3,2])
+    # Plist <- append(Plist, ABAET[2,2])
     
     output.N.list[t, 1:3, 1] <- ABAET %*% output.N.list[t-1, 1:3,1] 
     
@@ -308,7 +308,7 @@ for (iter in iterations){
 
 
 
-plot(timestep[3:367], output.N.list[3:367, 3, 1], type = "l", ylab = "Baetis spp. Adults", xlab = "Timstep (1 fortnight)")
+plot(timestep[3:(length(timestep)+1)], output.N.list[3:(length(timestep)+1), 3, 1], type = "l", ylab = "Baetis spp. Adults", xlab = "Timstep (1 fortnight)")
 
 plot(timestep, Total.N[2:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
 
@@ -325,14 +325,14 @@ ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
   geom_path()+
   geom_path(aes(x = timestep, y = Stage2, color = "Stage2"))+
   geom_path(aes(x = timestep, y = Stage3, color = "Stage3"))+
-  geom_path(aes(x = timestep, y = Temperature*250, color = "Temperature"))+
+  geom_path(aes(x = timestep, y = Temperature*117, color = "Temperature"))+
   scale_y_continuous(
     
     # Features of the first axis
     name = "Abundance",
     
     # Add a second axis and specify its features
-    sec.axis = sec_axis( ~.*0.004, name="Temperature C")
+    sec.axis = sec_axis( ~.*0.085, name="Temperature C")
   )
 
 
