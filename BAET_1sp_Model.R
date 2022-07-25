@@ -46,21 +46,42 @@ ID <- as.numeric(as.factor(temp$Date))-1
 ID <- ID %/% 14
 # aggregate over ID and TYPE for all numeric data.
 outs <- aggregate(temp[sapply(temp,is.numeric)],
-                  by=list(ID,temp$X_00010_00003),
+                  by=list(ID),
                   FUN=mean)
+
+
 # format output
 names(outs)[1:2] <-c("dts","Temperature")
 # add the correct dates as the beginning of every period
 outs$dts <- as.POSIXct(temp$Date[(outs$dts*14)+1])
 # order by date in chronological order
 outs <- outs[order(outs$dts),]
-# get mean Discharge data for every 14 days
-outs <- aggregate(outs, by = list(outs$dts), FUN = mean)
+# get mean
 mean_temp <- mean(outs$Temperature)
 
 # there are less temperatures than discharge readings, so we will just repeat the same temp sequence for this exercise
 temps <- rbind(outs, outs, outs)
 temps <- temps[1:length(out$Discharge), ]
+
+# calculate degree days
+# that is basically  degree day = Sum( mean temp - threshold temp) over time period
+# we can calculate threshold temp later (based on info regarding Cloean dipterum, 10 C)
+
+
+degreeday <- aggregate(temp[sapply(temp,is.numeric)],
+                       by=list(ID),
+                       FUN=sum)
+names(degreeday)[1:2] <-c("dts","DegreeDay")
+# add the correct dates as the beginning of every period
+# 
+degreeday$dts <- as.POSIXct(temp$Date[(degreeday$dts*14)+1])
+# order by date in chronological order
+degreeday <- degreeday[order(degreeday$dts),]
+degreeday <- degreeday[1:363,]
+
+# there are less temperatures than discharge readings, so we will just repeat the same temp sequence for this exercise
+DDs <- rbind(degreeday, degreeday, degreeday)
+DDs <- DDs[1:length(out$Discharge), ]
 
 #make matrix with fecundities
 
@@ -151,8 +172,13 @@ b = 0.005
 for (iter in iterations){
   
   # we can also create a random flow scenario by sampleing flows
-  out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
-  Q <- out_sample
+  #out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
+  #Q <- out_sample
+  
+  # another option is to keep flow the same each timestep (to test temp effects)
+  out_same <- rep(10000, length(out$Discharge))
+  Q <- out_same
+  
   
   # need to assign starting value
   # in the future, we can pull these #s from a randomly selected date in the Colorado River data
@@ -259,25 +285,42 @@ for (iter in iterations){
     #P2 = A[2,2] = prob of staying in stage 2
     #G1 = A[3,2] = prob of going to stage 3
     # if (temps$Temperature[t-1] > mean_temp){
-    #   ABAET[3,2]= ABAET[2,1] = ((temps$Temperature[t-1] - mean_temp)/mean_temp * 0.32) + 0.32
-    #   ABAET[1,1] = ABAET[2,2] = 0.32 - ((temps$Temperature[t-1] - mean_temp)/mean_temp * 0.32)
+    #   ABAET[3,2]= ABAET[2,1] = ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2]) + ABAET[3,2]
+    #   ABAET[1,1] = ABAET[2,2] = ABAET[2,2] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[2,2])
     # }
     # 
     # # if the water temp is cooler than the average water temp, then growth is favored over development
     # if (temps$Temperature[t-1] < mean_temp){
-    #   ABAET[2,2] = ABAET [1,1] = ((mean_temp - temps$Temperature[t-1])/mean_temp * 0.32) + 0.32
-    #   ABAET[3,2]= ABAET[2,1] = 0.32 - ((temps$Temperature[t-1] - mean_temp)/mean_temp * 0.32)
+    #   ABAET[2,2] = ABAET [1,1] = ((mean_temp - temps$Temperature[t-1])/mean_temp * ABAET[2,2]) + ABAET[2,2]
+    #   ABAET[3,2]= ABAET[2,1] = ABAET[3,2] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2])
     # }
 
     # 
 
     
     # using two y = sqrt(x) to model change
-    # ABAET[3,2] = ABAET[2,1] = 0.656*sqrt(temps$Temperature[t-1]) - 1.79
-    # ABAET[2,2] = ABAET[1,1] = -0.4051*sqrt(temps$Temperature[t-1]) + 1.62
+    #ABAET[3,2] = ABAET[2,1] = 0.656*sqrt(temps$Temperature[t-1]) - 1.79
+    #ABAET[2,2] = ABAET[1,1] = -0.4051*sqrt(temps$Temperature[t-1]) + 1.62
+    
+    # using two threshold function to model change
+    
+    # development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
+    if (10 > temps$Temperature[t-1]) ABAET[3,2] <- 0
+    if (temps$Temperature[t-1] > 12) ABAET[3,2] <- 0.6  
+    if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 13) ABAET[3,2] <- (0.2 * temps$Temperature[t-1]) -2
+    
+    ABAET[2,1] <- ABAET[3,2] 
+
+    # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
+    if (10 >= temps$Temperature[t-1]) ABAET[2,2] <- 0.6
+    if (temps$Temperature[t-1] > 12) ABAET[2,2] <- 0
+    if (10 < temps$Temperature[t-1] & temps$Temperature[t-1] <=  13) ABAET[2,2] <- (-0.2 * temps$Temperature[t-1] + 2.6)
+
+    ABAET[1,1] <- ABAET[2,2] 
+        
     # 
-    # Glist <-append(Glist, ABAET[3,2])
-    # Plist <- append(Plist, ABAET[2,2])
+    Glist <-append(Glist, ABAET[3,2])
+    Plist <- append(Plist, ABAET[2,2])
     
     output.N.list[t, 1:3, 1] <- ABAET %*% output.N.list[t-1, 1:3,1] 
     
@@ -320,19 +363,19 @@ plot(timestep, Total.N[2:(length(timestep)+1)], type= "l", ylab = "Baetis spp. T
 data <- as.data.frame(cbind(timestep, output.N.list[2:(length(timestep)+1) ,1, 1], output.N.list[2:(length(timestep)+1) ,2, 1], output.N.list[2:(length(timestep)+1) ,3, 1], temps$Temperature))
 colnames(data) <- c("timestep", "Stage1", "Stage2", "Stage3", "Temperature")
 
-data <- data[10:37, ]
+data <- data[10:60, ]
 ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
   geom_path()+
   geom_path(aes(x = timestep, y = Stage2, color = "Stage2"))+
   geom_path(aes(x = timestep, y = Stage3, color = "Stage3"))+
-  geom_path(aes(x = timestep, y = Temperature*117, color = "Temperature"))+
+  geom_path(aes(x = timestep, y = Temperature*100, color = "Temperature"))+
   scale_y_continuous(
     
     # Features of the first axis
     name = "Abundance",
     
     # Add a second axis and specify its features
-    sec.axis = sec_axis( ~.*0.085, name="Temperature C")
+    sec.axis = sec_axis( ~.*0.01, name="Temperature C")
   )
 
 
