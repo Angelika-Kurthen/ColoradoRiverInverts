@@ -202,10 +202,16 @@ for (iter in iterations){
   # list to imput flow morts
   flowmortlist <- vector()
   
+  Flist <- vector()
+  
   for (t in timestep){
-    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 *0.5 assuming 50% female and * 0.5 assuming 50% mort.
+    # can pull fecundities from normal distribution
+    #F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 *0.5 assuming 50% female and * 0.5 assuming 50% mort.
     
+    # relate fecundities to temperature based on Sweeney et al., 2017 paper
+    F_BAET <- -379.8021*(temps$Temperature[t-1]) + 16.4664*(temps$Temperature[t-1]^2) - 0.2684*(temps$Temperature[t-1]^3) + 4196.8608
     
+    Flist <- append(Flist, F_BAET)
     # Calculate the disturbance magnitude-K relationship. Sets to 0 if below the Qmin
     if (Q[t-1] < Qmin) {
       Qf <- 0
@@ -306,15 +312,15 @@ for (iter in iterations){
     
     # development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
     if (10 > temps$Temperature[t-1]) ABAET[3,2] <- 0
-    if (temps$Temperature[t-1] > 12) ABAET[3,2] <- 0.6  
+    if (temps$Temperature[t-1] > 13) ABAET[3,2] <- 0.6  
     if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 13) ABAET[3,2] <- (0.2 * temps$Temperature[t-1]) -2
     
     ABAET[2,1] <- ABAET[3,2] 
 
     # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
     if (10 >= temps$Temperature[t-1]) ABAET[2,2] <- 0.6
-    if (temps$Temperature[t-1] > 12) ABAET[2,2] <- 0
-    if (10 < temps$Temperature[t-1] & temps$Temperature[t-1] <=  13) ABAET[2,2] <- (-0.2 * temps$Temperature[t-1] + 2.6)
+    if (temps$Temperature[t-1] > 13) ABAET[2,2] <- 0
+    if (10 < temps$Temperature[t-1] & temps$Temperature[t-1] <=  13) ABAET[2,2] <- (-0.2 * temps$Temperature[t-1]) + 2.6
 
     ABAET[1,1] <- ABAET[2,2] 
         
