@@ -63,10 +63,6 @@ mean_temp <- mean(outs$Temperature)
 temps <- rbind(outs, outs, outs)
 temps <- temps[1:length(out$Discharge), ]
 
-# calculate degree days
-# that is basically  degree day = Sum( mean temp - threshold temp) over time period
-# we can calculate threshold temp later (based on info regarding Cloean dipterum, 10 C)
-
 
 degreeday <- aggregate(temp[sapply(temp,is.numeric)],
                        by=list(ID),
@@ -79,9 +75,14 @@ degreeday$dts <- as.POSIXct(temp$Date[(degreeday$dts*14)+1])
 degreeday <- degreeday[order(degreeday$dts),]
 degreeday <- degreeday[1:363,]
 
+degreeday$DegreeDay <- degreeday$DegreeDay - 100
+# can't have negative numbers so turn those into 0s
+degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
+
 # there are less temperatures than discharge readings, so we will just repeat the same temp sequence for this exercise
 DDs <- rbind(degreeday, degreeday, degreeday)
 DDs <- DDs[1:length(out$Discharge), ]
+
 
 #make matrix with fecundities
 
@@ -169,7 +170,7 @@ g <- 0.01
 e = 2.71828
 b = 0.005
 
-for (iter in iterations){
+for (iter in iterations) {
   
   # we can also create a random flow scenario by sampleing flows
   #out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
@@ -204,13 +205,44 @@ for (iter in iterations){
   
   Flist <- vector()
   
-  for (t in timestep){
+  emergetime <- vector()
+  
+  sizelist <- vector()
+  
+  for (t in timestep) {
+    
+
+    if (t == 1) {print("t = 1")}
+    else {
+      degseq <- seq(t-1, 1, by = -1)
+      vec <- 0
+      for (s in degseq) {
+        if(vec <= 266) { vec <- DDs$DegreeDay[s] + vec }
+        else {emerg <- t - s
+        emergetime <- append(emergetime, emerg)
+        break}
+        
+      }
+  
+      }
+    
+      
+    
     # can pull fecundities from normal distribution
-    #F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 *0.5 assuming 50% female and * 0.5 assuming 50% mort.
+    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 *0.5 assuming 50% female and * 0.5 assuming 50% mort.
     
-    # relate fecundities to temperature based on Sweeney et al., 2017 paper
-    F_BAET <- -379.8021*(temps$Temperature[t-1]) + 16.4664*(temps$Temperature[t-1]^2) - 0.2684*(temps$Temperature[t-1]^3) + 4196.8608
+    # relate fecundities to temperature based on Sweeney et al., 2017  *0.5 assuming 50% female and * 0.5 assuming 50% mort.
+    #F_BAET <- (-379.8021 * (temps$Temperature[t-1]) + 16.4664*(temps$Temperature[t-1]^2) - 0.2684* (temps$Temperature[t-1]^3) + 4196.8608) * 0.5 * 0.5
     
+    # we can also relate fecundities to body mass. Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
+    # that weight is related to fecundity Y = 614X - 300
+    # we can "convert" emergetime to mg by multiplying by 0.225 (to get dry weights between 0.9 - 2 mg)
+    if (t > 6) {
+    size <- emergetime[t-6] * 0.225
+    sizelist <- append(sizelist, size)
+    F_BAET <- ((614 * size) - 300) * 0.5 * 0.5
+    }
+    #F_BAET <- emergetime[t]
     Flist <- append(Flist, F_BAET)
     # Calculate the disturbance magnitude-K relationship. Sets to 0 if below the Qmin
     if (Q[t-1] < Qmin) {
@@ -353,8 +385,10 @@ for (iter in iterations){
   }
 }
 
+
 # take a look at results
 
+par(mfrow = c(1,1))
 
 
 plot(timestep[3:(length(timestep)+1)], output.N.list[3:(length(timestep)+1), 3, 1], type = "l", ylab = "Baetis spp. Adults", xlab = "Timstep (1 fortnight)")
@@ -374,16 +408,29 @@ ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
   geom_path()+
   geom_path(aes(x = timestep, y = Stage2, color = "Stage2"))+
   geom_path(aes(x = timestep, y = Stage3, color = "Stage3"))+
-  geom_path(aes(x = timestep, y = Temperature*100, color = "Temperature"))+
+  geom_path(aes(x = timestep, y = Temperature*200, color = "Temperature"))+
   scale_y_continuous(
     
     # Features of the first axis
     name = "Abundance",
     
     # Add a second axis and specify its features
-    sec.axis = sec_axis( ~.*0.01, name="Temperature C")
+    sec.axis = sec_axis( ~.*0.005, name="Temperature C")
   )
 
+# plot to show relationship between temp and fecundity
+plot(temps$Temperature, Flist, ylab = "Fecundity per individual", xlab = "Temperature (C)", pch = 19)
+
+
+plot(timestep[10:60], output.N.list[10:60, 3,1] * 1, type = "l", ylim  = c(0, 450), ylab = " ")
+lines(timestep[10:60], Flist[10:60], col = "blue", ylim = c(0, 450))
+lines(timestep[10:60], temps$Temperature[10:60]*15, col = "red")
+#lines(timestep[10:60], emergetime[4:54]*18, col = "green")
+lines(timestep[10:60], sizelist[4:54]*100, col = "magenta")
+legend(25, 430, legend = c("Adult Abundance", "Fecundity per female", "Temperature (C) * 15", "Dry Weight (mg) * 100"), 
+       col = c("black", "blue", "red", "magenta"), lty = 1, cex = 0.8)
+
+plot(timestep, temps$Temperature, type = "l", col = "blue")
 
 par(mfrow = c(1,2))
 plot(timestep[10:37], Glist[10:37], type = "l", col = "blue")
@@ -402,3 +449,6 @@ r <-Total.N[2:(length(timestep)+1)]/Total.N[1:length(timestep)]
 plot(timestep, r, type = "l")
 
 plot(Q, Klist)
+
+
+
