@@ -9,10 +9,22 @@ library(lubridate)
 library(plyr)
 library(dplyr)
 library(ggplot2)
-
 # data retrieval tool from USGS
 library(dataRetrieval)
 
+# Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
+# We have to manually load all tidyverse packages
+# library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(forcats, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(plyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
@@ -83,7 +95,7 @@ DDs <- DDs[1:length(out$Discharge), ]
 
 
 # specify iterations
-iterations <- 500
+iterations <- 5
 #species <- c("BAET", "SIMU", "CHIRO")
 
 
@@ -136,21 +148,22 @@ Qmin <- 20000
 a <- 100
 g <- 0.1
 
-# beverton holt is Nt+1 = rNt/1-Nt(r-1)/K
-# it is supposed to be depensatory, so as t -> inf, Nt+1 -> K, BUT 
-# the discrete nature of this causes it overshoot by a lot, 
-# meaning it isn't any better or worse than traditional logistric growth models
 
-# ricker model Nt+1= Nt* e^r(1-Nt/K)
-# overcompensatory, but could represent pops better? used in fisheries a lot
-# r is instrisice rate of increase when N is small 
-# r can be species specific, or the same for all species
+
+
 # in this case, we will use the r that McMullen et al 2017 used for Beatis
 #r = 1.23
 e = 2.71828
 b = 0.005
 
+#-------------------------
+# Outer Loop of Iterations
+#--------------------------
+
+
 for (iter in c(1:iterations)) {
+  
+  r = 1.23
   
   # we can also create a random flow scenario by sampleing flows
   #out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
@@ -167,16 +180,19 @@ for (iter in c(1:iterations)) {
   #  output.N.list[[sp]][1,1] <- 10
   #}
   
+  # or we can pull randomw values from a uniform distribution 
   output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.5*K))
+  
+  # we often want to look at different parameter values after we run code, so we create some lists
   
   # list to input Ks
   Klist <- vector()
   
   # list of transitions to next change
-  Glist <- vector()
+  #Glist <- vector()
   
   # list of probability of remaining in stage
-  Plist <- vector()
+  #Plist <- vector()
   
   # list to imput flow morts
   flowmortlist <- vector()
@@ -187,26 +203,36 @@ for (iter in c(1:iterations)) {
   
   sizelist <- vector()
   
+  #-------------------------
+  # Inner Loop of Timesteps
+  #-------------------------
+  
   for (t in timestep) {
     
+    #----------------------------------------------------------
+    # Calculate how many timesteps emerging adults have matured
     
+    # for each timestep, we want to back calculate the number of degree days
     if (t == 1) {print("t = 1")}
     else {
+      # create a sequence of time from last t to 1
       degseq <- seq(t-1, 1, by = -1)
+      # create an empty vector to put the total number of degree days accumulated
       vec <- 0
+      # for each value in that sequence, we will add the degree day values of 
+      #the timestep prior and check if it adds up to our threshold to emergence
       for (s in degseq) {
         if(vec <= 266) { vec <- DDs$DegreeDay[s] + vec }
         else {emerg <- t - s
         emergetime <- append(emergetime, emerg)
         break}
-        
+      # once we hit that threshold, we count the number of timesteps it took to reach that and add that to our emergetime vector  
       }
-      
     }
+    #---------------------------------------------------------
+    # Calculate fecundity per adult
     
-    
-    
-    # can pull fecundities from normal distribution
+    # we start by pulling fecundities from normal distribution
     F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 *0.5 assuming 50% female and * 0.5 assuming 50% mort.
     
     # relate fecundities to temperature based on Sweeney et al., 2017  *0.5 assuming 50% female and * 0.5 assuming 50% mort.
@@ -220,17 +246,19 @@ for (iter in c(1:iterations)) {
       sizelist <- append(sizelist, size)
       F_BAET <- ((614 * size) - 300) * 0.5 * 0.5
     }
-    #F_BAET <- emergetime[t]
+    
     Flist <- append(Flist, F_BAET)
-    # Calculate the disturbance magnitude-K relationship. Sets to 0 if below the Qmin
+    
+    #---------------------------------------------------
+    # Calculate the disturbance magnitude-K relationship 
+    # Sets to 0 if below the Qmin
     if (Q[t-1] < Qmin) {
       Qf <- 0
     } else {
       Qf <- (Q[t-1] - Qmin)/(a + Q[t-1]- Qmin)
     }
     
-    
-    
+    #-------------------------------------------------------------------
     # Calculate K arrying capacity immediately following the disturbance
     K <- 10000 + ((40000-10000)*Qf)
     
@@ -238,11 +266,30 @@ for (iter in c(1:iterations)) {
     K <- 10000 + ((K - 10000)*exp(-g*14))
     
     Klist <- append(Klist, K)
+    
+    #---------------------------------------------
+    # Calculate effect of density dependnce on fecundity 
+    
+    # ricker model Nt+1= Nt* e^r(1-Nt/K)
+    # overcompensatory, but could represent pops better? used in fisheries a lot
+    # r is instrisice rate of increase when N is small 
+    # r can be species specific, or the same for all species
+    
     # Ricker model - pro = doesn't go negative
     #F_BAET <- F_BAET*exp(r*(1-(Total.N[t-1]/K)))
     
-    #Ricker model from Mathmatica
-    F_BAET <- F_BAET*exp(-b * Total.N[t-1, iter])
+    #Ricker model from Mathmatica (after Recruitment = axe^-bx, see Bolker Ch 3 Deterministic Functions for
+    #Ecological Modeling)
+  
+    #F_BAET <- F_BAET*exp(-b * Total.N[t-1, iter])
+    
+    # Ricker model reproductive output, from  (recruitment = axe^r-bx)
+    F_BAET <- F_BAET*exp(r-b * Total.N[t-1, iter])
+    
+    # beverton holt is Nt+1 = rNt/1-Nt(r-1)/K
+    # it is supposed to be depensatory, so as t -> inf, Nt+1 -> K, BUT 
+    # the discrete nature of this causes it overshoot by a lot, 
+    # meaning it isn't any better or worse than traditional logistric growth models
     
     # Beverton Holt from Mathmatica - can't go negative
     #if (Total.N[t-1] < K){
@@ -256,50 +303,19 @@ for (iter in c(1:iterations)) {
     #} else{#
     #F_BAET <- F_BAET*((K - (K-1))/K)
     #}
-    
-    # regular old logistic equation - issue, can go negative
-    #if (Total.N[t-1] < K) {       # we can also just imagine 'normal' logistic growth of the K - N/K
-    #F_BAET <- F_BAET*(1 - Total.N[t-1]/K)
-    #} else {
-    # F_BAET <- F_BAET*((1 - (K-1))/K)
-    #}
-    
-    
-    #Baetidae
+
+    #-----------------------------------------------
+    # Create Lefkovitch Matrix
     
     BAET1 <- c(P1_BAET, 0, F_BAET)
     BAET2 <- c(G1_BAET, P2_BAET, 0)
     BAET3 <- c(0, G2_BAET, 0) 
     
-    
     ABAET <- rbind( BAET1, BAET2, BAET3)
-    
-    
-    # proportional (linear) relationship between temp and growth/development (maximum parsimony)
-    #if the water temp is warmer than the average water temp, then development is favored over growth
-    #P1 = A[1,1] = prob of staying in stage 1
-    #G1 = A[2,1] = prob of going to stage 2
-    #P2 = A[2,2] = prob of staying in stage 2
-    #G1 = A[3,2] = prob of going to stage 3
-    # if (temps$Temperature[t-1] > mean_temp){
-    #   ABAET[3,2]= ABAET[2,1] = ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2]) + ABAET[3,2]
-    #   ABAET[1,1] = ABAET[2,2] = ABAET[2,2] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[2,2])
-    # }
-    # 
-    # # if the water temp is cooler than the average water temp, then growth is favored over development
-    # if (temps$Temperature[t-1] < mean_temp){
-    #   ABAET[2,2] = ABAET [1,1] = ((mean_temp - temps$Temperature[t-1])/mean_temp * ABAET[2,2]) + ABAET[2,2]
-    #   ABAET[3,2]= ABAET[2,1] = ABAET[3,2] - ((temps$Temperature[t-1] - mean_temp)/mean_temp * ABAET[3,2])
-    # }
-    
-    # 
-    
-    
-    # using two y = sqrt(x) to model change
-    #ABAET[3,2] = ABAET[2,1] = 0.656*sqrt(temps$Temperature[t-1]) - 1.79
-    #ABAET[2,2] = ABAET[1,1] = -0.4051*sqrt(temps$Temperature[t-1]) + 1.62
-    
-    # using two threshold function to model change
+
+    #-----------------------------------------------
+    # Calculate new transition probabilities based on temperature
+    # This is the growth v development tradeoff
     
     # development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
     if (10 > temps$Temperature[t-1]) ABAET[3,2] <- 0
@@ -316,19 +332,22 @@ for (iter in c(1:iterations)) {
     ABAET[1,1] <- ABAET[2,2] 
     
     # 
-    Glist <-append(Glist, ABAET[3,2])
-    Plist <- append(Plist, ABAET[2,2])
+    #Glist <-append(Glist, ABAET[3,2])
+    #Plist <- append(Plist, ABAET[2,2])
+    
+    #--------------------------------------
+    # Calculate abundances for each stage
     
     output.N.list[t, 1:3, iter] <- ABAET %*% output.N.list[t-1, 1:3, iter] 
     
-    # immediate mortality due to flows
+    #------------------------------------------
+    #Calculate immediate mortality due to flows
     # mortality due to flooding follows N0 = Nz*e^-hQ
     # but what about using a sigmoidal logistic function so we can control the threshold point and rate of growth
     # following m = 1/1+e^-h*(x-xf)
     # where h is is shape value
     # x is Q, and xf is threshold point (100% of pop dies)
     #plot(x = Q, y = 1/(1+exp(-0.02*(Q-100000))))
-    
     
     #s1
     output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-80000))))
@@ -340,33 +359,42 @@ for (iter in c(1:iterations)) {
     flowmortlist <- append(flowmortlist, (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000)))))
     #replist[[1]][,,1] <- output.N.list[[1]]
     Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
-  }
-}
-# summarizing iterations
-## turning replist into a df
-repdf <- adply(output.N.list, c(1,2,3))
+  } #-------------------------
+    # End Inner Loop  
+    #------------------------- 
+} #----------------------
+  # End Outer Loop
+  #----------------------
 
-names(repdf) <- c('timestep', 'stage', 'rep', 'abund')
-repdf$timestep <- as.numeric(as.character(repdf$timestep))
+#------------------
+# Analyzing Results
+#-------------------
+# summarizing iterations
+
+## turning replist into a df
+repdf <- plyr::adply(output.N.list, c(1,2,3))
+
+names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
+repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
 
 totn <- adply(Total.N, c(1,2))
-names(totn) <- c('timestep', 'rep', 'tot.abund')
-totn$timestep <- as.numeric(as.character(totn$timestep))
+names(totn) <- c('timesteps', 'rep', 'tot.abund')
+totn$timesteps <- as.numeric(as.character(totn$timesteps))
 
 ## joining totn and repdf together
 repdf <- left_join(totn, repdf)
 
 ## calculating relative abundance
 repdf <- mutate(repdf, rel.abund = abund/tot.abund)
-
+repdf$timesteps <- as.factor(repdf$timesteps)
 ## Taking mean results to cf w/ observed data
 means.list<- repdf %>%
   select(-tot.abund) %>%
-  dplyr::group_by_if(timestep, rep) %>% # combining stages
+  dplyr::group_by(timesteps, rep) %>% # combining stages
   dplyr::summarise(abund = sum(abund),
             rel.abund = sum(rel.abund)) %>%
   ungroup() %>%
-  dplyr::group_by(timestep) %>%
+  dplyr::group_by(timesteps) %>%
   dplyr::summarise(mean.abund = mean(abund),
             sd.abund = sd(abund),
             se.abund = sd(abund)/sqrt(iterations),
@@ -379,16 +407,18 @@ saveRDS(means.list, paste0('modelresults/', '.rds'))
 #flowmeans.list[[flowmod]] <- ldply(flowlist, function(x) apply(x, 2, mean)) %>%
 #  apply(2, mean)
 
-abund.trends <- ggplot(means.list, aes(timestep,
-                                       mean.abund)) +
+# want to exclude first 10 timesteps for "burn in"
+burns.list <- means.list[10:941, ]
+
+abund.trends <- ggplot(data = burns.list, aes(x = timesteps,
+                                       y = mean.abund, group = 1)) +
   geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
                   ymax = mean.abund + 1.96 * se.abund),
               colour = 'transparent',
               alpha = .5,
               show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  theme_classic() +
-  coord_cartesian(ylim = c(0,10000)) +
+  coord_cartesian(ylim = c(0,3000)) +
   ylab('Baetis Abundance') +
   xlab('Timestep')
 
@@ -397,68 +427,63 @@ saveRDS(abund.trends, paste0('BAETplot', '.rds'))
 
 
 # take a look at results
-
-par(mfrow = c(1,1))
-
-
-plot(timestep[3:(length(timestep)+1)], output.N.list[3:(length(timestep)+1), 3, 1], type = "l", ylab = "Baetis spp. Adults", xlab = "Timestep (1 fortnight)")
-
-plot(timestep, Total.N[2:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight)")
-
-
-
-# creating plots to analyze how temp relationship is working
-# create dataframe with timestemp, s1, s2, and s3 abundances, and tempterature
-
-data <- as.data.frame(cbind(timestep, output.N.list[2:(length(timestep)+1) ,1, 1], output.N.list[2:(length(timestep)+1) ,2, 1], output.N.list[2:(length(timestep)+1) ,3, 1], temps$Temperature))
-colnames(data) <- c("timestep", "Stage1", "Stage2", "Stage3", "Temperature")
-
-data <- data[10:60, ]
-ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
-  geom_path()+
-  geom_path(aes(x = timestep, y = Stage2, color = "Stage2"))+
-  geom_path(aes(x = timestep, y = Stage3, color = "Stage3"))+
-  geom_path(aes(x = timestep, y = Temperature*200, color = "Temperature"))+
-  scale_y_continuous(
-    
-    # Features of the first axis
-    name = "Abundance",
-    
-    # Add a second axis and specify its features
-    sec.axis = sec_axis( ~.*0.005, name="Temperature C")
-  )
-
-# plot to show relationship between temp and fecundity
-plot(temps$Temperature, Flist, ylab = "Fecundity per individual", xlab = "Temperature (C)", pch = 19)
-
-
-plot(timestep[10:60], output.N.list[10:60, 3,1] * 1, type = "l", ylim  = c(0, 500), ylab = " ")
-lines(timestep[10:60], ((Flist[10:60]*output.N.list[10:60, 3,1])/10), col = "blue", ylim = c(0, 450))
-lines(timestep[10:60], temps$Temperature[10:60]*15, col = "red")
-#lines(timestep[10:60], emergetime[4:54]*18, col = "green")
-lines(timestep[10:60], sizelist[4:54]*100, col = "magenta")
-legend(25, 430, legend = c("Adult Abundance", "Realized Fecundity per female * 0.1", "Temperature (C) * 15", "Dry Weight (mg) * 100"), 
-       col = c("black", "blue", "red", "magenta"), lty = 1, cex = 0.8)
-
-plot(timestep, temps$Temperature, type = "l", col = "blue")
-
-par(mfrow = c(1,2))
-plot(timestep[10:37], Glist[10:37], type = "l", col = "blue")
-lines(timestep[10:37], Plist[10:37], type = "l", col = "black")
-legend(18, 0.1, legend=c("Growth (remain)", "Development (transition)"),
-       col=c("Black", "Blue"), lty=1, cex=0.8)
-plot(timestep[10:37], temps$Temperature[10:37], type = "l", col = "red")
-
-plot(timestep[200:210], Total.N[201:211], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
-par(new=TRUE)
-lines(timestep[200:210],temps$Temperature[201:211],col="green")
-
-Total.N
-
-r <-Total.N[2:(length(timestep)+1)]/Total.N[1:length(timestep)]
-plot(timestep, r, type = "l")
-
-plot(Q, Klist)
-
-
-
+# 
+# par(mfrow = c(1,1))
+# plot(timestep[9:(length(timestep)+1)], output.N.list[9:(length(timestep)+1), 3, 1], type = "l", ylab = "Baetis spp. Adults", xlab = "Timestep (1 fortnight)")
+# plot(timestep[9:length(timestep)], Total.N[10:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight)")
+# 
+# 
+# 
+# #creating plots to analyze how temp relationship is working
+# #create dataframe with timestemp, s1, s2, and s3 abundances, and tempterature
+#  data <- as.data.frame(cbind(timestep, output.N.list[2:(length(timestep)+1) ,1, 1], output.N.list[2:(length(timestep)+1) ,2, 1], output.N.list[2:(length(timestep)+1) ,3, 1], temps$Temperature))
+#  colnames(data) <- c("timestep", "Stage1", "Stage2", "Stage3", "Temperature")
+# 
+#  data <- data[10:60, ]
+# ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
+#    geom_path()+
+#    geom_path(aes(x = timestep, y = Stage2, color = "Stage2"))+
+#    geom_path(aes(x = timestep, y = Stage3, color = "Stage3"))+
+#    geom_path(aes(x = timestep, y = Temperature*200, color = "Temperature"))+
+#    scale_y_continuous(
+# 
+#      # Features of the first axis
+#      name = "Abundance",
+# 
+#      # Add a second axis and specify its features
+#      sec.axis = sec_axis( ~.*0.005, name="Temperature C")
+#    )
+# 
+#  # plot to show relationship between temp and fecundity
+#  plot(temps$Temperature, Flist, ylab = "Fecundity per individual", xlab = "Temperature (C)", pch = 19)
+# 
+#  plot(timestep[10:60], output.N.list[10:60, 3,1] * 1, type = "l", ylim  = c(0, 500), ylab = " ")
+#  lines(timestep[10:60], ((Flist[10:60]*output.N.list[10:60, 3,1])/10), col = "blue", ylim = c(0, 450))
+#  lines(timestep[10:60], temps$Temperature[10:60]*15, col = "red")
+# lines(timestep[10:60], emergetime[4:54]*18, col = "green")
+#  lines(timestep[10:60], sizelist[4:54]*100, col = "magenta")
+#  legend(25, 430, legend = c("Adult Abundance", "Realized Fecundity per female * 0.1", "Temperature (C) * 15", "Dry Weight (mg) * 100"),
+#         col = c("black", "blue", "red", "magenta"), lty = 1, cex = 0.8)
+# 
+#  plot(timestep, temps$Temperature, type = "l", col = "blue")
+# 
+#  par(mfrow = c(1,2))
+#  plot(timestep[10:37], Glist[10:37], type = "l", col = "blue")
+#  lines(timestep[10:37], Plist[10:37], type = "l", col = "black")
+#  legend(18, 0.1, legend=c("Growth (remain)", "Development (transition)"),
+#         col=c("Black", "Blue"), lty=1, cex=0.8)
+#  plot(timestep[10:37], temps$Temperature[10:37], type = "l", col = "red")
+# 
+#  plot(timestep[200:210], Total.N[201:211], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
+#  par(new=TRUE)
+#  lines(timestep[200:210],temps$Temperature[201:211],col="green")
+# 
+#  Total.N
+# 
+#  r <-Total.N[2:(length(timestep)+1)]/Total.N[1:length(timestep)]
+#  plot(timestep, r, type = "l")
+# 
+#  plot(Q, Klist[1:940])
+# 
+#  
+#  
