@@ -71,6 +71,10 @@ fortarray <- array(0,
                    dimnames <- list(1:26, 1:iterations))
 datearray <- fortarray
 
+sizearray <- array(0, 
+                   dim <- c(21, iterations), 
+                   dimnames <- list(1:21, 1:iterations))
+
 # specify iterations
 iterations <- 14
 #species <- c("BAET", "SIMU", "CHIRO")
@@ -155,7 +159,7 @@ for (iter in c(1:iterations)) {
 ID <- as.numeric(as.factor(temp$Date)) + iter 
 # want it to be every 14 days, hence the 14
 ID <- ID %/% 14
-ID[which(ID == 26)] <- 0
+ID[which(ID == 26 | ID == 27)] <- 0
 
 # aggregate over ID and TYPEall numeric data.
 outs <- aggregate(temparray[,iter]
@@ -228,7 +232,6 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
   Flist <- vector()
   
   emergetime <- vector()
-  
   sizelist <- vector()
   
   #-------------------------
@@ -250,12 +253,17 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
       # for each value in that sequence, we will add the degree day values of 
       #the timestep prior and check if it adds up to our threshold to emergence
       for (s in degseq) {
-        if(vec <= 266) { vec <- DDs$DegreeDay[s] + vec }
+        if(vec <= 266) { vec <- degreeday$DegreeDay[s] + vec
+        }
         else {emerg <- t - s
         emergetime <- append(emergetime, emerg)
+        print(emerg)
         break}
         # once we hit that threshold, we count the number of timesteps it took to reach that and add that to our emergetime vector  
       }
+      if (vec == 0) {
+        emerg = NA
+        emergetime <- append(emergetime, emerg)}
     }
     #---------------------------------------------------------
     # Calculate fecundity per adult
@@ -269,10 +277,11 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
     # we can also relate fecundities to body mass. Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
     # that weight is related to fecundity Y = 614X - 300
     # we can "convert" emergetime to mg by multiplying by 0.225 (to get dry weights between 0.9 - 2 mg)
-    if (t > 15) {
-      size <- emergetime[t-15] * 0.225
+    if(t > 1) {
+      size <- emergetime[t] * 0.225
       sizelist <- append(sizelist, size)
-      F_BAET <- ((614 * size) - 300) * 0.5 * 0.5
+      if (!is.na(size[t])){
+      F_BAET <- ((614 * size) - 300) * 0.5 * 0.5}
     }
     
     Flist <- append(Flist, F_BAET)
@@ -391,17 +400,23 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
   } #-------------------------
   # End Inner Loop  
   #------------------------- 
+sizearray[, iter] <- sizelist
+
 } #----------------------
 # End Outer Loop
 #----------------------
-
 #------------------
 # Analyzing Results
 #-------------------
 # summarizing iterations
 
 ## turning replist into a df
+
+(datearray)
+
 repdf <- plyr::adply(output.N.list, c(1,2,3))
+temp <- plyr::adply(datearray),c(1,2))
+
 
 names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
 repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
