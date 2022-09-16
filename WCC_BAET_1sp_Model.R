@@ -62,6 +62,8 @@ temp <- temp %>% group_by(Date) %>% dplyr::summarise(Temperature = mean(X_00010_
                                              sd = sd(X_00010_00003), 
                                              count = n(), 
                                              se = sd(X_00010_00003)/count)
+#specify iterations
+iterations <- 56
 # now we want to create some data based on this 
 temparray <- array(0,
                    dim  <-c(length(temp$Date), iterations),
@@ -72,11 +74,9 @@ fortarray <- array(0,
 datearray <- fortarray
 
 sizearray <- array(0, 
-                   dim <- c(21, iterations), 
-                   dimnames <- list(1:21, 1:iterations))
+                   dim <- c(26, iterations), 
+                   dimnames <- list(1:26, 1:iterations))
 
-# specify iterations
-iterations <- 14
 #species <- c("BAET", "SIMU", "CHIRO")
 
 
@@ -159,8 +159,8 @@ for (iter in c(1:iterations)) {
 ID <- as.numeric(as.factor(temp$Date)) + iter 
 # want it to be every 14 days, hence the 14
 ID <- ID %/% 14
-ID[which(ID == 26 | ID == 27)] <- 0
 
+ID[which(ID >=26)] <- ID[which(ID >= 26)] - 26
 # aggregate over ID and TYPEall numeric data.
 outs <- aggregate(temparray[,iter]
                   [sapply(temp,is.numeric)],
@@ -257,11 +257,10 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
         }
         else {emerg <- t - s
         emergetime <- append(emergetime, emerg)
-        print(emerg)
-        break}
+                break}
         # once we hit that threshold, we count the number of timesteps it took to reach that and add that to our emergetime vector  
       }
-      if (vec == 0) {
+      if (vec  <= 266) {
         emerg = NA
         emergetime <- append(emergetime, emerg)}
     }
@@ -277,12 +276,12 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
     # we can also relate fecundities to body mass. Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
     # that weight is related to fecundity Y = 614X - 300
     # we can "convert" emergetime to mg by multiplying by 0.225 (to get dry weights between 0.9 - 2 mg)
-    if(t > 1) {
-      size <- emergetime[t] * 0.225
-      sizelist <- append(sizelist, size)
-      if (!is.na(size[t])){
-      F_BAET <- ((614 * size) - 300) * 0.5 * 0.5}
-    }
+   
+    size <- emergetime[t-1] * 0.225
+    sizelist <- append(sizelist, size)
+    if (!is.na(size[t]) == T){
+    F_BAET <- ((614 * size) - 300) * 0.5 * 0.5}
+    
     
     Flist <- append(Flist, F_BAET)
     
@@ -412,10 +411,25 @@ sizearray[, iter] <- sizelist
 
 ## turning replist into a df
 
-(datearray)
-
 repdf <- plyr::adply(output.N.list, c(1,2,3))
-temp <- plyr::adply(datearray),c(1,2))
+dates <- plyr::adply(datearray, c(1,2))
+sizes <- plyr::adply(sizearray, c(1,2))
+
+sizedf <- as.data.frame(cbind(dates$V1, sizes$V1))
+names(sizedf) <- c('date', 'size')
+sizedf$date <- as_date(sizedf$date, origin= "1970-01-01")
+sizedf$date <- format(sizedf$date, format = "%m-%d")
+
+sizedf <- sizedf[order(sizedf$date),]## Taking mean results to cf w/ observed data
+
+means.size<- sizedf %>%
+  dplyr::group_by(date) %>% # 
+  dplyr::summarise(mean.size = mean(size),
+                   sd.size = sd(size),
+                   count =  n(),
+                   se.size = sd(size)/sqrt(count)) %>%
+  ungroup()
+
 
 
 names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
@@ -528,6 +542,4 @@ ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
 #  plot(timestep, r, type = "l")
 # 
 #  plot(Q, Klist[1:940])
-# 
-#  
 #  
