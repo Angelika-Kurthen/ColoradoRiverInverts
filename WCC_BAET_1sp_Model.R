@@ -63,7 +63,7 @@ temp <- temp %>% group_by(Date) %>% dplyr::summarise(Temperature = mean(X_00010_
                                              count = n(), 
                                              se = sd(X_00010_00003)/count)
 #specify iterations
-iterations <- 56
+iterations <- 356
 # now we want to create some data based on this 
 temparray <- array(0,
                    dim  <-c(length(temp$Date), iterations),
@@ -172,10 +172,12 @@ outs <- aggregate(temparray[,iter]
 # format output
 names(outs)[1:2] <-c("dts","Temperature")
 # add the correct dates as the beginning of every period
+outs$dts <- (outs$dts*14)+iter
+outs$dts[which(outs$dts >=365)] <- outs$dts[which(outs$dts >= 365)] - 364
+outs$dts <- strptime(outs$dts, "%j") ###Note need to subtract 365 if larger than 365
 
-outs$dts <- strptime((outs$dts*14)+iter, "%j")
-# order by date in chronological order
-outs <- outs[order(outs$dts),]
+# order by date in chronological order#
+#outs <- outs[order(outs$dts),]
 outs$dts <- as_date(outs$dts)
 
 fortarray[,iter] <- outs$Temperature
@@ -186,10 +188,13 @@ degreeday <- aggregate(temparray[,iter][sapply(temp,is.numeric)],
                        FUN=sum)
 names(degreeday)[1:2] <-c("dts","DegreeDay")
 # add the correct dates as the beginning of every period
-# 
-degreeday$dts <- strptime((degreeday$dts*14)+iter, "%j")
+
+degreeday$dts <- (degreeday$dts*14)+iter
+degreeday$dts[which(degreeday$dts >=365)] <- degreeday$dts[which(degreeday$dts >= 365)] - 364
+degreeday$dts <- strptime(degreeday$dts, "%j") ###Note need to subtract 365 if larger than 365
+
 # order by date in chronological order
-degreeday <- degreeday[order(degreeday$dts),]
+#degreeday <- degreeday[order(degreeday$dts),]
 #degreeday <- degreeday[1:363,]
 
 degreeday$DegreeDay <- degreeday$DegreeDay - 100
@@ -427,7 +432,7 @@ means.size<- sizedf %>%
   dplyr::summarise(mean.size = mean(size),
                    sd.size = sd(size),
                    count =  n(),
-                   se.size = sd(size)/sqrt(count)) %>%
+                   se.size = sd(size)/sqrt(count), na.rm = TRUE) %>%
   ungroup()
 
 
