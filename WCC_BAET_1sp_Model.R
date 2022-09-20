@@ -9,6 +9,7 @@ library(lubridate)
 library(plyr)
 library(dplyr)
 library(ggplot2)
+library(scales)
 # data retrieval tool from USGS
 library(dataRetrieval)
 
@@ -24,7 +25,9 @@ library(dataRetrieval)
 # library(plyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(scales, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+
 
 #read in flow data from USGS gauge at White Clay Creek tributary West Branch Brandywine Creek (39`57'42", 75`48'06") from Vannote and Sweeney, 1980
 flow <- readNWISdv("01480617", "00060", "2018-10-01", "2022-09-05")
@@ -151,6 +154,13 @@ for (iter in c(1:iterations)) {
   for (day in 1:length(temp$Date)) {
     temps[day] <- rnorm(1, mean = temp$Temperature[day], sd = temp$se[day])
   }
+  
+  meantemp <- mean(temps)
+  # change amplitude
+  temps[which(temps > meantemp)] <- ((temps[which(temps > meantemp)] - meantemp)/2) + meantemp
+  temps[which(temps < meantemp)] <-  meantemp - ((meantemp - temps[which(temps < meantemp)])/2)
+  
+  temparray[,iter] <- temps
   temparray[,iter] <- temps
   
 
@@ -426,15 +436,44 @@ sizedf$date <- as_date(sizedf$date, origin= "1970-01-01")
 sizedf$date <- format(sizedf$date, format = "%m-%d")
 
 sizedf <- sizedf[order(sizedf$date),]## Taking mean results to cf w/ observed data
-
+sizedf <- na.omit(sizedf)
 means.size<- sizedf %>%
   dplyr::group_by(date) %>% # 
   dplyr::summarise(mean.size = mean(size),
                    sd.size = sd(size),
                    count =  n(),
-                   se.size = sd(size)/sqrt(count), na.rm = TRUE) %>%
+                   se.size = sd(size)/sqrt(count)) %>%
   ungroup()
+means.size$date <- as.POSIXct(means.size$date, format = "%m-%d")
 
+ggplot(data = means.size, aes(x = date,
+                             y = mean.size, group = 1)) +
+  geom_ribbon(aes(ymin = mean.size - 1.96 * se.size,
+                  ymax = mean.size + 1.96 * se.size),
+              colour = 'transparent',
+              alpha = .5,
+              show.legend = FALSE) +
+  geom_line(show.legend = FALSE) +
+  #coord_cartesian(xlim = ylim = c(0)) +
+  ylab('Baetis Size (mg)') +
+  xlab('Date') +
+  scale_x_datetime(labels = date_format("%b"))
+
+means_May_BV <- means.size[132:163, ]
+
+
+ggplot(data = means_May_BV, aes(x = date,
+                              y = mean.size, group = 1)) +
+  geom_ribbon(aes(ymin = mean.size - 1.96 * se.size,
+                  ymax = mean.size + 1.96 * se.size),
+              colour = 'transparent',
+              alpha = .5,
+              show.legend = FALSE) +
+  geom_line(show.legend = FALSE) +
+  #coord_cartesian(xlim = ylim = c(0)) +
+  ylab('Baetis Size (mg)') +
+  xlab('Date') #+
+  #scale_x_datetime(labels = date_format("%b"))
 
 
 names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
@@ -499,23 +538,23 @@ plot(timestep[15:length(timestep)], Total.N[16:(length(timestep)+1)], type= "l",
 
 #creating plots to analyze how temp relationship is working
 #create dataframe with timestemp, s1, s2, and s3 abundances, and tempterature
- data <- as.data.frame(cbind(timestep, output.N.list[2:(length(timestep)+1) ,1, 1], output.N.list[2:(length(timestep)+1) ,2, 1], output.N.list[2:(length(timestep)+1) ,3, 1], temps$Temperature))
- colnames(data) <- c("timestep", "Stage1", "Stage2", "Stage3", "Temperature")
-
- data <- data[15:60, ]
-ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
-   geom_path()+
-   geom_path(aes(x = timestep, y = Stage2, color = "Stage2"))+
-   geom_path(aes(x = timestep, y = Stage3, color = "Stage3"))+
-   geom_path(aes(x = timestep, y = Temperature*200, color = "Temperature"))+
-   scale_y_continuous(
-
-     # Features of the first axis
-     name = "Abundance",
-
-     # Add a second axis and specify its features
-     sec.axis = sec_axis( ~.*0.005, name="Temperature C")
-   )
+#  data <- as.data.frame(cbind(timestep, output.N.list[2:(length(timestep)+1) ,1, 1], output.N.list[2:(length(timestep)+1) ,2, 1], output.N.list[2:(length(timestep)+1) ,3, 1], temps$Temperature))
+#  colnames(data) <- c("timestep", "Stage1", "Stage2", "Stage3", "Temperature")
+# 
+#  data <- data[15:60, ]
+# ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
+#    geom_path()+
+#    geom_path(aes(x = timestep, y = Stage2, color = "Stage2"))+
+#    geom_path(aes(x = timestep, y = Stage3, color = "Stage3"))+
+#    geom_path(aes(x = timestep, y = Temperature*200, color = "Temperature"))+
+#    scale_y_continuous(
+# 
+#      # Features of the first axis
+#      name = "Abundance",
+# 
+#      # Add a second axis and specify its features
+#      sec.axis = sec_axis( ~.*0.005, name="Temperature C")
+#    )
 
 #  # plot to show relationship between temp and fecundity
 #  plot(temps$Temperature, Flist, ylab = "Fecundity per individual", xlab = "Temperature (C)", pch = 19)
