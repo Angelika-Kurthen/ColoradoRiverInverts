@@ -162,8 +162,8 @@ for (iter in c(1:iterations)) {
   
   meantemp <- mean(temps)
   # change amplitude
-  temps[which(temps > meantemp)] <- ((temps[which(temps > meantemp)] - meantemp)/2) + meantemp
-  temps[which(temps < meantemp)] <-  meantemp - ((meantemp - temps[which(temps < meantemp)])/2)
+  temps[which(temps > meantemp)] <- ((temps[which(temps > meantemp)] - meantemp)*3) + meantemp
+  temps[which(temps < meantemp)] <-  meantemp - ((meantemp - temps[which(temps < meantemp)])*3)
   
   temparray[,iter] <- temps
   
@@ -467,6 +467,18 @@ ggplot(data = means.size_May_VC, aes(x = date,
   xlab('Date')# +
   #scale_x_datetime(labels = date_format("%b"))
 
+ggplot(data = means.size, aes(x = date,
+                                     y = mean.size, group = 1)) +
+  geom_ribbon(aes(ymin = mean.size - 1.96 * se.size,
+                  ymax = mean.size + 1.96 * se.size),
+              colour = 'transparent',
+              alpha = .5,
+              show.legend = FALSE) +
+  geom_line(show.legend = FALSE) +
+  #coord_cartesian(xlim = ylim = c(0)) +
+  ylab('Baetis Size (mg)') +
+  xlab('Date') +
+  scale_x_datetime(labels = date_format("%b"))
 
 
 
