@@ -403,7 +403,7 @@ means.list<- repdf %>%
             se.rel.abund = sd(rel.abund)/sqrt(iterations)) %>%
   ungroup()
 ## Save the objects as .rds files - then use loadRDS in other file. 
-saveRDS(means.list, paste0('modelresults/', '.rds'))
+saveRDS(means.list, paste0('modelresults', '.rds'))
 #flowmeans.list[[flowmod]] <- ldply(flowlist, function(x) apply(x, 2, mean)) %>%
 #  apply(2, mean)
 
