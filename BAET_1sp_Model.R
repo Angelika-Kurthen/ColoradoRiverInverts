@@ -103,11 +103,10 @@ iterations <- 5
 K = 10000
 
 # specify baseline transition probabilities for each species
-G1_BAET = 0.8
-G2_BAET = 0.8
-P1_BAET = 0.8
-P2_BAET = 0.8
-
+G1_BAET = 0.6
+G2_BAET = 0.6
+P1_BAET = 0.2
+P2_BAET = 0.2
 
 # want to run this for one year, in 14 day timesteps 
 timestep <- seq(2, (length(out$Discharge) + 1), by = 1) # OR
@@ -252,6 +251,9 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
+    Klist[1] <- 10000
+    # Calculate the disturbance magnitude-K relationship 
+    # Sets to 0 if below the Qmin
     if (Q[t-1] < Qmin) {
       Qf <- 0
     } else {
@@ -263,9 +265,16 @@ for (iter in c(1:iterations)) {
     K <- 10000 + ((40000-10000)*Qf)
     
     # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
-    K <- 10000 + ((K - 10000)*exp(-g*14))
     
-    Klist <- append(Klist, K)
+    tau = (t-1) - (last(which(Q[1:t-1] > Qmin)))
+
+if (is.na(tau)==T) { tau <-  0}
+
+if (tau > 0) {
+  
+  K <- 10000 + ((Klist[t-1] - 10000)*exp(-g*tau))}
+  Klist <- append(Klist, K)
+  
     
     #---------------------------------------------
     # Calculate effect of density dependnce on fecundity 
@@ -363,7 +372,8 @@ for (iter in c(1:iterations)) {
     # End Inner Loop  
     #------------------------- 
 } #----------------------
-  # End Outer Loop
+  
+# End Outer Loop
   #----------------------
 
 #------------------
