@@ -15,7 +15,7 @@ library(dataRetrieval)
 
 # Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 # We have to manually load all tidyverse packages
-# library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4Phosphorus-mediated changes in life history traits of the invasive New Zealand mudsnail (Potamopyrgus antipodarum) .2.1")
 # library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
@@ -26,6 +26,22 @@ library(dataRetrieval)
 # library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+
+
+# growth - according to _ growth is dependent on shell length, as is fecundity 
+# we want 1 class of non-reproductive subadults (smaller than 3.2 mm) and two classes of reproductive adults (3.2 mm and larger)
+# growth follows the equation growth per day = -0.006*length[t]+0.029 (Cross et al., 2010)
+# this can be re-written as length[t+1] = 0.994*length[t]+0.029
+#
+x <- seq(1,1000, by = 1)
+lengths <- vector(length= 1000)
+lengths[1] <- 0.5
+for (i in x) {
+  lengths[i + 1] <- 0.994*lengths[i]+0.029
+} # on day 164, length ~ 3.2 (maturity) - so on week 24, maturity reached [stage 1 = 0.5mm - 3.2 mm] in about 24 weeks or 12 timesteps
+  # on day 266, length ~ 3.9538776 - [stage 2 = 3.2 - 3.9538776] in about 14 weeks or 7 timesteps
+  # that means [stage 3 = 3.9538776+] for about 14 weeks or 7 timesteps
+
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
@@ -104,9 +120,18 @@ iterations <- 5
 K = 10000
 
 # specify baseline transition probabilities
-G1_NZMS = 0.49005
+# its speculated (Cross et al 2010) that survivorship is between 80 - 100% for NZMS in Grand Canyon - will say 90% survive, 10% baseline mortality
+# from timestep to timestep, we expect 90% to survive so for stage 1 (which lasts aproximately 14 timesteps, survival should be approx 09^14 = 0.2287679
+# from that, only 1/14th will transition out, 13/14 remain in stage
+
+# stage 1 G1 (prob transition to stage 2) = 0.9^14/14
+# stage 1 P1 (prob remaining in stage 2) = 0.9^14 -0.9^14/14
+# stage 2 G2 (prob transition to stage 3) = 0.9^7/7
+# stage 2 P2 (prob remaining in stage 2) = 0.9^7 -0.9^7/7
+
+G1_NZMS = 0.01634056
 G2_NZMS = 0.190198
-P1_NZMS = 0.49005
+P1_NZMS = 0.2124273
 P2_NZMS = 0.760792
 P3_NZMS = 0.7826861
 
@@ -234,8 +259,13 @@ for (iter in c(1:iterations)) {
     # Calculate fecundity per adult
     
     # we start by pulling fecundities from normal distribution
-    if (temps$Temperature[t-1] <= 10) { F_NZMS = 0} 
-    else {F_NZMS = runif(1, 0, 70)}
+    if (temps$Temperature[t-1] <= 10) { 
+      F2_NZMS = 0
+      F3_NZMS = 0 } 
+    else {
+      F2_NZMS <- 8.87473
+      F3_NZMS <- 27.89665
+    }
      #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960  0.5 assuming 50% mort.
     
     # relate fecundities to temperature based on Sweeney et al., 2017  *0.5 assuming 50% female and * 0.5 assuming 50% mort.
@@ -250,7 +280,7 @@ for (iter in c(1:iterations)) {
     #   F_NZMS <- ((614 * size) - 300) * 0.5 * 0.5
     # }
     
-    Flist <- append(Flist, F_NZMS)
+    #Flist <- append(Flist, F_NZMS)
     
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
@@ -266,9 +296,12 @@ for (iter in c(1:iterations)) {
     K <- 10000 + ((40000-10000)*Qf)
     
     # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
-    K <- 10000 + ((K - 10000)*exp(-g*14))
     
-    Klist <- append(Klist, K)
+    tau = (t-1) - (last(which(Q[1:t-1] > Qmin)))
+    if (tau > 0) {
+    K <- 10000 + ((Klist[t-1] - 10000)*exp(-g*tau))
+    
+    Klist <- append(Klist, K)}
     
     #---------------------------------------------
     # Calculate effect of density dependnce on fecundity 
@@ -287,7 +320,8 @@ for (iter in c(1:iterations)) {
     #F_NZMS <- F_NZMS*exp(-b * Total.N[t-1, iter])
     
     # Ricker model reproductive output, from  (recruitment = axe^r-bx)
-    F_NZMS <- F_NZMS*exp(r-b * Total.N[t-1, iter])
+    F2_NZMS <- F2_NZMS*exp(r-b * Total.N[t-1, iter])
+    F3_NZMS <- F3_NZMS*exp(r-b * Total.N[t-1, iter])
     
     # beverton holt is Nt+1 = rNt/1-Nt(r-1)/K
     # it is supposed to be depensatory, so as t -> inf, Nt+1 -> K, BUT 
@@ -310,7 +344,7 @@ for (iter in c(1:iterations)) {
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
-    NZMS1 <- c(P1_NZMS, 0, F_NZMS)
+    NZMS1 <- c(P1_NZMS, F2_NZMS, F3_NZMS)
     NZMS2 <- c(G1_NZMS, P2_NZMS, 0)
     NZMS3 <- c(0, G2_NZMS, P3_NZMS) 
     
