@@ -26,6 +26,12 @@ library(dataRetrieval)
 # library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
+
+## checkpos makes sure that the K-occupied term is positive, assigns 0 if not
+checkpos <- function(x) {
+  ifelse(x < 0, 0, x)
+}
+
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
 
@@ -246,7 +252,7 @@ for (iter in c(1:iterations)) {
       F_BAET <- ((614 * size) - 300) * 0.5 * 0.5
     }
     
-    Flist <- append(Flist, F_BAET)
+    
     
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
@@ -312,7 +318,10 @@ if (tau > 0) {
     #} else{#
     #F_BAET <- F_BAET*((K - (K-1))/K)
     #}
-
+  
+    # Logistic via Rogosch et al. Fish Model
+    #F_BAET <- F_BAET * checkpos((K - Total.N[t-1, iter])/K)
+    Flist <- append(Flist, F_BAET)
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
@@ -439,8 +448,8 @@ saveRDS(abund.trends, paste0('BAETplot', '.rds'))
 # take a look at results
 # 
 # par(mfrow = c(1,1))
-# plot(timestep[9:(length(timestep)+1)], output.N.list[9:(length(timestep)+1), 3, 1], type = "l", ylab = "Baetis spp. Adults", xlab = "Timestep (1 fortnight)")
-# plot(timestep[9:length(timestep)], Total.N[10:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight)")
+plot(timestep[9:(length(timestep)+1)], output.N.list[9:(length(timestep)+1), 3, 1], type = "l", ylab = "Baetis spp. Adults", xlab = "Timestep (1 fortnight)")
+plot(timestep[9:length(timestep)], Total.N[10:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight)")
 # 
 # 
 # 
