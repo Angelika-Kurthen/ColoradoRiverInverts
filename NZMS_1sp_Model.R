@@ -124,16 +124,17 @@ K = 10000
 # from timestep to timestep, we expect 90% to survive so for stage 1 (which lasts aproximately 14 timesteps, survival should be approx 09^14 = 0.2287679
 # from that, only 1/14th will transition out, 13/14 remain in stage
 
-# stage 1 G1 (prob transition to stage 2) = 0.9^14/14
-# stage 1 P1 (prob remaining in stage 2) = 0.9^14 -0.9^14/14
-# stage 2 G2 (prob transition to stage 3) = 0.9^7/7
-# stage 2 P2 (prob remaining in stage 2) = 0.9^7 -0.9^7/7
+# stage 1 G1 (prob transition to stage 2) = 0.95^14/14
+# stage 1 P1 (prob remaining in stage 2) = 0.95^14 -0.95^14/14
+# stage 2 G2 (prob transition to stage 3) = 0.95^7/7
+# stage 2 P2 (prob remaining in stage 2) = 0.95^7 - 0.95^7/7
+# stage 3 P3 (prob remaining in stage 3) = 0.95 ^5 - 0.95^5/5
 
-G1_NZMS = 0.01634056
-G2_NZMS = 0.190198
-P1_NZMS = 0.2124273
-P2_NZMS = 0.760792
-P3_NZMS = 0.7826861
+G1_NZMS = 0.03483393
+G2_NZMS = 0.09976247
+P1_NZMS = 0.4528411
+P2_NZMS = 0.5985748
+P3_NZMS = 0.6190247
 
 # want to run this for one year, in 14 day timesteps 
 timestep <- seq(2, (length(out$Discharge) + 1), by = 1) # OR
@@ -190,6 +191,7 @@ b = 0.005
 for (iter in c(1:iterations)) {
   
   r = 1.23
+  K = 10000
   
   # we can also create a random flow scenario by sampleing flows
   #out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
@@ -285,6 +287,9 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
+    Klist[1] <- 10000
+    # Calculate the disturbance magnitude-K relationship 
+    # Sets to 0 if below the Qmin
     if (Q[t-1] < Qmin) {
       Qf <- 0
     } else {
@@ -298,10 +303,14 @@ for (iter in c(1:iterations)) {
     # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
     
     tau = (t-1) - (last(which(Q[1:t-1] > Qmin)))
-    if (tau > 0) {
-    K <- 10000 + ((Klist[t-1] - 10000)*exp(-g*tau))
     
-    Klist <- append(Klist, K)}
+    if (is.na(tau)==T) { tau <-  0}
+    
+    if (tau > 0) {
+      
+      K <- 10000 + ((Klist[t-1] - 10000)*exp(-g*tau))}
+    Klist <- append(Klist, K)
+    
     
     #---------------------------------------------
     # Calculate effect of density dependnce on fecundity 
@@ -317,7 +326,7 @@ for (iter in c(1:iterations)) {
     #Ricker model from Mathmatica (after Recruitment = axe^-bx, see Bolker Ch 3 Deterministic Functions for
     #Ecological Modeling)
     
-    #F_NZMS <- F_NZMS*exp(-b * Total.N[t-1, iter])
+    F_NZMS <- F_NZMS*exp(-b * Total.N[t-1, iter])
     
     # Ricker model reproductive output, from  (recruitment = axe^r-bx)
     F2_NZMS <- F2_NZMS*exp(r-b * Total.N[t-1, iter])
