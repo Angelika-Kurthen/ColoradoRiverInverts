@@ -28,6 +28,11 @@ library(dataRetrieval)
 # library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
 
+## checkpos makes sure that the K-occupied term is positive, assigns 0 if not
+checkpos <- function(x) {
+  ifelse(x < 0, 0, x)
+}
+
 # growth - according to _ growth is dependent on shell length, as is fecundity 
 # we want 1 class of non-reproductive subadults (smaller than 3.2 mm) and two classes of reproductive adults (3.2 mm and larger)
 # growth follows the equation growth per day = -0.006*length[t]+0.029 (Cross et al., 2010)
@@ -130,11 +135,11 @@ K = 10000
 # stage 2 P2 (prob remaining in stage 2) = 0.95^7 - 0.95^7/7
 # stage 3 P3 (prob remaining in stage 3) = 0.95 ^5 - 0.95^5/5
 
-G1_NZMS = 0.03483393
-G2_NZMS = 0.09976247
-P1_NZMS = 0.4528411
-P2_NZMS = 0.5985748
-P3_NZMS = 0.6190247
+G1_NZMS = 0.1
+G2_NZMS = 0.1
+P1_NZMS = 0.4
+P2_NZMS = 0.5
+P3_NZMS = 0.8
 
 # want to run this for one year, in 14 day timesteps 
 timestep <- seq(2, (length(out$Discharge) + 1), by = 1) # OR
@@ -326,11 +331,11 @@ for (iter in c(1:iterations)) {
     #Ricker model from Mathmatica (after Recruitment = axe^-bx, see Bolker Ch 3 Deterministic Functions for
     #Ecological Modeling)
     
-    F_NZMS <- F_NZMS*exp(-b * Total.N[t-1, iter])
+   #F_NZMS <- F_NZMS*exp(-b * Total.N[t-1, iter])
     
     # Ricker model reproductive output, from  (recruitment = axe^r-bx)
-    F2_NZMS <- F2_NZMS*exp(r-b * Total.N[t-1, iter])
-    F3_NZMS <- F3_NZMS*exp(r-b * Total.N[t-1, iter])
+    #F2_NZMS <- F2_NZMS*exp(r-b * Total.N[t-1, iter])
+    #F3_NZMS <- F3_NZMS*exp(r-b * Total.N[t-1, iter])
     
     # beverton holt is Nt+1 = rNt/1-Nt(r-1)/K
     # it is supposed to be depensatory, so as t -> inf, Nt+1 -> K, BUT 
@@ -350,6 +355,9 @@ for (iter in c(1:iterations)) {
     #F_NZMS <- F_NZMS*((K - (K-1))/K)
     #}
     
+    # Logistic via Rogosch et al. Fish Model
+    F2_NZMS <- F2_NZMS * checkpos((K - Total.N[t-1, iter])/K) * 0.5
+    F3_NZMS <- F3_NZMS * checkpos((K - Total.N[t-1, iter])/K) * 0.5
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
@@ -488,7 +496,10 @@ abline(v = 381, col = "red")
 abline(v = 586, col = "red")
 abline(v = 670, col = "red")
 abline(v = 683, col = "red")
+lines(timestep[9:length(timestep)], Klist[10:(length(timestep)+1)], type = "l", col = "blue")
 
+
+# 
 lines(timestep, Klist, type = "l", col = "blue")
 
 
