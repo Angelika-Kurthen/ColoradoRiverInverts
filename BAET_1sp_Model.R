@@ -240,7 +240,7 @@ for (iter in c(1:iterations)) {
     # we start by pulling fecundities from normal distribution
     F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 *0.5 assuming 50% female and * 0.5 assuming 50% mort.
     
-    # relate fecundities to temperature based on Sweeney et al., 2017  *0.5 assuming 50% female and * 0.5 assuming 50% mort.
+    # relate fecundities to temperature based on Sweeney et al., 2017  *0.5 assuming 50% female and * 0.5 assuming 60% mort.
     #F_BAET <- (-379.8021 * (temps$Temperature[t-1]) + 16.4664*(temps$Temperature[t-1]^2) - 0.2684* (temps$Temperature[t-1]^3) + 4196.8608) * 0.5 * 0.5
     
     # we can also relate fecundities to body mass. Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
@@ -299,7 +299,7 @@ if (tau > 0) {
     #F_BAET <- F_BAET*exp(-b * Total.N[t-1, iter])
     
     # Ricker model reproductive output, from  (recruitment = axe^r-bx)
-    F_BAET <- F_BAET*exp(r-b * Total.N[t-1, iter])
+    #F_BAET <- F_BAET*exp(r-b * Total.N[t-1, iter])
     
     # beverton holt is Nt+1 = rNt/1-Nt(r-1)/K
     # it is supposed to be depensatory, so as t -> inf, Nt+1 -> K, BUT 
@@ -320,7 +320,7 @@ if (tau > 0) {
     #}
   
     # Logistic via Rogosch et al. Fish Model
-    #F_BAET <- F_BAET * checkpos((K - Total.N[t-1, iter])/K)
+    F_BAET <- F_BAET * checkpos((K - Total.N[t-1, iter])/K)
     Flist <- append(Flist, F_BAET)
     #-----------------------------------------------
     # Create Lefkovitch Matrix
@@ -336,16 +336,15 @@ if (tau > 0) {
     # This is the growth v development tradeoff
     
     # development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    if (10 > temps$Temperature[t-1]) ABAET[3,2] <- 0
-    if (temps$Temperature[t-1] > 13) ABAET[3,2] <- 0.6  
-    if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 13) ABAET[3,2] <- (0.2 * temps$Temperature[t-1]) -2
-    
+    if (10 > temps$Temperature[t-1]) ABAET[3,2] <- 0.001
+    if (temps$Temperature[t-1] > 13) ABAET[3,2] <- 0.55
+    if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 13) ABAET[3,2] <- (0.183 * temps$Temperature[t-1]) -1.829 #(0.2 * temps$Temperature[t-1]) -2
     ABAET[2,1] <- ABAET[3,2] 
     
     # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
-    if (10 >= temps$Temperature[t-1]) ABAET[2,2] <- 0.6
-    if (temps$Temperature[t-1] > 13) ABAET[2,2] <- 0
-    if (10 < temps$Temperature[t-1] & temps$Temperature[t-1] <=  13) ABAET[2,2] <- (-0.2 * temps$Temperature[t-1]) + 2.6
+    if (10 >= temps$Temperature[t-1]) ABAET[2,2] <- 0.55
+    if (temps$Temperature[t-1] > 13) ABAET[2,2] <- 0.001
+    if (10 < temps$Temperature[t-1] & temps$Temperature[t-1] <=  13) ABAET[2,2] <- (-0.183 * temps$Temperature[t-1]) + 2.38 #(-0.1 temps$Temperature[t-1]) - 2.6
     
     ABAET[1,1] <- ABAET[2,2] 
     
@@ -368,7 +367,7 @@ if (tau > 0) {
     #plot(x = Q, y = 1/(1+exp(-0.02*(Q-100000))))
     
     #s1
-    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-80000))))
+    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
     #s2
     output.N.list[t,2,iter] <- output.N.list[t,2,iter] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
     #3
