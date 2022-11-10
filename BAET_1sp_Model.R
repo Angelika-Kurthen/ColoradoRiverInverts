@@ -149,8 +149,8 @@ output.N.list <- reparray
 # Q is equal to average discharge over 14 days
 Q <- out$Discharge
 
-Qmin <- 20000
-a <- 100
+Qmin <- 40000
+a <- 3000
 g <- 0.1
 
 
@@ -342,9 +342,9 @@ if (tau > 0) {
     ABAET[2,1] <- ABAET[3,2] 
     
     # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
-    if (10 >= temps$Temperature[t-1]) ABAET[2,2] <- 0.55
+    if (10 > temps$Temperature[t-1]) ABAET[2,2] <- 0.55
     if (temps$Temperature[t-1] > 13) ABAET[2,2] <- 0.001
-    if (10 < temps$Temperature[t-1] & temps$Temperature[t-1] <=  13) ABAET[2,2] <- (-0.183 * temps$Temperature[t-1]) + 2.38 #(-0.1 temps$Temperature[t-1]) - 2.6
+    if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <=  13) ABAET[2,2] <- (-0.183 * temps$Temperature[t-1]) + 2.38 #(-0.1 temps$Temperature[t-1]) - 2.6
     
     ABAET[1,1] <- ABAET[2,2] 
     
