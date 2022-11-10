@@ -176,8 +176,8 @@ output.N.list <- reparray
 # Q is equal to average discharge over 14 days
 Q <- out$Discharge
 
-Qmin <- 20000
-a <- 100
+Qmin <- 40000
+a <- 3000
 g <- 0.1
 
 
@@ -265,7 +265,7 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
-    # we start by pulling fecundities from normal distribution
+    # fecundities estimated from McKenzie et al. 2013; 
     if (temps$Temperature[t-1] <= 10) { 
       F2_NZMS = 0
       F3_NZMS = 0 } 
@@ -273,21 +273,7 @@ for (iter in c(1:iterations)) {
       F2_NZMS <- 8.87473
       F3_NZMS <- 27.89665
     }
-     #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960  0.5 assuming 50% mort.
     
-    # relate fecundities to temperature based on Sweeney et al., 2017  *0.5 assuming 50% female and * 0.5 assuming 50% mort.
-    #F_NZMS <- (-379.8021 * (temps$Temperature[t-1]) + 16.4664*(temps$Temperature[t-1]^2) - 0.2684* (temps$Temperature[t-1]^3) + 4196.8608) * 0.5 * 0.5
-    
-    # we can also relate fecundities to body mass. Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
-    # that weight is related to fecundity Y = 614X - 300
-    # we can "convert" emergetime to mg by multiplying by 0.225 (to get dry weights between 0.9 - 2 mg)
-    # if (t > 6) {
-    #   size <- emergetime[t-6] * 0.225
-    #   sizelist <- append(sizelist, size)
-    #   F_NZMS <- ((614 * size) - 300) * 0.5 * 0.5
-    # }
-    
-    #Flist <- append(Flist, F_NZMS)
     
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
