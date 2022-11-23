@@ -4,6 +4,8 @@
 library(scales)
 library(geoR)
 library(forecast)
+library(dataRetrieval)
+library(MASS)
 # We are working with a variety of different flow scenarios in wildly different environments
 # We need to create a relativized flow magnitude scale
 # Flows will be scaled from 0 to 1000 (like McMullen model) but removed from m^3/s units
@@ -26,33 +28,19 @@ flow.scale <- function(flow, min = NA, max = NA) {
   }}
 
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
-flows <- as.vector(flow$X_00060_00003)
-?boxcox(
-)
 
 # unhinged option - rescale data to normal distribution, then artificially skew data to the right so majority of points are below 5 (Qmin) 
+# OR just have different Q min standardss? 
 
-lambda <- BoxCox.lambda(flow$X_00060_00003)
-fit <- BoxCox(flow$X_00060_00003,lambda)
-hist(fit)
-resfit <- rescale(fit, to = c(0,1))
-hist(resfit)
-skew <- 1/resfit
-resckew <- rescale(skew, to = c(0,1000))
-hist(resckew)
-
+flow.scale.distribution <- function(flow){ #requires geoR package
+  fit <- boxcoxfit(flow, lambda2 = T)
+  lambda = fit$lambda[1]
+  lambda2 = fit$lambda[2]
+  if(lambda==0){norm = log(flow + lambda2)}
+  if(lambda!=0){norm = ((flow + lambda2) ^ lambda - 1) / lambda} # create normal distribution
+  resc <- rescale(norm, to = c(0, 1000))
+  return(resc)
+}
 
 # doesn't like 0 values, can also use 2 parameter lambda from geoR package
 #https://www.researchgate.net/post/How-to-perform-a-two-parameter-Box-Cox-transformation-to-a-data-series-in-R
-
-
-oflow <- readNWISdv("09510200", "00060", "1982-10-01", "1987-09-30")
-
-l1 <- boxcoxfit(oflow$X_00060_00003, lambda2= T)
-fit1 <- BoxCox(oflow$X_00060_00003, l1)
-hist(fit1)
-resfit1 <- rescale(T.norm, to = c(0,1))
-hist(resfit1)
-skew1 <- 1/resfit
-resckew1 <- rescale(skew, to = c(0,1000))
-hist(resckew1)
