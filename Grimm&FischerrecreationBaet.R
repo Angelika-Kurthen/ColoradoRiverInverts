@@ -102,12 +102,17 @@ out <- aggregate(out, by = list(out$dts), FUN = mean)
 
 
 # specify iterations
-iterations <- 99
+iterations <- 10
 #species <- c("BAET", "SIMU", "CHIRO")
 
 
 # set carrying capacity
 K = 10000
+# baseline K in the absence of disturbance
+Kb <- 10000
+# max K after a big disturbance
+Kd <- 40000
+
 
 # specify baseline transition probabilities for each species
 # McPeek and Pekarsky 1998 estimate a 0.0378/day mortlatity rate for larvae (0.5292 per fortnight)
@@ -240,21 +245,7 @@ for (iter in c(1:iterations)) {
     # Calculate fecundity per adult
     
     # we start by pulling fecundities from normal distribution
-    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 *0.5 assuming 50% female and * 0.5 assuming 50% mort.
-    
-    # relate fecundities to temperature based on Sweeney et al., 2017  *0.5 assuming 50% female and * 0.5 assuming 60% mort.
-    #F_BAET <- (-379.8021 * (temps$Temperature[t-1]) + 16.4664*(temps$Temperature[t-1]^2) - 0.2684* (temps$Temperature[t-1]^3) + 4196.8608) * 0.5 * 0.5
-    
-    # we can also relate fecundities to body mass. Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
-    # that weight is related to fecundity Y = 614X - 300
-    # # we can "convert" emergetime to mg by multiplying by 0.225 (to get dry weights between 0.9 - 2 mg)
-    # if (t > 6) {
-    #   size <- emergetime[t-6] * 0.225
-    #   sizelist <- append(sizelist, size)
-    #   F_BAET <- ((614 * size) - 300) * 0.5 * 0.5
-    # }
-    # 
-    # 
+    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 
     
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
@@ -270,7 +261,7 @@ for (iter in c(1:iterations)) {
     
     #-------------------------------------------------------------------
     # Calculate K arrying capacity immediately following the disturbance
-    K <- 10000 + ((40000-10000)*Qf)
+    K <- K + ((Kd-K)*Qf)
     
     # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
     
@@ -280,7 +271,7 @@ for (iter in c(1:iterations)) {
     
     if (tau > 0) {
       
-      K <- 10000 + ((Klist[t-1] - 10000)*exp(-g*tau))}
+      K <- Kb + ((Klist[t-1] - Kb)*exp(-g*tau))}
     Klist <- append(Klist, K)
     
     
@@ -391,27 +382,16 @@ for (iter in c(1:iterations)) {
 #-------------------
 # summarizing iterations
 
-## turning replist into a df # only want larvae
+## turning replist into a df
 repdf <- plyr::adply(output.N.list, c(1,2,3))
 
 names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
 repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
-repdf <- repdf[which(repdf$stage != "S3"),]
-
-# totn <- adply(Total.N, c(1,2))
-# names(totn) <- c('timesteps', 'rep', 'tot.abund')
-# totn$timesteps <- as.numeric(as.character(totn$timesteps))
-# 
-# ## joining totn and repdf together
-# repdf <- left_join(totn, repdf)
-
-## calculating relative abundance
-# repdf <- mutate(repdf, rel.abund = abund/tot.abund)
+repdf <- repdf[which(repdf$stage != "S3"),]  # only want larvae
 repdf$timesteps <- as.factor(repdf$timesteps)
 ## Taking mean results to cf w/ observed data
 means.list<- repdf %>%
-  # select(c(-tot.abund)) %>%
-  dplyr::group_by(timesteps, rep) %>% # combining stages
+  dplyr::group_by(timesteps, rep) %>% # combining stage 1 and 2
   dplyr::summarise(abund = sum(abund)) %>%
   ungroup() %>%
   dplyr::group_by(timesteps) %>%
@@ -420,120 +400,35 @@ means.list<- repdf %>%
                    se.abund = sd(abund)/sqrt(iterations)) %>%
   ungroup()
 
-## Save the objects as .rds files - then use loadRDS in other file. 
-saveRDS(means.list, paste0('modelresults', '.rds'))
-#flowmeans.list[[flowmod]] <- ldply(flowlist, function(x) apply(x, 2, mean)) %>%
-#  apply(2, mean)
+# want to only look at 120 days past Mar 17 1986 disturbance
+burns.list <- means.list[92:101, ]
+burns.list <- cbind(burns.list, out$dts[as.numeric(burns.list$timesteps)])
+burns.list <- cbind(burns.list, as.numeric(round(difftime(burns.list$`out$dts[as.numeric(burns.list$timesteps)]`, "1986-3-17", units = "days"))))
+burns.list <- cbind(burns.list, rep("Model", times = length(burns.list$timesteps)))
+colnames(burns.list)[5:7] <- c("Date", "PostDist", "Group")
 
-# want to exclude first 10 timesteps for "burn in"
-burns.list <- means.list[91:111, ]
 
-abund.trends <- ggplot(data = burns.list, aes(x = timesteps,
-                                              y = mean.abund, group = 1)) +
+# read in Abundance data from Grimm&Fischer 1998 for all inverts
+GFAbund <- read.csv("~/ColoradoRiverInverts/GrimmFischerMar86abund.csv")
+GFAbund <- cbind(GFAbund, rep("Grimm & Fisher, 1989", times = length(GFAbund$Abund))) # assign group name for plotting
+colnames(GFAbund) <- c("PostDist", "mean.abund", "upperse", "se.abund", "Group") #adjust colnames so we can combine with model data
+
+# want to scale mean abundances from GFAbund to that of Burnslist
+# this is because the actual abundance values from the model are entirely dependent on K
+# if I wanted to get fancy, I could scale K but this does the same thing
+
+burns.list[2:4] <- burns.list[2:4] * mean(GFAbund$mean.abund)/mean(burns.list$mean.abund)
+long_list <- dplyr::bind_rows(burns.list, GFAbund)
+
+abund.trends <- ggplot(data = long_list, aes(x = PostDist,
+                                             y = mean.abund, group = Group, colour = Group, fill = Group)) +
   geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
                   ymax = mean.abund + 1.96 * se.abund),
               colour = 'transparent',
-              alpha = .5,
+              alpha = .25,
               show.legend = FALSE) +
-  geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,500000)) +
-  ylab('Baetis Abundance') +
-  xlab('Timestep')
-
-saveRDS(abund.trends, paste0('BAETplot', '.rds'))
-
-
-
-# take a look at results
-# 
-# par(mfrow = c(1,1))
-plot(timestep[9:(length(timestep)+1)], output.N.list[9:(length(timestep)+1), 3, 1], type = "l", ylab = "Baetis spp. Adults", xlab = "Timestep (1 fortnight)")
-plot(timestep[9:length(timestep)], Total.N[10:(length(timestep)+1)], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight)")
-# 
-# 
-# 
-# #creating plots to analyze how temp relationship is working
-# #create dataframe with timestemp, s1, s2, and s3 abundances, and tempterature
-#  data <- as.data.frame(cbind(timestep, output.N.list[2:(length(timestep)+1) ,1, 1], output.N.list[2:(length(timestep)+1) ,2, 1], output.N.list[2:(length(timestep)+1) ,3, 1], temps$Temperature))
-#  colnames(data) <- c("timestep", "Stage1", "Stage2", "Stage3", "Temperature")
-# 
-#  data <- data[10:60, ]
-# ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
-#    geom_path()+
-#    geom_path(aes(x = timestep, y = Stage2, color = "Stage2"))+
-#    geom_path(aes(x = timestep, y = Stage3, color = "Stage3"))+
-#    geom_path(aes(x = timestep, y = Temperature*200, color = "Temperature"))+
-#    scale_y_continuous(
-# 
-#      # Features of the first axis
-#      name = "Abundance",
-# 
-#      # Add a second axis and specify its features
-#      sec.axis = sec_axis( ~.*0.005, name="Temperature C")
-#    )
-# 
-#  # plot to show relationship between temp and fecundity
-#  plot(temps$Temperature, Flist, ylab = "Fecundity per individual", xlab = "Temperature (C)", pch = 19)
-# 
-#  plot(timestep[10:60], output.N.list[10:60, 3,1] * 1, type = "l", ylim  = c(0, 500), ylab = " ")
-#  lines(timestep[10:60], ((Flist[10:60]*output.N.list[10:60, 3,1])/10), col = "blue", ylim = c(0, 450))
-#  lines(timestep[10:60], temps$Temperature[10:60]*15, col = "red")
-# lines(timestep[10:60], emergetime[4:54]*18, col = "green")
-#  lines(timestep[10:60], sizelist[4:54]*100, col = "magenta")
-#  legend(25, 430, legend = c("Adult Abundance", "Realized Fecundity per female * 0.1", "Temperature (C) * 15", "Dry Weight (mg) * 100"),
-#         col = c("black", "blue", "red", "magenta"), lty = 1, cex = 0.8)
-# 
-#  plot(timestep, temps$Temperature, type = "l", col = "blue")
-# 
-#  par(mfrow = c(1,2))
-#  plot(timestep[10:37], Glist[10:37], type = "l", col = "blue")
-#  lines(timestep[10:37], Plist[10:37], type = "l", col = "black")
-#  legend(18, 0.1, legend=c("Growth (remain)", "Development (transition)"),
-#         col=c("Black", "Blue"), lty=1, cex=0.8)
-#  plot(timestep[10:37], temps$Temperature[10:37], type = "l", col = "red")
-# 
-#  plot(timestep[200:210], Total.N[201:211], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
-#  par(new=TRUE)
-#  lines(timestep[200:210],temps$Temperature[201:211],col="green")
-# 
-#  Total.N
-# 
-#  r <-Total.N[2:(length(timestep)+1)]/Total.N[1:length(timestep)]
-#  plot(timestep, r, type = "l")
-# 
-#  plot(Q, Klist[1:940])
-# 
-#  Abundance data is fine, but we haven't standardized for m2 so perhaps looking at biomass is more interesting
-#  # we can (convert" emergetime to mg by multiplying lengths by 0.225 (to get dry weights between 0.9 - 2 mg) from Vannote and Sweeney 1980
-#  # legths around 4 - 8 mm (from von Schiller and Solimini) - assume that S1 larvae are 5 mm in length (* 1.125g/individual) and S2 larvae are 7 mm in length (*1.575g/individual)
-repdf[which(repdf$stage == "S1"),4] <-repdf[which(repdf$stage == "S1"),4] * 1.125 * 0.0005# scale
-repdf[which(repdf$stage == "S2"),4] <-repdf[which(repdf$stage == "S2"),4] * 1.575 * 0.0005
-
-mass.list<- repdf %>%
-  # select(c(-tot.abund)) %>%
-  dplyr::group_by(timesteps, rep) %>% # combining stages
-  dplyr::summarise(mass = sum(abund)) %>%
-  ungroup() %>%
-  dplyr::group_by(timesteps) %>%
-  dplyr::summarise(mean.mass = mean(mass),
-                   sd.mass = sd(mass),
-                   se.mass = sd(mass)/sqrt(iterations)) %>%
-  ungroup()
-
-# want to exclude first 10 timesteps for "burn in"
-burns.list <- mass.list[91:100, ]
-
-mass.trends <- ggplot(data = burns.list, aes(x = timesteps,
-                                              y = mean.mass, group = 1)) +
-  geom_ribbon(aes(ymin = mean.mass - 1.96 * se.mass,
-                  ymax = mean.mass + 1.96 * se.mass),
-              colour = 'transparent',
-              alpha = .5,
-              show.legend = FALSE) +
-  geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,150)) +
-  ylab('Baetis Dry Mass') +
-  xlab('Timestep')
-
-
-
+  geom_line() +
+  theme_bw()+  
+  coord_cartesian(ylim = c(0,27)) +
+  ylab('Ephemeroptera Abundance (1000s/m2)') +
+  xlab('Days Past Disturbance')
