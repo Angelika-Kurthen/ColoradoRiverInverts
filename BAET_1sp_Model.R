@@ -107,6 +107,10 @@ iterations <- 5
 
 # set carrying capacity
 K = 10000
+# baseline K in the absence of disturbance
+Kb <- 10000
+# max K after a big disturbance
+Kd <- 40000
 
 # specify baseline transition probabilities for each species
 G1_BAET = 0.6
@@ -152,8 +156,8 @@ Q <- out$Discharge
 Qmin <- 40000
 a <- 3000
 g <- 0.1
-
-
+h <- 0.000022 
+k <- 1.221403 
 
 
 # in this case, we will use the r that McMullen et al 2017 used for Beatis
@@ -268,7 +272,7 @@ for (iter in c(1:iterations)) {
     
     #-------------------------------------------------------------------
     # Calculate K arrying capacity immediately following the disturbance
-    K <- 10000 + ((40000-10000)*Qf)
+    K <- K + ((Kd-K)*Qf)
     
     # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
     
@@ -278,7 +282,7 @@ if (is.na(tau)==T) { tau <-  0}
 
 if (tau > 0) {
   
-  K <- 10000 + ((Klist[t-1] - 10000)*exp(-g*tau))}
+  K <- Kb + ((Klist[t-1] - Kb)*exp(-g*tau))}
   Klist <- append(Klist, K)
   
     
@@ -367,13 +371,13 @@ if (tau > 0) {
     #plot(x = Q, y = 1/(1+exp(-0.02*(Q-100000))))
     
     #s1
-    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
+    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] * k* exp(-h*Q[t-1])
     #s2
-    output.N.list[t,2,iter] <- output.N.list[t,2,iter] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
+    output.N.list[t,2,iter] <- output.N.list[t,2,iter]*k* exp(-h*Q[t-1])
     #3
-    output.N.list[t,3,iter] <- output.N.list[t,3,iter] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
+    output.N.list[t,3,iter] <- output.N.list[t,3,iter]*k*exp(-h*Q[t-1])
     
-    flowmortlist <- append(flowmortlist, (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000)))))
+    flowmortlist <- append(flowmortlist, k*exp(-h*Q[t-1]))
     #replist[[1]][,,1] <- output.N.list[[1]]
     Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
   } #-------------------------
