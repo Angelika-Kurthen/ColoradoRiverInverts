@@ -1,12 +1,10 @@
-#####################################
-## Flow Mortality Rate graph
-###########################
+######################################
+## Flow Mortality Rate scale and graph
+#######################################
 library(tidyverse)
 library(minpack.lm)
 # follows exp(-h*Q[t-1])
-h =  0.0075
-Q <- seq(from = 1, to = 400, by = 2)
-surv <- exp(-h*Q)
+
 
 flow.surv.rate <- function(h, k, max, min, interval) {
   Q <- seq(min, max, by = interval)
@@ -15,13 +13,19 @@ flow.surv.rate <- function(h, k, max, min, interval) {
   return(surv.df)
 }
 
-surv.df.McMullen <- flow.surv.rate(0.02, 1, 100, 1, 1)
+
+# original McMullen model runs with discharges from 1 - 1000 m/s with 100% mortality after around 250 m/s
+# but that seems very steep, considering that only about 96% of individuals are wiped out post max disturbance (in Sycamore Creek)
+# going to run it between 1 and 100 (and scale to that because at 100 m/s about 86% die)
+
+surv.df.McMullen <- flow.surv.rate(0.02, 1, 1000, 1, 1) 
 
 ggplot(surv.df.McMullen, aes(x = Q, y = surv))+
   geom_line()+
   coord_cartesian(ylim = c(0,1)) +
+  theme_bw()+
   ylab('Immediate Post-Disturbance Survival (%)') +
-  xlab('McMullen Model Discharge')
+  xlab('McMullen Model Discharge (m^3/s)')
 
 # so we want to scale the max and min values to the McMullen model h values
 # using a neg exponential eq y = k*exp(-h*x)
@@ -40,7 +44,8 @@ surv.df.Sycamore <- flow.surv.rate(syc.fit$m$getPars()[2] , syc.fit$m$getPars()[
 ggplot(surv.df.Sycamore, aes(x = Q, y = surv))+
   geom_line()+
   coord_cartesian(ylim = c(0,1)) +
-  ylab('Immediate Post-Disturbance Mortality (%)') +
+  ylab('Immediate Post-Disturbance Survival (%)') +
+  theme_bw()+
   xlab('Sycamore Creek Discharge (cfs)')
 
 col.fit <- mcmullen.scale(10000, 100000, 0.02)
@@ -49,6 +54,7 @@ surv.df.Colorado <- flow.surv.rate(1, 0.02, 100000, 10000, (90000/99))
 ggplot(surv.df.Colorado, aes(x = Q, y = surv))+
   geom_line()+
   coord_cartesian(ylim = c(0,1)) +
-  ylab('Immediate Post-Disturbance Mortality (%)') +
-  xlab('Sycamore Creek Discharge (cfs)')
+  ylab('Immediate Post-Disturbance Survival (%)') +
+  theme_bw()+
+  xlab('Colorado River Discharge (cfs)')
 
