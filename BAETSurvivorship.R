@@ -12,7 +12,7 @@ flow.surv.fit <- function(magnitude, mortality, Qmin){
   x <- magnitude # rename x and y
   y <- 1 - mortality # convert to survival
   df <- as.data.frame(cbind(x,y))
-  df <- rbind(df, c(Qmin, 1))  # make sure we specify that we have 100% survival at Qmin (0.25)
+  df <- rbind(df, c(Qmin, 1.11))  # make sure we specify that we have 100% survival at Qmin (0.25)
   nls.fit <- nlsLM(formula = (y ~ k* exp(-h*x)), data = df, start = c(k = 1, h = 1)) # fit to negative exponential function
   return(nls.fit)
 }
