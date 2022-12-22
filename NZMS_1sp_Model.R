@@ -33,101 +33,122 @@ checkpos <- function(x) {
   ifelse(x < 0, 0, x)
 }
 
+## function to calculate daily shell size, to help determine stage transitions and fecundity at different stages
+shell.growth <- function(m, b, start.size){
+  l <- seq(1, 1000, by = 1)
+  lengths <- vector(length = 1000)
+  lengths[1] <- start.size
+  for (i in l){
+    lengths[i + 1] <- m*lengths[i]+b
+  }
+  return(lengths)
+}
+
+# function to index flow data, summarize as mean discharge per timestep, and relativize to flow magnitude (aka disturbance magnitude)
+TimestepDischarge <- function(flow, bankfull_discharge){
+  # Make an index to be used for aggregating
+  ID <- as.numeric(as.factor(flow$Date))-1
+  # want it to be every 14 days, hence the 14
+  ID <- ID %/% 14
+  # aggregate over ID and TYPE for all numeric data.
+  out <- aggregate(flow[sapply(flow,is.numeric)],
+                   by=list(ID,flow$X_00060_00003),
+                   FUN=mean)
+  # format output
+  names(out)[1:2] <-c("dts","Discharge")
+  # add the correct dates as the beginning of every period
+  out$dts <- as.POSIXct(flow$Date[(out$dts*14)+1])
+  # order by date in chronological order
+  out <- out[order(out$dts),]
+  # get mean Discharge data for every 14 days
+  out <- aggregate(out, by = list(out$dts), FUN = mean)
+  out$Discharge <- out$Discharge/bankfull_discharge # standardize to disturbance magnitude by taking discharge/bankfull_discharge
+  return(out)
+}
+
+# function to index and summarize temperature data over timesteps length
+TimestepTemperature <- function(temp, river){
+  # Make an index to be used for aggregating
+  ID <- as.numeric(as.factor(temp$Date))-1
+  # want it to be every 14 days, hence the 14
+  ID <- ID %/% 14
+  # aggregate over ID and TYPE for all numeric data.
+  outs <- aggregate(temp[sapply(temp,is.numeric)],
+                    by=list(ID),
+                    FUN=mean)
+  # format output
+  names(outs)[1:2] <-c("dts","Temperature")
+  # add the correct dates as the beginning of every period
+  outs$dts <- as.POSIXct(temp$Date[(outs$dts*14)+1])
+  # order by date in chronological order
+  temps <- outs[order(outs$dts),]
+  
+  if (river == "Colorado River"){
+    # there are less temperatures than discharge readings, so we will just repeat the same temp sequence for this exercise
+    temps <- rbind(temps, temps, temps)
+    temps <- temps[1:length(flow.magnitude$Discharge), ]
+  }
+  return(temps)
+}
+
+#function to calculate degree days accumulated every timestep
+TimestepDegreeDay <- function(temp, river){
+  # Make an index to be used for aggregating
+  ID <- as.numeric(as.factor(temp$Date))-1
+  # want it to be every 14 days, hence the 14
+  ID <- ID %/% 14
+  # aggregate over ID and T
+  degreeday <- aggregate(temp[sapply(temp,is.numeric)],
+                         by=list(ID),
+                         FUN=sum)
+  names(degreeday)[1:2] <-c("dts","DegreeDay")
+  # add the correct dates as the beginning of every period
+  degreeday$dts <- as.POSIXct(temp$Date[(degreeday$dts*14)+1])
+  # order by date in chronological order
+  degreeday <- degreeday[order(degreeday$dts),]
+  # can't have negative numbers so turn those into 0s
+  degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
+  
+  if (river == "Colorado River"){
+    # there are less temperatures than discharge readings, so we will just repeat the same temp sequence for this exercise
+    degreeday <- degreeday[1:363,] # last row isn't a full timestep
+    DDs <- rbind(degreeday, degreeday, degreeday) 
+    DDs <- DDs[1:length(flow.magnitude$Discharge), ]
+  } 
+  return(DDs)
+}
+
+
+# source functions
+source("NZMSSurvivorship.R")
+
+
 # growth - according to _ growth is dependent on shell length, as is fecundity 
 # we want 1 class of non-reproductive subadults (smaller than 3.2 mm) and two classes of reproductive adults (3.2 mm and larger)
 # growth follows the equation growth per day = -0.006*length[t]+0.029 (Cross et al., 2010)
 # this can be re-written as length[t+1] = 0.994*length[t]+0.029
-#
-x <- seq(1,1000, by = 1)
-lengths <- vector(length= 1000)
-lengths[1] <- 0.5
-for (i in x) {
-  lengths[i + 1] <- 0.994*lengths[i]+0.029
-} # on day 164, length ~ 3.2 (maturity) - so on week 24, maturity reached [stage 1 = 0.5mm - 3.2 mm] in about 24 weeks or 12 timesteps
-  # on day 266, length ~ 3.9538776 - [stage 2 = 3.2 - 3.9538776] in about 14 weeks or 7 timesteps
-  # that means [stage 3 = 3.9538776+] for about 14 weeks or 7 timesteps
+shell.growth(0.994, 0.029, 0.5)
+# on day 164, length ~ 3.2 (maturity) - so on week 24, maturity reached [stage 1 = 0.5mm - 3.2 mm] in about 24 weeks or 12 timesteps
+# on day 266, length ~ 3.9538776 - [stage 2 = 3.2 - 3.9538776] in about 14 weeks or 7 timesteps
+# that means [stage 3 = 3.9538776+] for about 14 weeks or 7 timesteps
 
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
-
-# Make an index to be used for aggregating
-ID <- as.numeric(as.factor(flow$Date))-1
-# want it to be every 14 days, hence the 14
-ID <- ID %/% 14
-# aggregate over ID and TYPE for all numeric data.
-out <- aggregate(flow[sapply(flow,is.numeric)],
-                 by=list(ID,flow$X_00060_00003),
-                 FUN=mean)
-# format output
-names(out)[1:2] <-c("dts","Discharge")
-# add the correct dates as the beginning of every period
-out$dts <- as.POSIXct(flow$Date[(out$dts*14)+1])
-# order by date in chronological order
-out <- out[order(out$dts),]
-# get mean Discharge data for every 14 days
-out <- aggregate(out, by = list(out$dts), FUN = mean)
-
-
 # read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
 
-# Make an index to be used for aggregating
-ID <- as.numeric(as.factor(temp$Date))-1
-# want it to be every 14 days, hence the 14
-ID <- ID %/% 14
-# aggregate over ID and TYPE for all numeric data.
-outs <- aggregate(temp[sapply(temp,is.numeric)],
-                  by=list(ID),
-                  FUN=mean)
-
-
-# format output
-names(outs)[1:2] <-c("dts","Temperature")
-# add the correct dates as the beginning of every period
-outs$dts <- as.POSIXct(temp$Date[(outs$dts*14)+1])
-# order by date in chronological order
-outs <- outs[order(outs$dts),]
-# get mean
-mean_temp <- mean(outs$Temperature)
-
-# there are less temperatures than discharge readings, so we will just repeat the same temp sequence for this exercise
-temps <- rbind(outs, outs, outs)
-temps <- temps[1:length(out$Discharge), ]
-
-
-degreeday <- aggregate(temp[sapply(temp,is.numeric)],
-                       by=list(ID),
-                       FUN=sum)
-names(degreeday)[1:2] <-c("dts","DegreeDay")
-# add the correct dates as the beginning of every period
-# 
-degreeday$dts <- as.POSIXct(temp$Date[(degreeday$dts*14)+1])
-# order by date in chronological order
-degreeday <- degreeday[order(degreeday$dts),]
-degreeday <- degreeday[1:363,]
-
-degreeday$DegreeDay <- degreeday$DegreeDay - 100
-# can't have negative numbers so turn those into 0s
-degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
-
-# there are less temperatures than discharge readings, so we will just repeat the same temp sequence for this exercise
-DDs <- rbind(degreeday, degreeday, degreeday)
-DDs <- DDs[1:length(out$Discharge), ]
-
+flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
+temps <- TimestepTemperature(temp, "Colorado River") # calculate mean temperature data for each timestep
+degreedays <- TimestepDegreeDay(temp, "Colorado River")
 
 # specify iterations
 iterations <- 5
-#species <- c("BAET", "SIMU", "CHIRO")
 
-
-# set carrying capacity
-K = 10000
 # baseline K in the absence of disturbance
 Kb <- 10000
 # max K after a big disturbance
 Kd <- 40000
-
 
 # specify baseline transition probabilities
 # its speculated (Cross et al 2010) that survivorship is between 80 - 100% for NZMS in Grand Canyon - will say 90% survive, 10% baseline mortality
@@ -147,18 +168,12 @@ P2_NZMS = 0.5
 P3_NZMS = 0.8
 
 # want to run this for one year, in 14 day timesteps 
-timestep <- seq(2, (length(out$Discharge) + 1), by = 1) # OR
-#timestep <- seq(2, (length(out_sample) + 1), by = 1)
+timestep <- seq(2, (length(flow.magnitude$Discharge) + 1), by = 1) # OR
 
 # create an array to put our output into
-#output.N.array <- array(0, dim = c(length(timestep) + 1, length(species)))
 output.N.array <- array(0, dim = c(length(timestep) + 1))
 
 output.N.list <- list(output.N.array)
-
-
-## Assigning names to each array from sppnames vector
-#names(output.N.list) <- species
 
 # create array to put the total N of all species into
 Total.N <- array(0,
@@ -173,23 +188,15 @@ reparray <- array(0,
 )
 
 output.N.list <- reparray
-## Repeating the array 7 times 
-#replist <- rep(list(reparray), 3)
-#names(replist) <- species
-
 
 # Q is equal to average discharge over 14 days
-Q <- out$Discharge
+Q <- flow.magnitude$Discharge
 
-Qmin <- 40000
-a <- 3000
+Qmin <- 0.25
+a <- 
 g <- 0.1
-h <- 0.000022  
-k <- 1.221403 
-
-
-# in this case, we will use the r that McMullen et al 2017 used for Beatis
-#r = 1.23
+h <- surv.fit.NZMS$m$getPars()[2]   
+k <- surv.fit.NZMS$m$getPars()[1]
 e = 2.71828
 b = 0.005
 
@@ -200,10 +207,9 @@ b = 0.005
 
 for (iter in c(1:iterations)) {
   
-  r = 1.23
-  K = 10000
+  K = 10000 # need to reset K for each iteration
   
-  # we can also create a random flow scenario by sampleing flows
+  # we can also create a random flow scenario by sampling flows
   #out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
   #Q <- out_sample
   
@@ -217,7 +223,6 @@ for (iter in c(1:iterations)) {
   #for (sp in species){
   #  output.N.list[[sp]][1,1] <- 10
   #}
-  
   # or we can pull randomw values from a uniform distribution 
   output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.5*K))
   
@@ -225,12 +230,6 @@ for (iter in c(1:iterations)) {
   
   # list to input Ks
   Klist <- vector()
-  
-  # list of transitions to next change
-  #Glist <- vector()
-  
-  # list of probability of remaining in stage
-  #Plist <- vector()
   
   # list to imput flow morts
   flowmortlist <- vector()
