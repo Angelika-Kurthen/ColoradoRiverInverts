@@ -118,6 +118,34 @@ TimestepDegreeDay <- function(temp, river){
   return(DDs)
 }
 
+# function to calculate Qf from McMullen et al 2017. Sets to 0 if below the Qmin
+Qf.Function <- function(Q, Qmin, a){
+  if (Q < Qmin) {
+    Qf <- 0
+  } else {
+    Qf <- (Q - Qmin)/(a + Q- Qmin)
+  }
+  return(Qf)
+}
+
+
+# Function to calculate logistic density dependence on fecundity, after Rogosch et al 2019
+Logistic.Dens.Dependence <- function(Fecundity, K, N){
+  f.rate <- Fecundity * checkpos((K - N)/K) * 0.5
+}
+
+
+# Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
+post.dist.K <- function(K0, Kb, g){
+  #calculate tau (times since last distubance)
+  tau = (t-1) - (last(which(Q[1:t-1] > Qmin)))
+  if (is.na(tau)==T) { tau <-  0} 
+  if (tau > 0) {
+    K <- Kb + ((K0 - Kb)*exp(-g*tau))} # function from McMullen et al 2017, g is shape function
+  Klist <- append(Klist, K)
+  return(K)
+}
+
 
 # source functions
 source("NZMSSurvivorship.R")
@@ -267,13 +295,13 @@ for (iter in c(1:iterations)) {
     #   }
     # }
     #---------------------------------------------------------
-    # Calculate fecundity per adult
+    # Calculate starting fecundity per adult
     
     # fecundities estimated from McKenzie et al. 2013; 
     if (temps$Temperature[t-1] <= 10) { 
-      F2_NZMS = 0
-      F3_NZMS = 0 } 
-    else {
+      F2_NZMS <- 0
+      F3_NZMS <- 0  
+    } else {
       F2_NZMS <- 8.87473
       F3_NZMS <- 27.89665
     }
@@ -284,29 +312,14 @@ for (iter in c(1:iterations)) {
     # Sets to 0 if below the Qmin
     Klist[1] <- 10000
     # Calculate the disturbance magnitude-K relationship 
-    # Sets to 0 if below the Qmin
-    if (Q[t-1] < Qmin) {
-      Qf <- 0
-    } else {
-      Qf <- (Q[t-1] - Qmin)/(a + Q[t-1]- Qmin)
-    }
-    
+
+    Qf <- Qf.Function(Q[t-1], Qmin, a)
     #-------------------------------------------------------------------
     # Calculate K arrying capacity immediately following the disturbance
-    K <- K + ((Kd-K)*Qf)
+    K0 <- K + ((Kd-K)*Qf)
     
-    # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
-    
-    tau = (t-1) - (last(which(Q[1:t-1] > Qmin)))
-    
-    if (is.na(tau)==T) { tau <-  0}
-    
-    if (tau > 0) {
-      
-      K <- Kb + ((Klist[t-1] - Kb)*exp(-g*tau))}
-    Klist <- append(Klist, K)
-    
-    
+    # Calculate final K for timestep, including relationship between K and time since disturbance
+    K <- post.dist.K(K0, Kb, g)
     
     #---------------------------------------------
     # Calculate effect of density dependnce on fecundity 
@@ -346,12 +359,11 @@ for (iter in c(1:iterations)) {
     #F_NZMS <- F_NZMS*((K - (K-1))/K)
     #}
     
-    # Logistic via Rogosch et al. Fish Model
-    F2_NZMS <- F2_NZMS * checkpos((K - Total.N[t-1, iter])/K) * 0.5
-    F3_NZMS <- F3_NZMS * checkpos((K - Total.N[t-1, iter])/K) * 0.5
+    # Logistic Density Dependence on Fecundity via Rogosch et al. Fish Model
+    F2_NZMS <- Logistic.Dens.Dependence(F2_NZMS, K, Total.N[t-1, iter])
+    F3_NZMS <- Logistic.Dens.Dependence(F3_NZMS, K, Total.N[t-1, iter])
     #-----------------------------------------------
     # Create Lefkovitch Matrix
-    
     NZMS1 <- c(P1_NZMS, F2_NZMS, F3_NZMS)
     NZMS2 <- c(G1_NZMS, P2_NZMS, 0)
     NZMS3 <- c(0, G2_NZMS, P3_NZMS) 
