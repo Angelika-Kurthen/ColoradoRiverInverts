@@ -129,12 +129,6 @@ Qf.Function <- function(Q, Qmin, a){
 }
 
 
-# Function to calculate logistic density dependence on fecundity, after Rogosch et al 2019
-Logistic.Dens.Dependence <- function(Fecundity, K, N){
-  f.rate <- Fecundity * checkpos((K - N)/K) * 0.5
-}
-
-
 # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
 post.dist.K <- function(K0, Kb, g){
   #calculate tau (times since last distubance)
@@ -144,6 +138,49 @@ post.dist.K <- function(K0, Kb, g){
     K <- Kb + ((K0 - Kb)*exp(-g*tau))} # function from McMullen et al 2017, g is shape function
   Klist <- append(Klist, K)
   return(K)
+}
+
+
+# Function to calculate logistic density dependence on fecundity, after Rogosch et al 2019
+Logistic.Dens.Dependence <- function(Fecundity, K, N){
+  f.rate <- Fecundity * checkpos((K - N)/K) * 0.5
+  return(f.rate)
+}
+
+
+#Ricker model (after Recruitment = axe^-bx, see Bolker Ch 3 Deterministic Functions for
+#Ecological Modeling)
+Ricker.Dens.Dependence <- function(b, N, fecundity){
+  f.rate <- fecundity * exp(-b * N)
+  return(f.rate)}
+# b = 0.005
+#F_NZMS <- Ricker.Dens.Dependence(b, Total.N[t-1, iter], F_NZMS) 
+
+# beverton holt is Nt+1 = rNt/1-Nt(r-1)/K
+# it is supposed to be depensatory, so as t -> inf, Nt+1 -> K, BUT 
+# the discrete nature of this causes it overshoot by a lot, 
+# meaning it isn't any better or worse than traditional logistric growth models
+Bev.Holt.Dens.Dependence <- function(r, N, K, fecundity){
+  if(N < K){
+    f.rate <- fecundity * (K - N/K)
+  } else {
+    f.rate <- fecundity * (1/K)
+  }
+}
+
+# F_NZMS <- Bev.Holt.Dens.Dependence(r, Total.N[t-1, iter], K, F_NZMS)
+
+
+
+
+# mortality due to flooding follows N0 = Nz*e^-h
+flood.mortality <- function(N, k, h, Q, Qmin){
+  if (Q <= Qmin){
+    newN <- N
+  } else {
+    newN <- N * k * exp(-h * Q)
+  }
+  return(newN)
 }
 
 
@@ -226,7 +263,7 @@ g <- 0.1
 h <- surv.fit.NZMS$m$getPars()[2]   
 k <- surv.fit.NZMS$m$getPars()[1]
 e = 2.71828
-b = 0.005
+
 
 #-------------------------
 # Outer Loop of Iterations
@@ -324,41 +361,6 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------
     # Calculate effect of density dependnce on fecundity 
     
-    # ricker model Nt+1= Nt* e^r(1-Nt/K)
-    # overcompensatory, but could represent pops better? used in fisheries a lot
-    # r is instrisice rate of increase when N is small 
-    # r can be species specific, or the same for all species
-    
-    # Ricker model - pro = doesn't go negative
-    #F_NZMS <- F_NZMS*exp(r*(1-(Total.N[t-1]/K)))
-    
-    #Ricker model from Mathmatica (after Recruitment = axe^-bx, see Bolker Ch 3 Deterministic Functions for
-    #Ecological Modeling)
-    
-   #F_NZMS <- F_NZMS*exp(-b * Total.N[t-1, iter])
-    
-    # Ricker model reproductive output, from  (recruitment = axe^r-bx)
-    #F2_NZMS <- F2_NZMS*exp(r-b * Total.N[t-1, iter])
-    #F3_NZMS <- F3_NZMS*exp(r-b * Total.N[t-1, iter])
-    
-    # beverton holt is Nt+1 = rNt/1-Nt(r-1)/K
-    # it is supposed to be depensatory, so as t -> inf, Nt+1 -> K, BUT 
-    # the discrete nature of this causes it overshoot by a lot, 
-    # meaning it isn't any better or worse than traditional logistric growth models
-    
-    # Beverton Holt from Mathmatica - can't go negative
-    #if (Total.N[t-1] < K){
-    #  F_NZMS <- F_NZMS*((K - Total.N[t-1])/K)
-    #} else{
-    #  F_NZMS <- F_NZMS*((K - (K-1))/K)
-    #}
-    # Beverton Holt - issue, can go negative
-    #if (Total.N[t-1] < K){
-    #F_NZMS <- F_NZMS*((r*Total.N[t-1])/(1 - (Total.N[t-1]*(r-1)/K)))
-    #} else{#
-    #F_NZMS <- F_NZMS*((K - (K-1))/K)
-    #}
-    
     # Logistic Density Dependence on Fecundity via Rogosch et al. Fish Model
     F2_NZMS <- Logistic.Dens.Dependence(F2_NZMS, K, Total.N[t-1, iter])
     F3_NZMS <- Logistic.Dens.Dependence(F3_NZMS, K, Total.N[t-1, iter])
@@ -373,25 +375,6 @@ for (iter in c(1:iterations)) {
     #-----------------------------------------------
     # Calculate new transition probabilities based on temperature
     # This is the growth v development tradeoff
-    
-    # # development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    # if (10 > temps$Temperature[t-1]) ANZMS[3,2] <- 0
-    # if (temps$Temperature[t-1] > 13) ANZMS[3,2] <- 0.6  
-    # if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 13) ANZMS[3,2] <- (0.2 * temps$Temperature[t-1]) -2
-    # 
-    # ANZMS[2,1] <- ANZMS[3,2] 
-    # 
-    # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
-    # if (10 >= temps$Temperature[t-1]) ANZMS[2,2] <- 0.6
-    # if (temps$Temperature[t-1] > 13) ANZMS[2,2] <- 0
-    # if (10 < temps$Temperature[t-1] & temps$Temperature[t-1] <=  13) ANZMS[2,2] <- (-0.2 * temps$Temperature[t-1]) + 2.6
-    # 
-    # ANZMS[1,1] <- ANZMS[2,2] 
-    # 
-    # 
-    #Glist <-append(Glist, ANZMS[3,2])
-    #Plist <- append(Plist, ANZMS[2,2])
-    
     #--------------------------------------
     # Calculate abundances for each stage
     
@@ -399,24 +382,23 @@ for (iter in c(1:iterations)) {
     
     #------------------------------------------
     #Calculate immediate mortality due to flows
-    # mortality due to flooding follows N0 = Nz*e^-hQ
-    # but what about using a sigmoidal logistic function so we can control the threshold point and rate of growth
-    # following m = 1/1+e^-h*(x-xf)
-    # where h is is shape value
-    # x is Q, and xf is threshold point (100% of pop dies)
-    #plot(x = Q, y = 1/(1+exp(-0.02*(Q-100000))))
-    
+
     #s1
-    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] *k* exp(-h*Q[t-1])
+    output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t,1,iter], k, h, Q[t-1], Qmin)
     #s2
-    output.N.list[t,2,iter] <- output.N.list[t,2,iter] *k* exp(-h*Q[t-1])
+    output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
     #3
-    output.N.list[t,3,iter] <- output.N.list[t,3,iter] *k* exp(-h*Q[t-1])
+    output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
     
+    # in case we want to look back on what the flow mortality rates were
     flowmortlist <- append(flowmortlist, k* exp(-h*Q[t-1]))
-    #replist[[1]][,,1] <- output.N.list[[1]]
+
+    #-------------------------------------------------
+    # calculate sum of all stages (total population)
     Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
-  } #-------------------------
+
+  
+    } #-------------------------
   # End Inner Loop  
   #------------------------- 
 } #----------------------
@@ -475,8 +457,8 @@ abund.trends <- ggplot(data = burns.list, aes(x = timesteps,
               alpha = .5,
               show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,3000)) +
-  ylab('Baetis Abundance') +
+  coord_cartesian(ylim = c(0,7000)) +
+  ylab('NZMS Abundance') +
   xlab('Timestep')
 
 saveRDS(abund.trends, paste0('BAETplot', '.rds'))
