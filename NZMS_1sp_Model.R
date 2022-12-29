@@ -183,6 +183,44 @@ flood.mortality <- function(N, k, h, Q, Qmin){
   return(newN)
 }
 
+#function to summarize code into mean population abundance over iterations
+mean.data.frame <- function(data, stages, burnin){
+  repdf <- plyr::adply(data, c(1,2,3))
+  names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
+  repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
+  
+  totn <- plyr::adply(Total.N, stages)
+  names(totn) <- c('timesteps', 'rep', 'tot.abund')
+  totn$timesteps <- as.numeric(as.character(totn$timesteps))
+  
+  # joining totn and repdf together
+  repdf <- dplyr::left_join(totn, repdf)
+  
+  ## calculating relative abundance
+  repdf <- mutate(repdf, rel.abund = abund/tot.abund)
+  repdf$timesteps <- as.factor(repdf$timesteps)
+  ## Taking mean results to cf w/ observed data
+  means.list<- repdf %>%
+    select(-tot.abund) %>%
+    dplyr::group_by(timesteps, rep) %>% # combining stages
+    dplyr::summarise(abund = sum(abund),
+                     rel.abund = sum(rel.abund)) %>%
+    ungroup() %>%
+    dplyr::group_by(timesteps) %>%
+    dplyr::summarise(mean.abund = mean(abund),
+                     sd.abund = sd(abund),
+                     se.abund = sd(abund)/sqrt(iterations),
+                     mean.rel.abund = mean(rel.abund),
+                     sd.rel.abund = sd(rel.abund),
+                     se.rel.abund = sd(rel.abund)/sqrt(iterations)) %>%
+    ungroup()
+  
+  if (burnin == T){
+    means.list <- means.list[ , burnin:means.list$timesteps]
+  }
+  return(means.list)
+}
+
 
 # source functions
 source("NZMSSurvivorship.R")
@@ -411,45 +449,10 @@ for (iter in c(1:iterations)) {
 # summarizing iterations
 
 ## turning replist into a df
-repdf <- plyr::adply(output.N.list, c(1,2,3))
+mean.data.frame(output.N.list, stages = c(1,2), burnin = 10)
 
-names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
-repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
-
-totn <- adply(Total.N, c(1,2))
-names(totn) <- c('timesteps', 'rep', 'tot.abund')
-totn$timesteps <- as.numeric(as.character(totn$timesteps))
-
-## joining totn and repdf together
-repdf <- left_join(totn, repdf)
-
-## calculating relative abundance
-repdf <- mutate(repdf, rel.abund = abund/tot.abund)
-repdf$timesteps <- as.factor(repdf$timesteps)
-## Taking mean results to cf w/ observed data
-means.list<- repdf %>%
-  select(-tot.abund) %>%
-  dplyr::group_by(timesteps, rep) %>% # combining stages
-  dplyr::summarise(abund = sum(abund),
-                   rel.abund = sum(rel.abund)) %>%
-  ungroup() %>%
-  dplyr::group_by(timesteps) %>%
-  dplyr::summarise(mean.abund = mean(abund),
-                   sd.abund = sd(abund),
-                   se.abund = sd(abund)/sqrt(iterations),
-                   mean.rel.abund = mean(rel.abund),
-                   sd.rel.abund = sd(rel.abund),
-                   se.rel.abund = sd(rel.abund)/sqrt(iterations)) %>%
-  ungroup()
-## Save the objects as .rds files - then use loadRDS in other file. 
-saveRDS(means.list, paste0('modelresults', '.rds'))
-#flowmeans.list[[flowmod]] <- ldply(flowlist, function(x) apply(x, 2, mean)) %>%
-#  apply(2, mean)
-
-# want to exclude first 10 timesteps for "burn in"
-burns.list <- means.list[10:941, ]
-
-abund.trends <- ggplot(data = burns.list, aes(x = timesteps,
+# plot abundance over time
+abund.trends <- ggplot(data = means.list, aes(x = timesteps,
                                               y = mean.abund, group = 1)) +
   geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
                   ymax = mean.abund + 1.96 * se.abund),
@@ -482,65 +485,4 @@ abline(v = 586, col = "red")
 abline(v = 670, col = "red")
 abline(v = 683, col = "red")
 lines(timestep[9:length(timestep)], Klist[10:(length(timestep)+1)], type = "l", col = "blue")
-
-
-# 
 lines(timestep, Klist, type = "l", col = "blue")
-
-
-# 
-# 
-# 
-# #creating plots to analyze how temp relationship is working
-# #create dataframe with timestemp, s1, s2, and s3 abundances, and tempterature
-#  data <- as.data.frame(cbind(timestep, output.N.list[2:(length(timestep)+1) ,1, 1], output.N.list[2:(length(timestep)+1) ,2, 1], output.N.list[2:(length(timestep)+1) ,3, 1], temps$Temperature))
-#  colnames(data) <- c("timestep", "Stage1", "Stage2", "Stage3", "Temperature")
-# 
-#  data <- data[10:60, ]
-# ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
-#    geom_path()+
-#    geom_path(aes(x = timestep, y = Stage2, color = "Stage2"))+
-#    geom_path(aes(x = timestep, y = Stage3, color = "Stage3"))+
-#    geom_path(aes(x = timestep, y = Temperature*200, color = "Temperature"))+
-#    scale_y_continuous(
-# 
-#      # Features of the first axis
-#      name = "Abundance",
-# 
-#      # Add a second axis and specify its features
-#      sec.axis = sec_axis( ~.*0.005, name="Temperature C")
-#    )
-# 
-#  # plot to show relationship between temp and fecundity
-#  plot(temps$Temperature, Flist, ylab = "Fecundity per individual", xlab = "Temperature (C)", pch = 19)
-# 
-#  plot(timestep[10:60], output.N.list[10:60, 3,1] * 1, type = "l", ylim  = c(0, 500), ylab = " ")
-#  lines(timestep[10:60], ((Flist[10:60]*output.N.list[10:60, 3,1])/10), col = "blue", ylim = c(0, 450))
-#  lines(timestep[10:60], temps$Temperature[10:60]*15, col = "red")
-# lines(timestep[10:60], emergetime[4:54]*18, col = "green")
-#  lines(timestep[10:60], sizelist[4:54]*100, col = "magenta")
-#  legend(25, 430, legend = c("Adult Abundance", "Realized Fecundity per female * 0.1", "Temperature (C) * 15", "Dry Weight (mg) * 100"),
-#         col = c("black", "blue", "red", "magenta"), lty = 1, cex = 0.8)
-# 
-#  plot(timestep, temps$Temperature, type = "l", col = "blue")
-# 
-#  par(mfrow = c(1,2))
-#  plot(timestep[10:37], Glist[10:37], type = "l", col = "blue")
-#  lines(timestep[10:37], Plist[10:37], type = "l", col = "black")
-#  legend(18, 0.1, legend=c("Growth (remain)", "Development (transition)"),
-#         col=c("Black", "Blue"), lty=1, cex=0.8)
-#  plot(timestep[10:37], temps$Temperature[10:37], type = "l", col = "red")
-# 
-#  plot(timestep[200:210], Total.N[201:211], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
-#  par(new=TRUE)
-#  lines(timestep[200:210],temps$Temperature[201:211],col="green")
-# 
-#  Total.N
-# 
-#  r <-Total.N[2:(length(timestep)+1)]/Total.N[1:length(timestep)]
-#  plot(timestep, r, type = "l")
-# 
-#  plot(Q, Klist[1:940])
-# 
-#  
-#  
