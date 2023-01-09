@@ -103,7 +103,6 @@ out <- aggregate(out, by = list(out$dts), FUN = mean)
 
 # specify iterations
 iterations <- 10
-#species <- c("BAET", "SIMU", "CHIRO")
 
 
 # set carrying capacity
@@ -115,25 +114,19 @@ Kd <- 40000
 
 
 # specify baseline transition probabilities for each species
-# McPeek and Pekarsky 1998 estimate a 0.0378/day mortlatity rate for larvae (0.5292 per fortnight)
-G1_BAET = 0.25
-G2_BAET = 0.25
-P1_BAET = 0.23
-P2_BAET = 0.23
+G1_BAET = 0.3 # based on values from McMullen supp material
+G2_BAET = 0.05
+P1_BAET = 0.3
+P2_BAET = 0
 
 # want to run this for one year, in 14 day timesteps 
 timestep <- seq(2, (length(out$Discharge) + 1), by = 1) # OR
 #timestep <- seq(2, (length(out_sample) + 1), by = 1)
 
 # create an array to put our output into
-#output.N.array <- array(0, dim = c(length(timestep) + 1, length(species)))
 output.N.array <- array(0, dim = c(length(timestep) + 1))
 
 output.N.list <- list(output.N.array)
-
-
-## Assigning names to each array from sppnames vector
-#names(output.N.list) <- species
 
 # create array to put the total N of all species into
 Total.N <- array(0,
@@ -148,9 +141,6 @@ reparray <- array(0,
 )
 
 output.N.list <- reparray
-## Repeating the array 7 times 
-#replist <- rep(list(reparray), 3)
-#names(replist) <- species
 
 
 # Q is equal to average discharge over 14 days
@@ -245,8 +235,7 @@ for (iter in c(1:iterations)) {
     # Calculate fecundity per adult
     
     # we start by pulling fecundities from normal distribution
-    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 
-    
+    F_BAET = rnorm(1, mean = 1850, sd = 331.63) * 0.2  # from McMullen Suplemental info https://docs.google.com/document/d/19yWWYe5XO5b7UjYo4ZAb1_uo1DVUH_rJ/edit#
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
@@ -417,7 +406,7 @@ colnames(GFAbund) <- c("PostDist", "mean.abund", "upperse", "se.abund", "Group")
 # this is because the actual abundance values from the model are entirely dependent on K
 # if I wanted to get fancy, I could scale K but this does the same thing
 
-burns.list[2:4] <- burns.list[2:4] * mean(GFAbund$mean.abund)/mean(burns.list$mean.abund)
+burns.list[2:4] <- burns.list[2:4] * mean(GFAbund$mean.abund)/mean(burns.list$mean.abund) # could also divide by 1000
 long_list <- dplyr::bind_rows(burns.list, GFAbund)
 
 abund.trends <- ggplot(data = long_list, aes(x = PostDist,
