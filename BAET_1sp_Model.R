@@ -55,7 +55,7 @@ P1_BAET = 0.2
 P2_BAET = 0.2
 
 # want to run this for one year, in 14 day timesteps 
-timestep <- seq(2, (length(out$Discharge) + 1), by = 1) # OR
+timestep <- seq(2, (length(flow.magnitude$Discharge) + 1), by = 1) # OR
 #timestep <- seq(2, (length(out_sample) + 1), by = 1)
 
 # create an array to put our output into
@@ -145,27 +145,6 @@ for (iter in c(1:iterations)) {
     #----------------------------------------------------------
     # Calculate how many timesteps emerging adults have matured
     
-    back.count.degreedays <- function(time, criticaldegreedays){
-      # for each timestep, we want to back calculate the number of degree days
-      if(time == 1) {print("t=1")
-        emerg <- NA
-      } else {
-        # create a sequence of time from last t to 1
-          degseq <- seq(time - 1, 1, by = -1)
-          # create an empty vector to put the total number of degree days accumulated
-          vec <- 0
-          # for each value in that sequence, we will add the degree day values of 
-          #the timestep prior and check if it adds up to our threshold to emergence
-          for (s in degseq) {
-            if(vec <= criticaldegreedays) { vec <- degreedays$DegreeDay[s] + vec}
-            else {emerg <- time - s
-            break}
-            # once we hit that threshold, we count the number of timesteps it took to reach that and add that to our emergetime vector
-          }
-      }
-      return(emerg)
-    }
-    
     emergetime <- append(emergetime, back.count.degreedays(t, 406)) # or 406? 266 degree days used from REF days above 10C. Add 266 + 10*14 
     #---------------------------------------------------------
     # Calculate fecundity per adult
@@ -250,7 +229,7 @@ for (iter in c(1:iterations)) {
     
     output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
     
-    flowmortlist <- append(flowmortlist, k* exp(-h*Q[t-1]))
+    flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
     #replist[[1]][,,1] <- output.N.list[[1]]
     Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
   } #-------------------------
