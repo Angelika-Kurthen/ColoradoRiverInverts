@@ -227,7 +227,7 @@ for (iter in c(1:iterations)) {
 # summarizing iterations
 
 ## turning replist into a df
-mean.data.frame(output.N.list, stages = c(1,2), burnin = 10)
+mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
 
 # plot abundance over time
 abund.trends <- ggplot(data = means.list, aes(x = timesteps,
