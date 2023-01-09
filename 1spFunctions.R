@@ -91,6 +91,27 @@ TimestepDegreeDay <- function(temp, river){
   } 
   return(DDs)
 }
+back.count.degreedays <- function(time, criticaldegreedays){
+  # for each timestep, we want to back calculate the number of degree days
+  if(time == 1) {print("t=1")
+    emerg <- NA
+  } else {
+    # create a sequence of time from last t to 1
+    degseq <- seq(time - 1, 1, by = -1)
+    # create an empty vector to put the total number of degree days accumulated
+    vec <- 0
+    # for each value in that sequence, we will add the degree day values of 
+    #the timestep prior and check if it adds up to our threshold to emergence
+    for (s in degseq) {
+      if(vec <= criticaldegreedays) { vec <- degreedays$DegreeDay[s] + vec}
+      else {emerg <- time - s
+      break}
+      # once we hit that threshold, we count the number of timesteps it took to reach that and add that to our emergetime vector
+    }
+  }
+  return(emerg)
+}
+
 
 # function to calculate Qf from McMullen et al 2017. Sets to 0 if below the Qmin
 Qf.Function <- function(Q, Qmin, a){
