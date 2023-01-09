@@ -26,91 +26,26 @@ library(dataRetrieval)
 # library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
-
-## checkpos makes sure that the K-occupied term is positive, assigns 0 if not
-checkpos <- function(x) {
-  ifelse(x < 0, 0, x)
-}
+source("HYOSSurvivorship.R")
+source("1spFunctions.R")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
-
-# Make an index to be used for aggregating
-ID <- as.numeric(as.factor(flow$Date))-1
-# want it to be every 14 days, hence the 14
-ID <- ID %/% 14
-# aggregate over ID and TYPE for all numeric data.
-out <- aggregate(flow[sapply(flow,is.numeric)],
-                 by=list(ID,flow$X_00060_00003),
-                 FUN=mean)
-# format output
-names(out)[1:2] <-c("dts","Discharge")
-# add the correct dates as the beginning of every period
-out$dts <- as.POSIXct(flow$Date[(out$dts*14)+1])
-# order by date in chronological order
-out <- out[order(out$dts),]
-# get mean Discharge data for every 14 days
-out <- aggregate(out, by = list(out$dts), FUN = mean)
-
-
 # read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
 
-# Make an index to be used for aggregating
-ID <- as.numeric(as.factor(temp$Date))-1
-# want it to be every 14 days, hence the 14
-ID <- ID %/% 14
-# aggregate over ID and TYPE for all numeric data.
-outs <- aggregate(temp[sapply(temp,is.numeric)],
-                  by=list(ID),
-                  FUN=mean)
-
-
-# format output
-names(outs)[1:2] <-c("dts","Temperature")
-# add the correct dates as the beginning of every period
-outs$dts <- as.POSIXct(temp$Date[(outs$dts*14)+1])
-# order by date in chronological order
-outs <- outs[order(outs$dts),]
-# get mean
-mean_temp <- mean(outs$Temperature)
-
-# there are less temperatures than discharge readings, so we will just repeat the same temp sequence for this exercise
-temps <- rbind(outs, outs, outs)
-temps <- temps[1:length(out$Discharge), ]
-
-
-degreeday <- aggregate(temp[sapply(temp,is.numeric)],
-                       by=list(ID),
-                       FUN=sum)
-names(degreeday)[1:2] <-c("dts","DegreeDay")
-# add the correct dates as the beginning of every period
-# 
-degreeday$dts <- as.POSIXct(temp$Date[(degreeday$dts*14)+1])
-# order by date in chronological order
-degreeday <- degreeday[order(degreeday$dts),]
-degreeday <- degreeday[1:363,]
-
-degreeday$DegreeDay <- degreeday$DegreeDay
-# can't have negative numbers so turn those into 0s
-degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
-
-# there are less temperatures than discharge readings, so we will just repeat the same temp sequence for this exercise
-DDs <- rbind(degreeday, degreeday, degreeday)
-DDs <- DDs[1:length(out$Discharge), ]
-
+flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
+temps <- TimestepTemperature(temp, "Colorado River") # calculate mean temperature data for each timestep
+degreedays <- TimestepDegreeDay(temp, "Colorado River")
 
 # specify iterations
 iterations <- 5
-#species <- c("BAET", "SIMU", "CHIRO")
 
-
-# set carrying capacity
-K = 10000
 # baseline K in the absence of disturbance
 Kb <- 10000
 # max K after a big disturbance
 Kd <- 40000
+
 
 # specify baseline transition probabilities for each species
 # 3 stages - we have egg - larval instar V, pupae, and adult
@@ -121,7 +56,7 @@ P1_HYOS = 0.7 # remain in stage 1
 P2_HYOS = 0.0 # remain in stage 2
 
 # want to run this for one year, in 14 day timesteps 
-timestep <- seq(2, (length(out$Discharge) + 1), by = 1) # OR
+timestep <- seq(2, (length(flow.magnitude$Discharge) + 1), by = 1) # OR
 #timestep <- seq(2, (length(out_sample) + 1), by = 1)
 
 # create an array to put our output into
@@ -153,19 +88,13 @@ output.N.list <- reparray
 
 
 # Q is equal to average discharge over 14 days
-Q <- out$Discharge
+Q <- flow.magnitude$Discharge
 
-Qmin <- 40000
+Qmin <- 0.25
 a <- 3000
 g <- 0.1
-h <- 0.000022 
-k <- 1.221403 
-
-
-# in this case, we will use the r that McMullen et al 2017 used for Beatis
-#r = 1.23
-e = 2.71828
-b = 0.005
+h <- surv.fit.HYOS$m$getPars()[2]   
+k <- surv.fit.HYOS$m$getPars()[1] 
 
 #-------------------------
 # Outer Loop of Iterations
@@ -173,9 +102,7 @@ b = 0.005
 
 
 for (iter in c(1:iterations)) {
-  
-  r = 1.23
-  
+  K = 10000 # need to reset K for each iteration
   # we can also create a random flow scenario by sampleing flows
   #out_sample <- sample(out$Discharge,length(out$Discharge), replace=TRUE)
   #Q <- out_sample
@@ -199,12 +126,6 @@ for (iter in c(1:iterations)) {
   # list to input Ks
   Klist <- vector()
   
-  # list of transitions to next change
-  #Glist <- vector()
-  
-  # list of probability of remaining in stage
-  #Plist <- vector()
-  
   # list to imput flow morts
   flowmortlist <- vector()
   
@@ -213,7 +134,6 @@ for (iter in c(1:iterations)) {
   emergetime <- vector()
   
   sizelist <- vector()
-  
   #-------------------------
   # Inner Loop of Timesteps
   #-------------------------
@@ -222,25 +142,9 @@ for (iter in c(1:iterations)) {
     
     #----------------------------------------------------------
     # Calculate how many timesteps emerging adults have matured
+    # Calculate how many timesteps emerging adults have matured
     
-    # for each timestep, we want to back calculate the number of degree days
-    if (t == 1) {print("t = 1")}
-    else {
-      # create a sequence of time from last t to 1
-      degseq <- seq(t-1, 1, by = -1)
-      # create an empty vector to put the total number of degree days accumulated
-      vec <- 0
-      # for each value in that sequence, we will add the degree day values of 
-      #the timestep prior and check if it adds up to our threshold to emergence
-      for (s in degseq) {
-        if(vec <= 1680) { vec <- DDs$DegreeDay[s] + vec }
-        else {emerg <- t - s
-        emergetime <- append(emergetime, emerg)
-        break}
-        # once we hit that threshold, we count the number of timesteps it took to reach that and add that to our emergetime vector  
-      }
-    }
-      
+    emergetime <- append(emergetime, back.count.degreedays(t, 1680))
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
@@ -254,75 +158,30 @@ for (iter in c(1:iterations)) {
         F_HYOS <- ((8.664 * size) - 127.3) * 0.5
       }
       
-    
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
     Klist[1] <- 10000
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
-    if (Q[t-1] < Qmin) {
-      Qf <- 0
-    } else {
-      Qf <- (Q[t-1] - Qmin)/(a + Q[t-1]- Qmin)
-    }
-    
+    Qf <- Qf.Function(Q[t-1], Qmin, a)
+  
     #-------------------------------------------------------------------
     # Calculate K arrying capacity immediately following the disturbance
-    K <- K + ((Kd-K)*Qf)
+    # Calculate K arrying capacity immediately following the disturbance
+    K0 <- K + ((Kd-K)*Qf)
     
-    # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
+    # Calculate final K for timestep, including relationship between K and time since disturbance
+    K <- post.dist.K(K0, Kb, g)
     
-    tau = (t-1) - (last(which(Q[1:t-1] > Qmin)))
-    
-    if (is.na(tau)==T) { tau <-  0}
-    
-    if (tau > 0) {
-      
-      K <- Kb + ((Klist[t-1] - Kb)*exp(-g*tau))}
     Klist <- append(Klist, K)
-    
-    
+
     #---------------------------------------------
-    # Calculate effect of density dependnce on fecundity 
-    
-    # ricker model Nt+1= Nt* e^r(1-Nt/K)
-    # overcompensatory, but could represent pops better? used in fisheries a lot
-    # r is instrisice rate of increase when N is small 
-    # r can be species specific, or the same for all species
-    
-    # Ricker model - pro = doesn't go negative
-    #F_HYOS <- F_HYOS*exp(r*(1-(Total.N[t-1]/K)))
-    
-    #Ricker model from Mathmatica (after Recruitment = axe^-bx, see Bolker Ch 3 Deterministic Functions for
-    #Ecological Modeling)
-    
-    #F_HYOS <- F_HYOS*exp(-b * Total.N[t-1, iter])
-    
-    # Ricker model reproductive output, from  (recruitment = axe^r-bx)
-    #F_HYOS <- F_HYOS*exp(r-b * Total.N[t-1, iter])
-    
-    # beverton holt is Nt+1 = rNt/1-Nt(r-1)/K
-    # it is supposed to be depensatory, so as t -> inf, Nt+1 -> K, BUT 
-    # the discrete nature of this causes it overshoot by a lot, 
-    # meaning it isn't any better or worse than traditional logistric growth models
-    
-    # Beverton Holt from Mathmatica - can't go negative
-    #if (Total.N[t-1] < K){
-    #  F_HYOS <- F_HYOS*((K - Total.N[t-1])/K)
-    #} else{
-    #  F_HYOS <- F_HYOS*((K - (K-1))/K)
-    #}
-    # Beverton Holt - issue, can go negative
-    #if (Total.N[t-1] < K){
-    #F_HYOS <- F_HYOS*((r*Total.N[t-1])/(1 - (Total.N[t-1]*(r-1)/K)))
-    #} else{#
-    #F_HYOS <- F_HYOS*((K - (K-1))/K)
-    #}
+    # Calculate effect of density dependence on fecundity
     
     # Logistic via Rogosch et al. Fish Model
-    F_HYOS <- F_HYOS * checkpos((K - Total.N[t-1, iter])/K)
-    Flist <- append(Flist, F_HYOS)
+    F_BAET <- Logistic.Dens.Dependence(F_BAET, K, Total.N[t-1, iter])
+    Flist <- append(Flist, F_BAET)
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
@@ -369,13 +228,13 @@ for (iter in c(1:iterations)) {
     #plot(x = Q, y = 1/(1+exp(-0.02*(Q-100000))))
     
     #s1
-    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter]  *k* exp(-h*Q[t-1])
+    output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t, 1, iter], k, h, Q[t-1], Qmin)
     #s2
-    output.N.list[t,2,iter] <- output.N.list[t,2,iter] *k*exp(-h*Q[t-1])
+    output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
     #3
-    output.N.list[t,3,iter] <- output.N.list[t,3,iter]  *k* exp(-h*Q[t-1])
+    output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
     
-    flowmortlist <- append(flowmortlist, k*exp(-h*Q[t-1]))
+    flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
     #replist[[1]][,,1] <- output.N.list[[1]]
     Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
   } #-------------------------
@@ -390,45 +249,7 @@ for (iter in c(1:iterations)) {
 # Analyzing Results
 #-------------------
 # summarizing iterations
-
-## turning replist into a df
-repdf <- plyr::adply(output.N.list, c(1,2,3))
-
-names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
-repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
-
-totn <- adply(Total.N, c(1,2))
-names(totn) <- c('timesteps', 'rep', 'tot.abund')
-totn$timesteps <- as.numeric(as.character(totn$timesteps))
-
-## joining totn and repdf together
-repdf <- left_join(totn, repdf)
-
-## calculating relative abundance
-repdf <- mutate(repdf, rel.abund = abund/tot.abund)
-repdf$timesteps <- as.factor(repdf$timesteps)
-## Taking mean results to cf w/ observed data
-means.list<- repdf %>%
-  select(-tot.abund) %>%
-  dplyr::group_by(timesteps, rep) %>% # combining stages
-  dplyr::summarise(abund = sum(abund),
-                   rel.abund = sum(rel.abund)) %>%
-  ungroup() %>%
-  dplyr::group_by(timesteps) %>%
-  dplyr::summarise(mean.abund = mean(abund),
-                   sd.abund = sd(abund),
-                   se.abund = sd(abund)/sqrt(iterations),
-                   mean.rel.abund = mean(rel.abund),
-                   sd.rel.abund = sd(rel.abund),
-                   se.rel.abund = sd(rel.abund)/sqrt(iterations)) %>%
-  ungroup()
-## Save the objects as .rds files - then use loadRDS in other file. 
-saveRDS(means.list, paste0('modelresults', '.rds'))
-#flowmeans.list[[flowmod]] <- ldply(flowlist, function(x) apply(x, 2, mean)) %>%
-#  apply(2, mean)
-
-# want to exclude first 10 timesteps for "burn in"
-burns.list <- means.list[10:941, ]
+mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
 
 abund.trends <- ggplot(data = burns.list, aes(x = timesteps,
                                               y = mean.abund, group = 1)) +
