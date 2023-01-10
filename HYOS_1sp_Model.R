@@ -91,7 +91,7 @@ output.N.list <- reparray
 Q <- flow.magnitude$Discharge
 
 Qmin <- 0.25
-a <- 3000
+a <- 100
 g <- 0.1
 h <- surv.fit.HYOS$m$getPars()[2]   
 k <- surv.fit.HYOS$m$getPars()[1] 
@@ -152,8 +152,8 @@ for (iter in c(1:iterations)) {
     # * 0.5 assuming 50% female
       
       # we can scale fecundity based on the 95% CI of 21.66 (min = 213.94, max = 257.26) 
-      if (t > 14) {
-        size <- emergetime[t-14]
+      if (t > 15) {
+        size <- emergetime[t-1]
         sizelist <- append(sizelist, size)
         F_HYOS <- ((8.664 * size) - 127.3) * 0.5
       }
@@ -249,9 +249,9 @@ for (iter in c(1:iterations)) {
 # Analyzing Results
 #-------------------
 # summarizing iterations
-mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
+means.list <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
 
-abund.trends <- ggplot(data = burns.list, aes(x = timesteps,
+abund.trends <- ggplot(data = means.list, aes(x = timesteps,
                                               y = mean.abund, group = 1)) +
   geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
                   ymax = mean.abund + 1.96 * se.abund),
@@ -259,7 +259,7 @@ abund.trends <- ggplot(data = burns.list, aes(x = timesteps,
               alpha = .5,
               show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,3000)) +
+  coord_cartesian(ylim = c(0,10000)) +
   ylab('Baetis Abundance') +
   xlab('Timestep')
 
