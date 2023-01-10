@@ -103,7 +103,8 @@ back.count.degreedays <- function(time, criticaldegreedays){
     # for each value in that sequence, we will add the degree day values of 
     #the timestep prior and check if it adds up to our threshold to emergence
     for (s in degseq) {
-      if(vec <= criticaldegreedays) { vec <- degreedays$DegreeDay[s] + vec}
+      if(vec <= criticaldegreedays) {vec <- degreedays$DegreeDay[s] + vec
+      emerg <- NA}
       else {emerg <- time - s
       break}
       # once we hit that threshold, we count the number of timesteps it took to reach that and add that to our emergetime vector
