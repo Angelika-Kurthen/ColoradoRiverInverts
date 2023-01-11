@@ -155,7 +155,7 @@ for (iter in c(1:iterations)) {
       if (t > 15) {
         size <- emergetime[t-1]
         sizelist <- append(sizelist, size)
-        F_HYOS <- ((8.664 * size) - 127.3) * 0.5
+        F_HYOS <- ((7.069 * size) + 3.0268) * 0.5
       }
       
     #---------------------------------------------------
@@ -180,8 +180,8 @@ for (iter in c(1:iterations)) {
     # Calculate effect of density dependence on fecundity
     
     # Logistic via Rogosch et al. Fish Model
-    F_BAET <- Logistic.Dens.Dependence(F_BAET, K, Total.N[t-1, iter])
-    Flist <- append(Flist, F_BAET)
+    F_HYOS <- Logistic.Dens.Dependence(F_HYOS, K, Total.N[t-1, iter])
+    Flist <- append(Flist, F_HYOS)
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
@@ -260,10 +260,8 @@ abund.trends <- ggplot(data = means.list, aes(x = timesteps,
               show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
   coord_cartesian(ylim = c(0,10000)) +
-  ylab('Baetis Abundance') +
+  ylab('Hydrospyche spp. Abundance') +
   xlab('Timestep')
-
-saveRDS(abund.trends, paste0('BAETplot', '.rds'))
 
 
 
