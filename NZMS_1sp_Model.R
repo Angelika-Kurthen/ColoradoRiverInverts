@@ -98,7 +98,7 @@ output.N.list <- reparray
 Q <- flow.magnitude$Discharge
 
 Qmin <- 0.25
-a <- 
+a <- 0.5
 g <- 0.1
 h <- surv.fit.NZMS$m$getPars()[2]   
 k <- surv.fit.NZMS$m$getPars()[1]
@@ -160,8 +160,7 @@ for (iter in c(1:iterations)) {
     
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
-    Klist[1] <- 10000
-    
+
     # Calculate the disturbance magnitude-K relationship
     # Sets to 0 if below the Qmin
     Qf <- Qf.Function(Q[t-1], Qmin, a)
@@ -172,7 +171,7 @@ for (iter in c(1:iterations)) {
     
     # Calculate final K for timestep, including relationship between K and time since disturbance
     K <- post.dist.K(K0, Kb, g)
-    
+    Klist <- append(Klist, K)
     #---------------------------------------------
     # Calculate effect of density dependnce on fecundity 
     
@@ -207,7 +206,7 @@ for (iter in c(1:iterations)) {
     output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
     
     # in case we want to look back on what the flow mortality rates were
-    flowmortlist <- append(flowmortlist, k* exp(-h*Q[t-1]))
+    flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
 
     #-------------------------------------------------
     # Calculate sum of all stages (total population)
@@ -227,10 +226,10 @@ for (iter in c(1:iterations)) {
 # summarizing iterations
 
 ## turning replist into a df
-mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
+means.list.NZMS <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
 
 # plot abundance over time
-abund.trends <- ggplot(data = means.list, aes(x = timesteps,
+abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = timesteps,
                                               y = mean.abund, group = 1)) +
   geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
                   ymax = mean.abund + 1.96 * se.abund),
