@@ -155,7 +155,7 @@ for (iter in c(1:iterations)) {
       if (t > 15) {
         size <- emergetime[t-1]
         sizelist <- append(sizelist, size)
-        F_HYOS <- ((7.069 * size) + 3.0268) * 0.5
+        F_HYOS <- ((94.24 * size) - 1156.34) * 0.5
       }
       
     #---------------------------------------------------
