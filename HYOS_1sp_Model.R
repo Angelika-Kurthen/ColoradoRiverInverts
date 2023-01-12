@@ -155,13 +155,12 @@ for (iter in c(1:iterations)) {
       if (t > 15) {
         size <- emergetime[t-1]
         sizelist <- append(sizelist, size)
-        F_HYOS <- ((94.24 * size) - 1156.34) * 0.5
+        F_HYOS <- ((8.664 * size) + 127.3) * 0.5
       }
       
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
-    Klist[1] <- 10000
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
     Qf <- Qf.Function(Q[t-1], Qmin, a)
