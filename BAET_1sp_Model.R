@@ -90,7 +90,7 @@ output.N.list <- reparray
 Q <- flow.magnitude$Discharge
 
 Qmin <- 0.25
-a <- 100
+a <- 0.5
 g <- 0.1
 h <- surv.fit.BAET$m$getPars()[2]   
 k <- surv.fit.BAET$m$getPars()[1]   
@@ -246,9 +246,9 @@ for (iter in c(1:iterations)) {
 # summarizing iterations
 
 ## turning replist into a df
-means.list <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
+means.list.BAET <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
 
-abund.trends <- ggplot(data = means.list, aes(x = timesteps,
+abund.trends.BAET <- ggplot(data = means.list.BAET, aes(x = timesteps,
                                        y = mean.abund, group = 1)) +
   geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
                   ymax = mean.abund + 1.96 * se.abund),
