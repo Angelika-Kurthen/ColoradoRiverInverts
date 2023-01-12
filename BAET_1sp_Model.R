@@ -90,7 +90,7 @@ output.N.list <- reparray
 Q <- flow.magnitude$Discharge
 
 Qmin <- 0.25
-a <- 3000
+a <- 100
 g <- 0.1
 h <- surv.fit.BAET$m$getPars()[2]   
 k <- surv.fit.BAET$m$getPars()[1]   
@@ -160,9 +160,9 @@ for (iter in c(1:iterations)) {
     # we can "convert" emergetime to mg by multiplying by 0.225 (to get dry weights between 0.9 - 2 mg)
     
     if (t > 4) {
-      size <- emergetime[t-1] * 0.225
+      size <- (emergetime[t-1] * 0.55)-0.75
       sizelist <- append(sizelist, size)
-      F_BAET <- ((614 * size) - 300) * 0.5 * 0.5
+      F_BAET <- ((614 * size) - 300) * 0.5 #* 0.5
     }
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
@@ -246,9 +246,9 @@ for (iter in c(1:iterations)) {
 # summarizing iterations
 
 ## turning replist into a df
-mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
+means.list <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
 
-abund.trends <- ggplot(data = burns.list, aes(x = timesteps,
+abund.trends <- ggplot(data = means.list, aes(x = timesteps,
                                        y = mean.abund, group = 1)) +
   geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
                   ymax = mean.abund + 1.96 * se.abund),
@@ -256,7 +256,7 @@ abund.trends <- ggplot(data = burns.list, aes(x = timesteps,
               alpha = .5,
               show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,6000)) +
+  coord_cartesian(ylim = c(0,100000)) +
   ylab('Baetis Abundance') +
   xlab('Timestep')
 
