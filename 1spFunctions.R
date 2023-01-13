@@ -129,7 +129,7 @@ Qf.Function <- function(Q, Qmin, a){
 post.dist.K <- function(K0, Kb, g){
   #calculate tau (times since last distubance)
   tau = (t-1) - (last(which(Q[1:t-1] > Qmin)))
-  if (is.na(tau)==T) { tau <-  0
+  if (is.na(tau)==T | tau == 0) { tau <-  0
   K <- K0} 
   if (tau > 0) {
     K <- Kb + ((K0 - Kb)*exp(-g*tau))} # function from McMullen et al 2017, g is shape function
