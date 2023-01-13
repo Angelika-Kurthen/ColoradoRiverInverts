@@ -91,7 +91,7 @@ output.N.list <- reparray
 Q <- flow.magnitude$Discharge
 
 Qmin <- 0.25
-a <- 0.5
+a <- 0.1
 g <- 0.1
 h <- surv.fit.HYOS$m$getPars()[2]   
 k <- surv.fit.HYOS$m$getPars()[1] 
@@ -125,7 +125,7 @@ for (iter in c(1:iterations)) {
   
   # list to input Ks
   Klist <- vector()
-  
+  Klist[1] <- 10000
   # list to imput flow morts
   flowmortlist <- vector()
   
