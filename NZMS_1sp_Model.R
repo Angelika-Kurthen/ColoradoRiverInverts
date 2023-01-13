@@ -98,7 +98,7 @@ output.N.list <- reparray
 Q <- flow.magnitude$Discharge
 
 Qmin <- 0.25
-a <- 0.5
+a <- 0.1
 g <- 0.1
 h <- surv.fit.NZMS$m$getPars()[2]   
 k <- surv.fit.NZMS$m$getPars()[1]
@@ -134,6 +134,7 @@ for (iter in c(1:iterations)) {
   # we often want to look at different parameter values after we run code, so we create some lists
   # list to input Ks
   Klist <- vector()
+  Klist[1] <- 10000
   # list to imput flow morts
   flowmortlist <- vector()
   Flist <- vector()
@@ -178,6 +179,7 @@ for (iter in c(1:iterations)) {
     # Logistic Density Dependence on Fecundity via Rogosch et al. Fish Model
     F2_NZMS <- Logistic.Dens.Dependence(F2_NZMS, K, Total.N[t-1, iter])
     F3_NZMS <- Logistic.Dens.Dependence(F3_NZMS, K, Total.N[t-1, iter])
+    
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
