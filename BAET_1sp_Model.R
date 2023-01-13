@@ -90,7 +90,7 @@ output.N.list <- reparray
 Q <- flow.magnitude$Discharge
 
 Qmin <- 0.25
-a <- 0.5
+a <- 0.1
 g <- 0.1
 h <- surv.fit.BAET$m$getPars()[2]   
 k <- surv.fit.BAET$m$getPars()[1]   
@@ -126,7 +126,7 @@ for (iter in c(1:iterations)) {
   
   # list to input Ks
   Klist <- vector()
-  
+  Klist[1] <- 10000
   # list to imput flow morts
   flowmortlist <- vector()
   
@@ -166,7 +166,7 @@ for (iter in c(1:iterations)) {
     }
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
-    Klist[1] <- 10000
+    #Klist[1] <- 10000
     
     # Calculate the disturbance magnitude-K relationship
     # Sets to 0 if below the Qmin
@@ -179,12 +179,14 @@ for (iter in c(1:iterations)) {
     # Calculate final K for timestep, including relationship between K and time since disturbance
     K <- post.dist.K(K0, Kb, g)
     
-    
+    Klist <- append(Klist, K)
     #---------------------------------------------
     # Calculate effect of density dependnce on fecundity 
     
     # Logistic via Rogosch et al. Fish Model
+    # no immediate egg mortality incorporated
     F_BAET <- Logistic.Dens.Dependence(F_BAET, K, Total.N[t-1, iter])
+    
     Flist <- append(Flist, F_BAET)
     #-----------------------------------------------
     # Create Lefkovitch Matrix
