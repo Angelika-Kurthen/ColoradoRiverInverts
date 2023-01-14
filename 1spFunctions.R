@@ -139,7 +139,7 @@ post.dist.K <- function(K0, Kb, g){
 
 # Function to calculate logistic density dependence on fecundity, after Rogosch et al 2019
 Logistic.Dens.Dependence <- function(Fecundity, K, N){
-  f.rate <- Fecundity * checkpos((K - N)/K) * 0.5
+  f.rate <- Fecundity * checkpos((K - N)/K) 
   return(f.rate)
 }
 
