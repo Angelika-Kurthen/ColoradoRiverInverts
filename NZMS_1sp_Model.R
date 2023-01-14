@@ -27,7 +27,7 @@ library(dataRetrieval)
 # source functions
 source("NZMSSurvivorship.R")
 source("1spFunctions.R")
-
+source("ColoradoRiverTempRamp.R")
 # growth - according to _ growth is dependent on shell length, as is fecundity 
 # we want 1 class of non-reproductive subadults (smaller than 3.2 mm) and two classes of reproductive adults (3.2 mm and larger)
 # growth follows the equation growth per day = -0.006*length[t]+0.029 (Cross et al., 2010)
@@ -43,9 +43,15 @@ flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
 # read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
 
-flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
+#flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
 temps <- TimestepTemperature(temp, "Colorado River") # calculate mean temperature data for each timestep
 degreedays <- TimestepDegreeDay(temp, "Colorado River")
+
+## Uncomment if Using Colorado River Temp Ramp 
+temps <- temp_seq
+degreedays <- temps$Temperature * 14
+
+
 
 # specify iterations
 iterations <- 5
@@ -73,8 +79,8 @@ P2_NZMS = 0.5
 P3_NZMS = 0.8
 
 # want to run this for one year, in 14 day timesteps 
-timestep <- seq(2, (length(flow.magnitude$Discharge) + 1), by = 1) # OR
-
+#timestep <- seq(2, (length(flow.magnitude$Discharge) + 1), by = 1) # OR
+timestep <- seq(2, (length(temps$Temperature) + 1), by = 1)
 # create an array to put our output into
 output.N.array <- array(0, dim = c(length(timestep) + 1))
 
@@ -95,7 +101,9 @@ reparray <- array(0,
 output.N.list <- reparray
 
 # Q is equal to average discharge over 14 days
-Q <- flow.magnitude$Discharge
+#Q <- flow.magnitude$Discharge
+
+Q <- rep(0.1, length(temps$Temperature))
 
 Qmin <- 0.25
 a <- 0.1
@@ -135,6 +143,7 @@ for (iter in c(1:iterations)) {
   # list to input Ks
   Klist <- vector()
   Klist[1] <- 10000
+  Flist <- vector()
   # list to imput flow morts
   flowmortlist <- vector()
   Flist <- vector()
@@ -152,8 +161,8 @@ for (iter in c(1:iterations)) {
     
     # fecundities estimated from McKenzie et al. 2013; 
     if (temps$Temperature[t-1] <= 10) { 
-      F2_NZMS <- 0
-      F3_NZMS <- 0  
+      F2_NZMS <- 2
+      F3_NZMS <- 2  
     } else {
       F2_NZMS <- 8.87473
       F3_NZMS <- 27.89665
@@ -176,10 +185,12 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------
     # Calculate effect of density dependnce on fecundity 
     
-    # Logistic Density Dependence on Fecundity via Rogosch et al. Fish Model
-    F2_NZMS <- Logistic.Dens.Dependence(F2_NZMS, K, Total.N[t-1, iter])
-    F3_NZMS <- Logistic.Dens.Dependence(F3_NZMS, K, Total.N[t-1, iter])
+    # Logistic Density Dependence on Fecundity via Rogosch et al. Fish Model \
+    # assume 97% Female poplation, and 30% instant mortality for eggs laid
+    F2_NZMS <- Logistic.Dens.Dependence(F2_NZMS, K, Total.N[t-1, iter]) * 0.97 * 0.7
+    F3_NZMS <- Logistic.Dens.Dependence(F3_NZMS, K, Total.N[t-1, iter]) * 0.97 * 0.7
     
+    Flist <- append(Flist, (F2_NZMS + F3_NZMS))
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
@@ -228,24 +239,48 @@ for (iter in c(1:iterations)) {
 # summarizing iterations
 
 ## turning replist into a df
-means.list.NZMS <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
-
+means.list.NZMS <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 25)
+means.list.NZMS <- cbind(means.list.NZMS[2:339,], temps$dts)
+means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
 # plot abundance over time
-abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = timesteps,
+
+arrows <- tibble(
+  x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+  x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+  y1 = c(14500, 14500, 14500, 14500), 
+  y2 = c(10000, 12500, 12500, 12500)
+)
+
+arrows$x1 <- as.Date(arrows$x1)
+arrows$x2 <- as.Date(arrows$x2)
+abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
                                               y = mean.abund, group = 1)) +
-  geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-                  ymax = mean.abund + 1.96 * se.abund),
-              colour = 'transparent',
-              alpha = .5,
-              show.legend = FALSE) +
-  geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,7000)) +
-  ylab('NZMS Abundance') +
-  xlab('Timestep')
+  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+  #                 ymax = mean.abund + 1.96 * se.abund),
+  #             colour = 'transparent',
+  #             alpha = .5,
+  #             show.legend = FALSE) +
+  geom_line(show.legend = FALSE, linewidth = 0.7) +
+  coord_cartesian(ylim = c(0,15000)) +
+  ylab('New Zealand Mudsnail Abundance') +
+  xlab(" ")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13))+
+  scale_x_date(date_labels="%B", date_breaks  ="6 months")+
+  annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
+           arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
+  annotate("text", x = arrows$x1[1], y = 15000, label = "+1°C", size = 5)+
+  annotate("text", x = arrows$x1[2], y = 15000, label = "+2.5°C", size = 5)+
+  annotate("text", x = arrows$x1[3], y = 15000, label = "+5°C", size = 5)+
+  annotate("text", x = arrows$x1[4], y = 15000, label = "+7.5°C", size = 5 )
+
+
 
 saveRDS(abund.trends, paste0('BAETplot', '.rds'))
 
 
+
+means.list.NZMS$`temps$dts` <- format(as.Date(means.list.NZMS$`temps$dts`), "%Y-%m")
 
 # take a look at results
 # 
