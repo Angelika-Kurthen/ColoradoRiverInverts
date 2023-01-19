@@ -29,3 +29,5 @@ H_CHIRO = 0.01615172*2
 r = 0.8
 integrate(f, lower = 0.8, upper =1 )
 H_SIMU = 0.02677842*2
+
+
