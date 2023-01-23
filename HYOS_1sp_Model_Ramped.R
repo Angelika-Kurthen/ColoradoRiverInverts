@@ -33,17 +33,76 @@ source("ColoradoRiverTempRamp.R")
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
 # read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
-temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
+temp <- read.delim("gcmrc20230123125915.tsv", header=T)
 
-#flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
-temps <- TimestepTemperature(temp, "Colorado River") # calculate mean temperature data for each timestep
-degreedays <- TimestepDegreeDay(temp, "Colorado River")
+#---------------------------------------------------------------
+# this chunk of code makes the repeating avg ColRiv temp series
+colnames(temp) <- c("Date", "Temperature")
+temp$Date <- as_datetime(temp$Date)
+temp$Date <- yday(temp$Date)
 
-## Uncomment if Using Colorado River Temp Ramp 
+
+# option 1: for each date, calculate mean and standard error so we can create a new dataset
+temp <- temp %>% group_by(Date) %>% dplyr::summarise(Temperature = mean(Temperature))
+temp
+
+# Make an index to be used for aggregating
+ID <- as.numeric(as.factor(temp$Date)) 
+# want it to be every 14 days, hence the 14
+ID <- ID %/% 14
+
+ID[which(ID ==26)] <- 25
+# aggregate over ID and TYPEall numeric data.
+outs <- aggregate(temp[sapply(temp,is.numeric)],
+                  by=list(ID),
+                  FUN=mean)
+
+
+
+# format output
+names(outs)[2:3] <-c("dts","Temperature")
+# add the correct dates as the beginning of every period
+outs$dts <- strptime(round(outs$dts), "%j") ###Note need to subtract 365 if larger than 365
+
+# order by date in chronological order#
+#outs <- outs[order(outs$dts),]
+outs$dts <- as_date(outs$dts)
+
+n <- 13
+
+# repeat this data frame for 13 years
+temp_seq <- do.call("rbind", replicate(n, outs, simplify = FALSE))
+temp_seq$dts <- as.Date(temp_seq$dts)
+# now adjust the years so time can proceed in chronological order
+year(temp_seq$dts[1:26]) <- 2000
+year(temp_seq$dts[27:52]) <- 2001
+year(temp_seq$dts[53:79]) <- 2002
+year(temp_seq$dts[80:104]) <- 2003
+year(temp_seq$dts[105:130]) <- 2004
+year(temp_seq$dts[131:156]) <- 2005
+year(temp_seq$dts[157:182]) <- 2006
+year(temp_seq$dts[183:208]) <- 2007
+year(temp_seq$dts[209:234]) <- 2008
+year(temp_seq$dts[235:260]) <- 2009
+year(temp_seq$dts[261:286]) <- 2010
+year(temp_seq$dts[287:312]) <- 2011
+year(temp_seq$dts[313:338]) <- 2012
+#--------------------------------------
+# years 6 and 7  represent a 1 C increase from baseline
+temp_seq$Temperature[131:182] <- temp_seq$Temperature[131:182] + 1
+
+# years 8 and 9 represent a 2.5 C increase from baseline
+temp_seq$Temperature[183:234] <- temp_seq$Temperature[183:234] + 2.5
+
+# years 10 and 11 represent at 5 C increase from baseline
+temp_seq$Temperature[235:286] <- temp_seq$Temperature[235:286] + 5
+
+# year 11 and 12 represent a 7.5 C increase from baseline
+temp_seq$Temperature[287:338] <- temp_seq$Temperature[287:338] + 7.5
+
 temps <- temp_seq
 degreedays <- as.data.frame(cbind(temp_seq$dts, temps$Temperature * 14))
 colnames(degreedays) <- c("dts", "DegreeDay")
-                            
 
 # specify iterations
 iterations <- 50
@@ -280,7 +339,7 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
               alpha = .5,
               show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,1.5000)) +
+  coord_cartesian(ylim = c(0.6,1.5000)) +
   ylab('Hydrospyche spp. Relative Abundance') +
   xlab(" ")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
