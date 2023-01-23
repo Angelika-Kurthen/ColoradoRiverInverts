@@ -241,39 +241,39 @@ for (iter in c(1:iterations)) {
 
 ## turning replist into a d
 means.list.NZMS <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 27)
-means.list.NZMS <- cbind(means.list.NZMS[27:339,], temps$dts[27:339])
+means.list.NZMS <- cbind(means.list.NZMS[(27:339),], temps$dts[27:339])
 means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
 # plot abundance over time
 
 arrows <- tibble(
   x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
   x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-  y1 = c(14500, 14500, 14500, 14500), 
-  y2 = c(10000, 12500, 12500, 12500)
+  y1 = c(1.45, 1.45, 1.45, 1.45), 
+  y2 = c(1, 1.25, 1.25, 1.25)
 )
 
 arrows$x1 <- as.Date(arrows$x1)
 arrows$x2 <- as.Date(arrows$x2)
 abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
-                                              y = mean.abund, group = 1)) +
+                                              y = mean.abund/10000, group = 1)) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
   #             alpha = .5,
   #             show.legend = FALSE) +
   geom_line(show.legend = FALSE, linewidth = 0.7) +
-  coord_cartesian(ylim = c(0,15000)) +
-  ylab('New Zealand Mudsnail Abundance') +
+  coord_cartesian(ylim = c(0,1.5)) +
+  ylab('New Zealand Mudsnail Relative Abundance') +
   xlab(" ")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13))+
   scale_x_date(date_labels="%B", date_breaks  ="6 months")+
   annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
            arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
-  annotate("text", x = arrows$x1[1], y = 15000, label = "+1°C", size = 5)+
-  annotate("text", x = arrows$x1[2], y = 15000, label = "+2.5°C", size = 5)+
-  annotate("text", x = arrows$x1[3], y = 15000, label = "+5°C", size = 5)+
-  annotate("text", x = arrows$x1[4], y = 15000, label = "+7.5°C", size = 5 )
+  annotate("text", x = arrows$x1[1], y = 1.5, label = "+1°C", size = 5)+
+  annotate("text", x = arrows$x1[2], y = 1.5, label = "+2.5°C", size = 5)+
+  annotate("text", x = arrows$x1[3], y = 1.5, label = "+5°C", size = 5)+
+  annotate("text", x = arrows$x1[4], y = 1.5, label = "+7.5°C", size = 5 )
 
 
 
