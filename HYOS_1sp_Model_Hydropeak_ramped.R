@@ -35,6 +35,7 @@ flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
 flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
 # read in temp data
 temp <- temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
+#temp <- read.delim("C:/Users/jelly/Downloads/gcmrc20230122165056.tsv", header=T)
 
 #---------------------------------------------------------------
 # this chunk of code makes the repeating avg ColRiv temp series
@@ -44,15 +45,15 @@ ID <- as.numeric(as.factor(temp$Date))
 # want it to be every 14 days, hence the 14
 ID <- ID %/% 14
 
-ID[which(ID ==26)] <- 25
 # aggregate over ID and TYPEall numeric data.
 outs <- aggregate(temp[sapply(temp,is.numeric)],
                   by=list(ID),
                   FUN=mean)
 # format output
 names(outs)[1:2] <-c("dts","Temperature")
+outs$dts <- outs$dts * 14
 # add the correct dates as the beginning of every period
-outs$dts <- strptime(round(outs$dts), "%j") ###Note need to subtract 365 if larger than 365
+outs$dts <- strptime(outs$dts, "%j", origin ) ###Note need to subtract 365 if larger than 365
 
 # order by date in chronological order#
 #outs <- outs[order(outs$dts),]
