@@ -34,26 +34,37 @@ source("EggMortalityIntegration.R")
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
 flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
 # read in temp data
-temp <- temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
-#temp <- read.delim("C:/Users/jelly/Downloads/gcmrc20230122165056.tsv", header=T)
+#temp <- temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
+temp <- read.delim("gcmrc20230123125915.tsv", header=T)
 
 #---------------------------------------------------------------
 # this chunk of code makes the repeating avg ColRiv temp series
+colnames(temp) <- c("Date", "Temperature")
+temp$Date <- as_datetime(temp$Date)
+temp$Date <- yday(temp$Date)
+
+
+# option 1: for each date, calculate mean and standard error so we can create a new dataset
+temp <- temp %>% group_by(Date) %>% dplyr::summarise(Temperature = mean(Temperature))
+temp
 
 # Make an index to be used for aggregating
 ID <- as.numeric(as.factor(temp$Date)) 
 # want it to be every 14 days, hence the 14
 ID <- ID %/% 14
 
+ID[which(ID ==26)] <- 25
 # aggregate over ID and TYPEall numeric data.
 outs <- aggregate(temp[sapply(temp,is.numeric)],
                   by=list(ID),
                   FUN=mean)
+
+
+
 # format output
-names(outs)[1:2] <-c("dts","Temperature")
-outs$dts <- outs$dts * 14
+names(outs)[2:3] <-c("dts","Temperature")
 # add the correct dates as the beginning of every period
-outs$dts <- strptime(outs$dts, "%j", origin ) ###Note need to subtract 365 if larger than 365
+outs$dts <- strptime(round(outs$dts), "%j") ###Note need to subtract 365 if larger than 365
 
 # order by date in chronological order#
 #outs <- outs[order(outs$dts),]
@@ -86,9 +97,9 @@ colnames(degreedays) <- c("dts", "DegreeDay")
 
 #-------------------------------------------------------------
 # need to make ramped increasing hydropeaking index 
-h <- c(rep(0, 130), rep(0.01, 52), rep(0.1, 52), rep(0.2, 52), rep(0.5, 52))
+hp <- c(rep(0, 130), rep(0.01, 52), rep(0.1, 52), rep(0.2, 52), rep(0.5, 52))
 # specify iterations
-iterations <- 5
+iterations <- 50
 
 # baseline K in the absence of disturbance
 Kb <- 10000
@@ -199,7 +210,7 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
-    F_HYOS = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = h[t-1])
+    F_HYOS = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 * hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
     #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
     # * 0.5 assuming 50% female
     
@@ -207,7 +218,7 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F_HYOS <- ((8.664 * size) + 127.3) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = h[t])
+      F_HYOS <- ((8.664 * size) + 127.3) * 0.5 * hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
     }
     
     #---------------------------------------------------
@@ -308,22 +319,22 @@ means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 arrows <- tibble(
   x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
   x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-  y1 = c(14500, 14500, 14500, 14500), 
-  y2 = c(9000, 9000, 9000, 9000)
+  y1 = c(1.4500, 1.4500, 1.4500, 1.4500), 
+  y2 = c(0.9000, 0.9000, 0.9000, 0.9000)
 )
 
 arrows$x1 <- as.Date(arrows$x1)
 arrows$x2 <- as.Date(arrows$x2)
 
 abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
-                                                        y = mean.abund, group = 1)) +
+                                                        y = mean.abund/10000, group = 1)) +
   #geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                ymax = mean.abund + 1.96 * se.abund),
   #            colour = 'transparent',
   #            alpha = .5,
   #            show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,15000)) +
+  coord_cartesian(ylim = c(0.5,1.5000)) +
   ylab('Hydrospyche spp. Abundance') +
   xlab(" ")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
@@ -332,8 +343,8 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
 )))+
   annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
            arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
-  annotate("text", x = arrows$x1[1], y = 15000, label = "+1°C", size = 5)+
-  annotate("text", x = arrows$x1[2], y = 15000, label = "+2.5°C", size = 5)+
-  annotate("text", x = arrows$x1[3], y = 15000, label = "+5°C", size = 5)+
-  annotate("text", x = arrows$x1[4], y = 15000, label = "+7.5°C", size = 5 )
+  annotate("text", x = arrows$x1[1], y = 1.5000, label = "HPI = 0.01", size = 5)+
+  annotate("text", x = arrows$x1[2], y = 1.5000, label = "HPI = 0.10", size = 5)+
+  annotate("text", x = arrows$x1[3], y = 1.5000, label = "HPI = 0.20", size = 5)+
+  annotate("text", x = arrows$x1[4], y = 1.5000, label = "HPI = 0.50", size = 5)
 
