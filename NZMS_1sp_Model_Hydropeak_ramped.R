@@ -295,13 +295,18 @@ means.list.NZMS <- cbind(means.list.NZMS[27:339,], temp_seq$dts[27:339])
 means.list.NZMS$`temp_seq$dts` <- as.Date(means.list.NZMS$`temp_seq$dts`)
 # plot abundance over time
 
-arrows <- tibble(
-  x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-  x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-  y1 = c(1.4500, 1.4500, 1.4500, 1.4500), 
-  y2 = c(1.0000, 1.00, 1.00, 1.00)
+# arrows <- tibble(
+#   x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+#   x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+#   y1 = c(1.4500, 1.4500, 1.4500, 1.4500), 
+#   y2 = c(1.0000, 1.00, 1.00, 1.00)
+# )
+arrows <- tibble (
+  x1 = c("2003-01-07"),
+  x2 = c("2011-01-07"), 
+  y1 = c(1.0),
+  y2 = c(1.0)
 )
-
 arrows$x1 <- as.Date(arrows$x1)
 arrows$x2 <- as.Date(arrows$x2)
 abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temp_seq$dts`,
@@ -320,8 +325,7 @@ abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temp_seq$dts`,
   scale_x_date(date_labels="%B", date_breaks  ="6 months")+
   annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
            arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
-  annotate("text", x = arrows$x1[1], y = 1.5000, label = "HPI = 0.01", size = 5)+
-  annotate("text", x = arrows$x1[2], y = 1.5000, label = "HPI = 0.10", size = 5)+
-  annotate("text", x = arrows$x1[3], y = 1.5000, label = "HPI = 0.20", size = 5)+
-  annotate("text", x = arrows$x1[4], y = 1.5000, label = "HPI = 0.50", size = 5 )
+  annotate("text", x = arrows$x1[1], y = 1.1, label = "Increasing Hydropeaking Intensity" ,hjust = 0, size = 5)
+
+
 
