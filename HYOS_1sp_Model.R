@@ -28,15 +28,22 @@ library(dataRetrieval)
 
 source("HYOSSurvivorship.R")
 source("1spFunctions.R")
+source("ColoradoRiverTempRamp.R")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
 # read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
 
-flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
+#flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
 temps <- TimestepTemperature(temp, "Colorado River") # calculate mean temperature data for each timestep
 degreedays <- TimestepDegreeDay(temp, "Colorado River")
+
+## Uncomment if Using Colorado River Temp Ramp 
+temps <- temp_seq
+degreedays <- as.data.frame(cbind(temp_seq$dts, temps$Temperature * 14))
+colnames(degreedays) <- c("dts", "DegreeDay")
+                            
 
 # specify iterations
 iterations <- 5
@@ -56,7 +63,8 @@ P1_HYOS = 0.7 # remain in stage 1
 P2_HYOS = 0.0 # remain in stage 2
 
 # want to run this for one year, in 14 day timesteps 
-timestep <- seq(2, (length(flow.magnitude$Discharge) + 1), by = 1) # OR
+#timestep <- seq(2, (length(flow.magnitude$Discharge) + 1), by = 1) # OR
+timestep <- seq(2, (length(temps$Temperature) + 1), by = 1)
 #timestep <- seq(2, (length(out_sample) + 1), by = 1)
 
 # create an array to put our output into
@@ -88,8 +96,8 @@ output.N.list <- reparray
 
 
 # Q is equal to average discharge over 14 days
-Q <- flow.magnitude$Discharge
-
+#Q <- flow.magnitude$Discharge
+Q <- rep(0.1, length(temps$Temperature))
 Qmin <- 0.25
 a <- 0.1
 g <- 0.1
@@ -126,6 +134,7 @@ for (iter in c(1:iterations)) {
   # list to input Ks
   Klist <- vector()
   Klist[1] <- 10000
+  
   # list to imput flow morts
   flowmortlist <- vector()
   
@@ -172,14 +181,14 @@ for (iter in c(1:iterations)) {
     
     # Calculate final K for timestep, including relationship between K and time since disturbance
     K <- post.dist.K(K0, Kb, g)
-    
     Klist <- append(Klist, K)
+
 
     #---------------------------------------------
     # Calculate effect of density dependence on fecundity
     
     # Logistic via Rogosch et al. Fish Model
-    F_HYOS <- Logistic.Dens.Dependence(F_HYOS, K, Total.N[t-1, iter])
+    F_HYOS <- Logistic.Dens.Dependence(F_HYOS, K, Total.N[t-1, iter]) * 0.5
     Flist <- append(Flist, F_HYOS)
     #-----------------------------------------------
     # Create Lefkovitch Matrix
