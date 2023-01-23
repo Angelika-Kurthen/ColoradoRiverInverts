@@ -316,13 +316,19 @@ means.list.HYOS <- cbind(means.list.HYOS[27:339,], temps$dts[27:339])
 means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 # plot abundance over time
 
-arrows <- tibble(
-  x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-  x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-  y1 = c(1.4500, 1.4500, 1.4500, 1.4500), 
-  y2 = c(0.9000, 0.9000, 0.9000, 0.9000)
-)
+# arrows <- tibble(
+#   x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+#   x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+#   y1 = c(1.4500, 1.4500, 1.4500, 1.4500), 
+#   y2 = c(0.9000, 0.9000, 0.9000, 0.9000)
+# )
 
+arrows <- tibble (
+  x1 = c("2003-01-07"),
+  x2 = c("2011-01-07"), 
+  y1 = c(1.0),
+  y2 = c(1.0)
+)
 arrows$x1 <- as.Date(arrows$x1)
 arrows$x2 <- as.Date(arrows$x2)
 
@@ -334,7 +340,7 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
   #            alpha = .5,
   #            show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0.5,1.5000)) +
+  coord_cartesian(ylim = c(0.5,1.3)) +
   ylab('Hydrospyche spp. Abundance') +
   xlab(" ")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
@@ -343,8 +349,5 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
 )))+
   annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
            arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
-  annotate("text", x = arrows$x1[1], y = 1.5000, label = "HPI = 0.01", size = 5)+
-  annotate("text", x = arrows$x1[2], y = 1.5000, label = "HPI = 0.10", size = 5)+
-  annotate("text", x = arrows$x1[3], y = 1.5000, label = "HPI = 0.20", size = 5)+
-  annotate("text", x = arrows$x1[4], y = 1.5000, label = "HPI = 0.50", size = 5)
+  annotate("text", x = arrows$x1[1], y = 1.1, label = "Increasing Hydropeaking Intensity" ,hjust = 0, size = 5)
 
