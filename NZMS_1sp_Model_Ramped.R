@@ -48,11 +48,13 @@ temps <- TimestepTemperature(temp, "Colorado River") # calculate mean temperatur
 degreedays <- TimestepDegreeDay(temp, "Colorado River")
 
 ## Uncomment if Using Colorado River Temp Ramp 
-temps <- temp_seq
-degreedays <- as.data.frame(cbind(temp_seq$dts, temps$Temperature * 14))
-colnames(degreedays) <- c("dts", "DegreeDay")
-
-
+temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
+n <- 13
+# qr is the temp ramps I want to increase the average Lees Ferry temp by 
+qr <- c(0, 1, 2.5, 5, 7.5)
+# how many years I want each temp ramp to last
+r <- c(5, 2, 2, 2, 2)
+temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
 
 # specify iterations
 iterations <- 5
@@ -112,7 +114,7 @@ g <- 0.1
 h <- surv.fit.NZMS$m$getPars()[2]   
 k <- surv.fit.NZMS$m$getPars()[1]
 e = 2.71828
-
+extinction <- 1
 
 #-------------------------
 # Outer Loop of Iterations
@@ -225,6 +227,8 @@ for (iter in c(1:iterations)) {
     #-------------------------------------------------
     # Calculate sum of all stages (total population)
     Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
+    # check extinction threshold
+    extinction.threshold(extinction)
 
   
     } #-------------------------
