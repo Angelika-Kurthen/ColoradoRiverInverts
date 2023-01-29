@@ -217,3 +217,44 @@ mean.data.frame <- function(data, stages, burnin){
   return(means.list)
 }
 
+# want to make a function to find the yearly average time series of a set of temps
+average.yearly.temp <- function(tempdata, temp.column_name, date.column_name){
+  require(tidyverse)
+  tempdata$Date <- as_datetime(tempdata[[date.column_name]])
+  tempdata$Date <- yday(tempdata$Date)
+  tempdata$Temperature <- tempdata[[temp.column_name]]
+  tempdata <- tempdata %>% group_by(Date) %>% dplyr::summarise(Temperature = mean(Temperature), 
+                                                               sd = sd(Temperature), 
+                                                               count = n(), 
+                                                               se = sd(Temperature/count))
+  # Make an index to be used for aggregating
+  ID <- as.numeric(as.factor(tempdata$Date)) 
+  # want it to be every 14 days, hence the 14
+  ID <- ID %/% 14
+  
+  ID[which(ID ==26)] <- 25
+  # aggregate over ID and TYPEall numeric data.
+  outs <- aggregate(tempdata[sapply(tempdata,is.numeric)],
+                    by=list(ID),
+                    FUN=mean)
+  names(outs)[2:3] <-c("dts","Temperature")
+  # add the correct dates as the beginning of every period
+  outs$dts <- strptime(round(outs$dts), "%j") ###Note need to subtract 365 if larger than 365
+  
+  # order by date in chronological order#
+  #outs <- outs[order(outs$dts),]
+  outs$dts <- as_date(outs$dts)
+  return(outs)
+}
+
+# function that creates a repeating yearly cyclical timeseries for n years, also allows temperatures to be manupulated
+rep.avg.year <- function(data, n, change.in.temp = 0, years.at.temp = 0){
+  yr <- seq(from = 2000, to = 2000+(n-1), by = 1)
+  
+  temp_seq <- do.call("rbind", replicate(n, data, simplify = FALSE))
+  temp_seq$dts <- as.Date(temp_seq$dts)
+  year(temp_seq$dts) <- rep(yr, each = 26) # want to make different years for each rep of the timestep
+  temp_seq$Temperature <- temp_seq$Temperature + rep(change.in.temp, years.at.temp*26)
+  return(temp_seq)
+}
+
