@@ -111,7 +111,7 @@ g <- 0.1
 h <- surv.fit.NZMS$m$getPars()[2]   
 k <- surv.fit.NZMS$m$getPars()[1]
 e = 2.71828
-
+extinction <- 1
 
 #-------------------------
 # Outer Loop of Iterations
@@ -224,7 +224,8 @@ for (iter in c(1:iterations)) {
     #-------------------------------------------------
     # Calculate sum of all stages (total population)
     Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
-
+    # check extinction threshold
+    extinction.threshold(extinction)
   
     } #-------------------------
   # End Inner Loop  
