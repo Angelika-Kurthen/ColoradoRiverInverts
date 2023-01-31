@@ -3,28 +3,28 @@
 ###########################
 
 # 
-# library(purrr)
-# library(tidyverse)
-# library(lubridate)
-# library(plyr)
-# library(dplyr)
-# library(ggplot2)
-# # data retrieval tool from USGS
-# library(dataRetrieval)
+library(purrr)
+library(tidyverse)
+library(lubridate)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+# data retrieval tool from USGS
+library(dataRetrieval)
 
 #Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 #We have to manually load all tidyverse packages
-library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-library(forcats, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-library(plyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(forcats, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(plyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
 source("BAETSurvivorship.R")
 source("1spFunctions.R")
@@ -69,7 +69,7 @@ for (initial.dev in initial.dev.list){
       for (g1 in g1list){
         for (g2 in g2list){
           for (p1 in p1list){
-            (p2 in p2list){
+            for(p2 in p2list){
               
 
 
