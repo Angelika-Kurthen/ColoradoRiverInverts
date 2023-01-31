@@ -49,13 +49,14 @@ Kb <- 10000
 Kd <- 40000
 
 # specify baseline transition probabilities for each species
-G1_BAET = 0.6
-G2_BAET = 0.6
+G1_BAET = 0.2
+G2_BAET = 0.2
 P1_BAET = 0.2
 P2_BAET = 0.2
 
+
 # want to run this for one year, in 14 day timesteps 
-timestep <- seq(2, (length(flow.magnitude$Discharge) + 1), by = 1) # OR
+timestep <- seq(2, (length(temps$Temperature) + 1), by = 1) # OR
 #timestep <- seq(2, (length(out_sample) + 1), by = 1)
 
 # create an array to put our output into
@@ -88,6 +89,8 @@ output.N.list <- reparray
 
 # Q is equal to average discharge over 14 days
 Q <- flow.magnitude$Discharge
+Q <- rep(0.1, length(temps$Temperature))
+
 
 Qmin <- 0.25
 a <- 0.1
@@ -150,7 +153,7 @@ for (iter in c(1:iterations)) {
     # Calculate fecundity per adult
     
     # we start by pulling fecundities from normal distribution
-    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 *0.5 assuming 50% female and * 0.5 assuming 50% mort.
+    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75)*0.5*0.25 #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 *0.5 assuming 50% female and 0.8 because 80% survival of eggs according to McMullen 2019 supplemental materials
     
     # relate fecundities to temperature based on Sweeney et al., 2017  *0.5 assuming 50% female and * 0.5 assuming 60% mort.
     #F_BAET <- (-379.8021 * (temps$Temperature[t-1]) + 16.4664*(temps$Temperature[t-1]^2) - 0.2684* (temps$Temperature[t-1]^3) + 4196.8608) * 0.5 * 0.5
@@ -159,10 +162,10 @@ for (iter in c(1:iterations)) {
     # that weight is related to fecundity Y = 614X - 300
     # we can "convert" emergetime to mg by multiplying by 0.225 (to get dry weights between 0.9 - 2 mg)
     
-    if (t > 4) {
+    if (t > 5) {
       size <- (emergetime[t-1] * 0.55)-0.75
       sizelist <- append(sizelist, size)
-      F_BAET <- ((614 * size) - 300) * 0.5 #* 0.5
+      F_BAET <- ((614 * size) - 300)* 0.5*0.25 #* hydropeaking.mortality(lower = 0.0, upper = 0.2, h = hp[t-1])
     }
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
@@ -200,21 +203,15 @@ for (iter in c(1:iterations)) {
     #-----------------------------------------------
     # Calculate new transition probabilities based on temperature
     # This is the growth v development tradeoff
-    
-    growth.development.tradeoff <- function(temp, thresholdtemp.min, thresholdtemp.max, min.rate, max.rate, m, b ){  # m and b from y = mx+b 
-      if (thresholdtemp.min > temp) rate <- min.rate
-      if (temp > thresholdtemp.max) rate <- max.rate
-      if (thresholdtemp.min <= temp & temp <= thresholdtemp.max) rate <- (m * temp) + b
-      return(rate)
-    }
+
     # development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395
-    ABAET[3, 2] <- growth.development.tradeoff(temps$Temperature[t-1],  10, 13, 0.001, 0.55, 0.183, -1.829)
-    ABAET[2,1] <- ABAET[3,2] 
+    ABAET[3, 2] <- growth.development.tradeoff(temps$Temperature[t-1],  10, 13, 0.01, 0.5)
+    ABAET[2,1] <- growth.development.tradeoff(temps$Temperature[t-1], 10, 13, 0.01, 0.5)
 
     # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
-    ABAET[2,2] <- growth.development.tradeoff(temps$Temperature[t-1], 10, 13, 0.55, 0.001, -0.183, 2.38)
-    ABAET[1,1] <- ABAET[2,2]
-
+    ABAET[2,2] <- growth.development.tradeoff(temps$Temperature[t-1], 10, 13, 0.5, 0.01)
+    ABAET[1,1] <- growth.development.tradeoff(temps$Temperature[t-1], 10, 13, 0.5, 0.01)
+    
     #--------------------------------------
     # Calculate abundances for each stage
     
@@ -226,22 +223,23 @@ for (iter in c(1:iterations)) {
     
     #s1
     output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t, 1, iter], k, h, Q[t-1], Qmin)
-    #s2
+    #s2Q
     output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
     
     output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
     
     flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
     #replist[[1]][,,1] <- output.N.list[[1]]
-    Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
     # check extinction threshold
-    extinction.threshold(extinction)
+    Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
+    if (Total.N[t, iter] < extinction){
+      output.N.list[t,,iter] <- 0
+      Total.N[t, iter] <- 0}
   } #-------------------------
     # End Inner Loop  
     #------------------------- 
 } #----------------------
-  
-# End Outer Loop
+  # End Outer Loop
   #----------------------
 
 #------------------
@@ -250,14 +248,14 @@ for (iter in c(1:iterations)) {
 # summarizing iterations
 
 ## turning replist into a df
-means.list.BAET <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
+means.list.BAET <- mean.data.frame(output.N.list, burnin = 27)
 
 abund.trends.BAET <- ggplot(data = means.list.BAET, aes(x = timesteps,
                                        y = mean.abund, group = 1)) +
   geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
                   ymax = mean.abund + 1.96 * se.abund),
               colour = 'transparent',
-              alpha = .5,
+             alpha = .5,
               show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
   coord_cartesian(ylim = c(0,100000)) +
