@@ -166,7 +166,13 @@ Bev.Holt.Dens.Dependence <- function(r, N, K, fecundity){
 
 # F_NZMS <- Bev.Holt.Dens.Dependence(r, Total.N[t-1, iter], K, F_NZMS)
 
-
+# growth.development tradeoff function 
+growth.development.tradeoff <- function(temp, thresholdtemp.min, thresholdtemp.max, min.rate, max.rate, m, b ){  # m and b from y = mx+b 
+  if (thresholdtemp.min > temp) rate <- min.rate
+  if (temp > thresholdtemp.max) rate <- max.rate
+  if (thresholdtemp.min <= temp & temp <= thresholdtemp.max) rate <- (m * temp) + b
+  return(rate)
+}
 
 
 # mortality due to flooding follows N0 = Nz*e^-h
@@ -180,8 +186,8 @@ flood.mortality <- function(N, k, h, Q, Qmin){
 }
 
 #function to summarize code into mean population abundance over iterations
-mean.data.frame <- function(data, stages, burnin){
-  repdf <- plyr::adply(data, stages)
+mean.data.frame <- function(data, stages = c(1,2,3), burnin){
+  repdf <- plyr::adply(data, c(1,2,3))
   names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
   repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
   
@@ -257,4 +263,3 @@ rep.avg.year <- function(data, n, change.in.temp = 0, years.at.temp = 0){
   temp_seq$Temperature <- temp_seq$Temperature + rep(change.in.temp, years.at.temp*26)
   return(temp_seq)
 }
-
