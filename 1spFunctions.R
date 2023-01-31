@@ -170,7 +170,10 @@ Bev.Holt.Dens.Dependence <- function(r, N, K, fecundity){
 growth.development.tradeoff <- function(temp, thresholdtemp.min, thresholdtemp.max, min.rate, max.rate, m, b ){  # m and b from y = mx+b 
   if (thresholdtemp.min > temp) rate <- min.rate
   if (temp > thresholdtemp.max) rate <- max.rate
-  if (thresholdtemp.min <= temp & temp <= thresholdtemp.max) rate <- (m * temp) + b
+  xs <- c(thresholdtemp.min, thresholdtemp.max)
+  ys <- c(min.rate, max.rate)
+  lm <- lm(ys~xs)
+  if (thresholdtemp.min <= temp & temp <= thresholdtemp.max) rate <- (summary(lm)$coefficients[2,1] * temp) + summary(lm)$coefficients[1,1]
   return(rate)
 }
 
