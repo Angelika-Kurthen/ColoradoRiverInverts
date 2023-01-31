@@ -225,8 +225,9 @@ for (iter in c(1:iterations)) {
     # Calculate sum of all stages (total population)
     Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
     # check extinction threshold
-    extinction.threshold(extinction)
-  
+    if (Total.N[t, iter] < extinction){
+      output.N.list[t,,iter] <- 0
+      Total.N[t, iter] <- 0
     } #-------------------------
   # End Inner Loop  
   #------------------------- 
@@ -240,7 +241,7 @@ for (iter in c(1:iterations)) {
 # summarizing iterations
 
 ## turning replist into a df
-means.list.NZMS <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 25)
+means.list.NZMS <- mean.data.frame(output.N.list,burnin = 25)
 means.list.NZMS <- cbind(means.list.NZMS[2:339,], temps$dts)
 means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
 # plot abundance over time
