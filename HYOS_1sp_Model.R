@@ -28,7 +28,6 @@ library(dataRetrieval)
 
 source("HYOSSurvivorship.R")
 source("1spFunctions.R")
-source("ColoradoRiverTempRamp.R")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
@@ -40,7 +39,6 @@ temps <- TimestepTemperature(temp, "Colorado River") # calculate mean temperatur
 degreedays <- TimestepDegreeDay(temp, "Colorado River")
 
 ## Uncomment if Using Colorado River Temp Ramp 
-temps <- temp_seq
 degreedays <- as.data.frame(cbind(temp_seq$dts, temps$Temperature * 14))
 colnames(degreedays) <- c("dts", "DegreeDay")
                             
@@ -246,10 +244,11 @@ for (iter in c(1:iterations)) {
     #replist[[1]][,,1] <- output.N.list[[1]]
     Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
     #check extinction threshold
-    extinction.threshold(extinction)
-  } #-------------------------
+    if (Total.N[t, iter] < extinction){
+      output.N.list[t,,iter] <- 0
+      Total.N[t, iter] <- 0  } #-------------------------
   # End Inner Loop  
-  #------------------------- 
+  }#------------------------- 
 } #----------------------
 
 # End Outer Loop
@@ -259,7 +258,7 @@ for (iter in c(1:iterations)) {
 # Analyzing Results
 #-------------------
 # summarizing iterations
-means.list.HYOS <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 10)
+means.list.HYOS <- mean.data.frame(output.N.list, burnin = 10)
 
 abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x = timesteps,
                                               y = mean.abund, group = 1)) +
