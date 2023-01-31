@@ -257,9 +257,10 @@ for (iter in c(1:iterations)) {
     #replist[[1]][,,1] <- output.N.list[[1]]
     Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
     #check extinction threshold
-    extinction.threshold(extinction)
-  } #-------------------------
-  # End Inner Loop  
+    if (Total.N[t, iter] < extinction){
+      output.N.list[t,,iter] <- 0
+      Total.N[t, iter] <- 0  } #-------------------------
+}  # End Inner Loop  
   #------------------------- 
 } #----------------------
 
@@ -270,7 +271,7 @@ for (iter in c(1:iterations)) {
 # Analyzing Results
 #-------------------
 # summarizing iterations
-means.list.HYOS <- mean.data.frame(output.N.list, stages = c(1,2,3), burnin = 27)
+means.list.HYOS <- mean.data.frame(output.N.list, burnin = 27)
 means.list.HYOS <- cbind(means.list.HYOS[27:339,], temps$dts[27:339])
 means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 # plot abundance over time
