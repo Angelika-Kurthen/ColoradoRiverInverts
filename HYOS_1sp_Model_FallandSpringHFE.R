@@ -1,5 +1,5 @@
 #####################################
-# Ramped hydropeaking index
+# Ramped hydropeaking index, temperature, and flows
 #####################################
 
 
@@ -330,7 +330,7 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
   annotate("text", x = springs$x1[1], y = 0, label = "Spring HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#018571")
 
   ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlow_", templist[te],".png"))
-  plotlist <- append(plotlist, paste0("HYOSTempFlow_", templist[te],".png"))
+  plotlist <- append(plotlist, paste0("HYOSTempFlow_", tempslist[te],".png"))
 
 }
 
