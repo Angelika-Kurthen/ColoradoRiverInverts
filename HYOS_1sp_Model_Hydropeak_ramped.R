@@ -28,7 +28,6 @@ library(dataRetrieval)
 
 source("HYOSSurvivorship.R")
 source("1spFunctions.R")
-source("EggMortalityIntegration.R")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
@@ -40,16 +39,17 @@ temp <- read.delim("gcmrc20230123125915.tsv", header=T)
 #---------------------------------------------------------------
 # this chunk of code makes the repeating avg ColRiv temp series
 colnames(temp) <- c("Date", "Temperature")
-temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
+temps <- average.yearly.temp(temp, "Temperature", "Date")
 n <- 13
 # qr is the temp ramps I want to increase the average Lees Ferry temp by 
-qr <- c(0, 1, 2.5, 5, 7.5)
+qr <- c(0, 0, 0, 0, 0)
 # how many years I want each temp ramp to last
 r <- c(5, 2, 2, 2, 2)
 temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
 
-degreedays <- as.data.frame(cbind(temp_seq$dts, temps$Temperature * 14))
+degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
 colnames(degreedays) <- c("dts", "DegreeDay")
+degreedays$dts <- as.Date(degreedays$dts, origin = "1970-01-01")
 
 #-------------------------------------------------------------
 # need to make ramped increasing hydropeaking index 
@@ -107,6 +107,9 @@ output.N.list <- reparray
 # Q is equal to average discharge over 14 days
 #Q <- flow.magnitude$Discharge
 Q <- rep(0.1, length(temps$Temperature))
+# Fall floods
+Q[c(23, 49, 75, 101, 127, 153, 179)] <- 0.45
+Q[c(189, 215, 241, 267, 293, 319)] <-  0.45
 Qmin <- 0.25
 a <- 0.1
 g <- 0.1
@@ -167,7 +170,7 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
-    F_HYOS = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 * hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
+    F_HYOS = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 #* hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
     #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
     # * 0.5 assuming 50% female
     
@@ -175,7 +178,7 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F_HYOS <- ((8.664 * size) + 127.3) * 0.5 * hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
+      F_HYOS <- ((8.664 * size) + 127.3) * 0.5 #* hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
     }
     
     #---------------------------------------------------
@@ -220,12 +223,12 @@ for (iter in c(1:iterations)) {
     # if (temps$Temperature[t-1] > 13) AHYOS[3,2] <- 0.55
     # if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 13) AHYOS[3,2] <- (0.183 * temps$Temperature[t-1]) -1.829 #(0.2 * temps$Temperature[t-1]) -2
     # AHYOS[2,1] <- AHYOS[3,2] 
-    # 
-    # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
+    # # 
+    # # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
     # if (10 >= temps$Temperature[t-1]) AHYOS[2,2] <- 0.55
     # if (temps$Temperature[t-1] > 13) AHYOS[2,2] <- 0.001
     # if (10 < temps$Temperature[t-1] & temps$Temperature[t-1] <=  13) AHYOS[2,2] <- (-0.183 * temps$Temperature[t-1]) + 2.38 #(-0.1 temps$Temperature[t-1]) - 2.6
-    # 
+    # # 
     # AHYOS[1,1] <- AHYOS[2,2] 
     
     # 
@@ -260,7 +263,7 @@ for (iter in c(1:iterations)) {
     if (Total.N[t, iter] < extinction){
       output.N.list[t,,iter] <- 0
       Total.N[t, iter] <- 0  } #-------------------------
-}  # End Inner Loop  
+  }  # End Inner Loop  
   #------------------------- 
 } #----------------------
 
@@ -276,21 +279,30 @@ means.list.HYOS <- cbind(means.list.HYOS[27:339,], temps$dts[27:339])
 means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 # plot abundance over time
 
-# arrows <- tibble(
-#   x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-#   x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-#   y1 = c(1.4500, 1.4500, 1.4500, 1.4500), 
-#   y2 = c(0.9000, 0.9000, 0.9000, 0.9000)
-# )
-
-arrows <- tibble (
-  x1 = c("2003-01-07"),
-  x2 = c("2011-01-07"), 
-  y1 = c(1.0),
-  y2 = c(1.0)
+falls <- tibble(
+  x1 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
+  x2 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
+  y1 = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
+  y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
+ )
+springs <- tibble(
+  x1 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
+  x2 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
+  y1 = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
+  y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
 )
-arrows$x1 <- as.Date(arrows$x1)
-arrows$x2 <- as.Date(arrows$x2)
+
+
+# arrows <- tibble (2013-03-31"
+#   x1 = c("2003-01-07"),
+#   x2 = c("2011-01-07"), 
+#   y1 = c(1.0),
+#   y2 = c(1.0)
+# )
+falls$x1 <- as.Date(falls$x1)
+falls$x2 <- as.Date(falls$x2)
+springs$x1 <- as.Date(springs$x1)
+springs$x2 <- as.Date(springs$x2)
 
 abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
                                                         y = mean.abund/10000, group = 1)) +
@@ -300,14 +312,17 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
   #            alpha = .5,
   #            show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0.5,1.3)) +
+  coord_cartesian(ylim = c(0,1.5)) +
   ylab('Hydrospyche spp. Abundance') +
   xlab(" ")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13))+
   scale_x_date(date_labels="%B", date_breaks  ="6 months", limits = as.Date(c("2001-01-27", "2012-12-04"
-)))+
-  annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
-           arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
-  annotate("text", x = arrows$x1[1], y = 1.1, label = "Increasing Hydropeaking Intensity" ,hjust = 0, size = 5)
+  )))+
+  annotate("segment", x = falls$x1, y = falls$y1, xend = falls$x2, yend = falls$y2,
+        arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#a6611a")+
+  annotate("text", x = falls$x1[1], y = 0, label = "Fall HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#a6611a")+
+  annotate("segment", x = springs$x1, y = springs$y1, xend = springs$x2, yend = springs$y2,
+           arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#018571")+
+  annotate("text", x = springs$x1[1], y = 0, label = "Spring HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#018571")
 
