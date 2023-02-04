@@ -295,3 +295,10 @@ rep.avg.year <- function(data, n, change.in.temp = 0, years.at.temp = 0){
   temp_seq$Temperature <- temp_seq$Temperature + rep(change.in.temp, years.at.temp*26)
   return(temp_seq)
 }
+
+hydrofunction <- function(x){-x*0.2}
+hydropeaking.mortality <- function(lower, upper, h){
+  int <- integrate(hydrofunction, lower = lower, upper = upper)
+  H <- (1 - int$value*2)*(1-h)
+  return(H)
+}
