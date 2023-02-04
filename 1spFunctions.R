@@ -91,12 +91,40 @@ TimestepDegreeDay <- function(temp, river){
   } 
   return(DDs)
 }
+
+
+# forward lookign degree day calculation 
+forward.count.degreedays <- function(criticaldegreedays){
+  emergetime <- vector()
+  for(degree in 1:length(degreedays$DegreeDay)){
+    degseq <- seq(degree, length(degreedays$DegreeDay), by = 1)
+    # create an empty vector to put the total number of degree days accumulated
+    vec <- 0
+    # for each value in that sequence, we will add the degree day values of 
+    #the timestep prior and check if it adds up to our threshold to emergence
+    for (s in degseq) {
+      if(vec <= criticaldegreedays) {vec <- degreedays$DegreeDay[s] + vec
+      emerg <- NA}
+      else {emerg <- s - degree
+      break}
+      # once we hit that threshold, we count the number of timesteps it took to reach that and add that to our emergetime vector
+    }
+    emergetime[degree] <- emerg
+  }
+  
+  return(emergetime)
+}
+
+
+
+
+# backwards looking calculation of timesteps required to reach stage 3
 back.count.degreedays <- function(time, criticaldegreedays){
   # for each timestep, we want to back calculate the number of degree days
-  if(time == 1) {print("t=1")
+  if(time == 1) {print(" ")
     emerg <- NA
   } else {
-    # create a sequence of time from last t to 1
+    # create a sequence of time from last t to current t
     degseq <- seq(time - 1, 1, by = -1)
     # create an empty vector to put the total number of degree days accumulated
     vec <- 0
@@ -112,6 +140,7 @@ back.count.degreedays <- function(time, criticaldegreedays){
   }
   return(emerg)
 }
+
 
 
 # function to calculate Qf from McMullen et al 2017. Sets to 0 if below the Qmin
@@ -265,4 +294,11 @@ rep.avg.year <- function(data, n, change.in.temp = 0, years.at.temp = 0){
   year(temp_seq$dts) <- rep(yr, each = 26) # want to make different years for each rep of the timestep
   temp_seq$Temperature <- temp_seq$Temperature + rep(change.in.temp, years.at.temp*26)
   return(temp_seq)
+}
+
+hydrofunction <- function(x){-x*0.2}
+hydropeaking.mortality <- function(lower, upper, h){
+  int <- integrate(hydrofunction, lower = lower, upper = upper)
+  H <- (1 - int$value*2)*(1-h)
+  return(H)
 }
