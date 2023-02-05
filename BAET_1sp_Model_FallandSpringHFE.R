@@ -9,7 +9,9 @@ library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
-
+library(grid)
+library(gridExtra)
+library(png)
 
 source("BAETSurvivorship.R")
 source("1spFunctions.R")
@@ -88,9 +90,12 @@ output.N.list <- reparray
 
 # We want to create a model with no flow mortality, so set Q less than Qmin
 Q <- rep(0.1, length(temps$Temperature))
-# Fall floods
-Q[c(23, 49, 75, 101, 127, 153, 179)] <- 0.45
-Q[c(189, 215, 241, 267, 293, 319)] <-  0.45
+# Spring HFE to Fall HFE
+Q[c(33, 59,85,111, 137, 163)] <- 0.45
+Q[c(179, 205, 231, 257, 283, 309)] <- 0.45
+# Fall HFE to Spring HFE
+#Q[c(23, 49, 75, 101, 127, 153, 179)] <- 0.45
+#Q[c(189, 215, 241, 267, 293, 319)] <-  0.45
 Qmin <- 0.25 # Q min is the minimum flow required to impact mortality and carryin capactity (K)
 a <- 0.1 #shape param for flow magnitude and K
 g <- 0.1 #shape param for relationship between K and time since disturbance
@@ -146,7 +151,7 @@ for (iter in c(1:iterations)) {
     # Calculate fecundity per adult
     
     # we start by pulling fecundities from normal distribution
-    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 * 0.5 *hydropeaking.mortality(lower = 0.0, upper = 0.2, h = hp[t-1]) #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
+    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 * 0.5 #hydropeaking.mortality(lower = 0.0, upper = 0.2, h = hp[t-1]) #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
     
     # we can also relate fecundities to body mass.
     # Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
@@ -157,7 +162,7 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- (emergetime[t-1] * 0.55)-0.75
       sizelist <- append(sizelist, size)
-      F_BAET <- ((614 * size) - 300)* 0.5 * 0.5 *hydropeaking.mortality(lower = 0.0, upper = 0.2, h = hp[t-1])
+      F_BAET <- ((614 * size) - 300)* 0.5 * 0.5 #hydropeaking.mortality(lower = 0.0, upper = 0.2, h = hp[t-1])
     }
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
@@ -247,19 +252,34 @@ for (iter in c(1:iterations)) {
 means.list.BAET <- mean.data.frame(output.N.list, burnin = 0)
 means.list.BAET <- cbind(means.list.BAET[(27:339),], temps$dts[27:339])
 means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
+# 
+
+springs <- tibble(
+  x1 = c("2001-03-31", "2002-03-31", "2003-03-31", "2004-03-31", "2005-03-31", "2006-03-31"),
+  x2 = c("2001-03-31", "2002-03-31", "2003-03-31", "2004-03-31", "2005-03-31", "2006-03-31"),
+  y1 = c(1,1,1, 1, 1, 1),
+  y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23))
 
 falls <- tibble(
-  x1 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
-  x2 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
+  x1 = c("2006-11-10", "2007-11-10", "2008-11-10", "2009-11-10", "2010-11-10", "2011-10-10"),
+  x2 = c("2006-11-10", "2007-11-10", "2008-11-10", "2009-11-10", "2010-11-10", "2011-10-10"),
   y2 = c(1, 1, 1, 1, 1, 1),
   y1 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
 )
-springs <- tibble(
-  x1 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
-  x2 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
-  y1 = c(1,1,1, 1, 1, 1),
-  y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23))
-  
+
+
+# falls <- tibble(
+#   x1 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
+#   x2 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
+#   y2 = c(1, 1, 1, 1, 1, 1),
+#   y1 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
+# )
+# springs <- tibble(
+#   x1 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
+#   x2 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
+#   y1 = c(1,1,1, 1, 1, 1),
+#   y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23))
+#   
 
 # arrows <- tibble(
 #   x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
@@ -280,6 +300,7 @@ abund.trends.BAET <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,
   geom_line(show.legend = FALSE) +
   coord_cartesian(ylim = c(-0.20, 10)) +
   ylab(paste0('Baetidae Relative Abundance adding ', tempslist[te], '°C')) +
+  #ylab(paste0('Baetidae Relative Abundance at HI = ', peaklist[pe])) +
   xlab(' ')+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 12.5))+
@@ -290,26 +311,26 @@ abund.trends.BAET <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,
   # annotate("text", x = arrows$x1[2], y = 9.5, label = "HI = 0.1", size = 4)+
   # annotate("text", x = arrows$x1[3], y = 9.5, label = "HI = 0.2", size = 4)+
   # annotate("text", x = arrows$x1[4], y = 9.5, label = "HI = 0.5", size = 4 )
-annotate("segment", x = falls$x1, y = falls$y1, xend = falls$x2, yend = falls$y2,
-         arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#a6611a")+
-  annotate("text", x = falls$x1[1], y = -0.2, label = "Fall HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#a6611a")+
-  annotate("segment", x = springs$x1, y = springs$y1, xend = springs$x2, yend = springs$y2,
-           arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#018571")+
-  annotate("text", x = springs$x1[1], y = -0.2, label = "Spring HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#018571")
- ggsave(abund.trends.BAET, filename = paste0("BAETTempFlowHI", tempslist[te], peaklist[pe],".png"))
- plotlist <- append(plotlist, paste0("BAETTempFlowHI", tempslist[te], peaklist[pe], ".png")) 
+annotate("segment", x = springs$x1, y = springs$y1, xend = springs$x2, yend = springs$y2,
+         arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#018571")+
+  annotate("text", x = springs$x1[1], y = -0.2, label = "Spring HFE (0.45 Bankflow)" ,hjust = 0, size = 4, color = "#018571")+
+  annotate("segment", x = falls$x1, y = falls$y1, xend = falls$x2, yend = falls$y2,
+           arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#a6611a")+
+  annotate("text", x = falls$x1[1], y = -0.2, label = "Fall HFE (0.45 Bankflow)" ,hjust = 0, size = 4, color = "#a6611a")
+ ggsave(abund.trends.BAET, filename = paste0("BAETTempFlowHI", tempslist[te],".png"))
+ plotlist <- append(plotlist, paste0("BAETTempFlowHI", tempslist[te], ".png")) 
 }
 plots <- lapply(ll <- plotlist ,function(x){
   img <- as.raster(readPNG(x))
   rasterGrob(img, interpolate = FALSE)
-})
-ggsave(filename = paste0("BAetTempFlowHI",peaklist[pe],".pdf"),width=8.5, height=11, 
+    })
+ggsave(filename = paste0("BAetTempFlowHI",peaklist[pe],".pdf"),width=8.5, height=11,
        marrangeGrob(grobs = plots, nrow = 3, ncol=2))
 plotlist <- NULL
 }
-# 
-# for (te in 1:length(tempslist)){
-#   assign(paste0("p",te), readPNG(plotlist[te]))}
-# grid.arrange(rasterGrob(p1), rasterGrob(p2), rasterGrob(p3), rasterGrob(p4), rasterGrob(p5), rasterGrob(p6), ncol = 3 )
-# 
+
+for (te in 1:length(tempslist)){
+   assign(paste0("p",te), readPNG(plotlist[te]))}
+ grid.arrange(rasterGrob(p1), rasterGrob(p2), rasterGrob(p3), rasterGrob(p4), rasterGrob(p5), rasterGrob(p6),  ncol = 2 )
+
 
