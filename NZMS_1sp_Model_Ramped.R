@@ -286,23 +286,3 @@ saveRDS(abund.trends, paste0('BAETplot', '.rds'))
 
 
 
-means.list.NZMS$`temps$dts` <- format(as.Date(means.list.NZMS$`temps$dts`), "%Y-%m")
-
-# take a look at results
-# 
-# par(mfrow = c(1,1))
-# plot(timestep[9:(length(timestep)+1)], output.N.list[9:(length(timestep)+1), 3, 1], type = "l", ylab = "Baetis spp. Adults", xlab = "Timestep (1 fortnight)")
-plot(timestep[9:length(timestep)], Total.N[10:(length(timestep)+1)], type= "l", ylab = "New Zealand Mudsnails. Total N", xlab = "Timestep (1 fortnight)", ylim = c(0,18000))
-abline(v = 16, col = "red")
-abline(v = 30, col = "red")
-abline(v = 48, col = "red")
-abline(v = 274, col = "red")
-abline(v = 298, col = "red")
-abline(v = 316, col = "red")
-abline(v = 334, col = "red")
-abline(v = 381, col = "red")
-abline(v = 586, col = "red")
-abline(v = 670, col = "red")
-abline(v = 683, col = "red")
-lines(timestep[9:length(timestep)], Klist[10:(length(timestep)+1)], type = "l", col = "blue")
-lines(timestep, Klist, type = "l", col = "blue")
