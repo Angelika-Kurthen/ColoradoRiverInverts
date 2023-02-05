@@ -43,11 +43,12 @@ temp <- read.delim("gcmrc20230123125915.tsv", header=T)
 #---------------------------------------------------------------
 # this chunk of code makes the repeating avg ColRiv temp series
 colnames(temp) <- c("Date", "Temperature")
-temps <- average.yearly.temp(temp, "Temperature", "Date")
 
-plotlist <- ()
+plotlist <- vector()
 peaklist <- c(0.01, 0.1, 0.2, 0.5)
 for (pe in 1:length(peaklist)){
+  temps <- average.yearly.temp(temp, "Temperature", "Date")
+  
 n <- 13
 # qr is the temp ramps I want to increase the average Lees Ferry temp by 
 qr <- 0
@@ -334,9 +335,9 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
            arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#018571")+
   annotate("text", x = springs$x1[1], y = 0, label = "Spring HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#018571")
 
-ggsave(abund.trends.HYOS, filename = paste0("HYOSFlowHI", peaklist[pe],".png"))
+ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlow", peaklist[pe],".png"))
 #ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te],".png"))
-plotlist <- append(plotlist, paste0("HYOSTempFlowHI",peaklist[pe],".png"))
+plotlist <- append(plotlist, paste0("HYOSTempFlow",peaklist[pe],".png"))
 }
 for (pe in 1:length(peaklist)){
   assign(paste0("p", pe), readPNG(plotlist[pe]))
