@@ -36,18 +36,21 @@ source("1spFunctions.R")
 #temp <- temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
 temp <- read.delim("gcmrc20230123125915.tsv", header=T)
 
+peaklist <- c(0.01, 0.1, 0.2, 0.5)
 tempslist <- c(0, 0.5, 1, 2.5, 5, 7.5)
 #---------------------------------------------------------------
 # this chunk of code makes the repeating avg ColRiv temp series
 colnames(temp) <- c("Date", "Temperature")
-temps <- average.yearly.temp(temp, "Temperature", "Date")
 n <- 13
-
+for (pe in 1:length(peaklist)){
+plotlist <- vector()
 for(te in 1:length(tempslist)){
 # qr is the temp ramps I want to increase the average Lees Ferry temp by 
-qr <- c(te)
+qr <- tempslist[te]
 # how many years I want each temp ramp to last
-r <- c(13)
+r <- 13
+temps <- average.yearly.temp(temp, "Temperature", "Date")
+
 temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
 
 degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
@@ -56,7 +59,8 @@ degreedays$dts <- as.Date(degreedays$dts, origin = "1970-01-01")
 
 #-------------------------------------------------------------
 # need to make ramped increasing hydropeaking index 
-hp <- c(rep(0, 130), rep(0.01, 52), rep(0.1, 52), rep(0.2, 52), rep(0.5, 52))
+hp <- c(rep(peaklist[pe], times = length(temps$Temperature)))
+# hp <- c(rep(0, 130), rep(0.01, 52), rep(0.1, 52), rep(0.2, 52), rep(0.5, 52))
 # specify iterations
 iterations <- 50
 
@@ -173,7 +177,7 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
-    F_HYOS = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 # hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
+    F_HYOS = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 *hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
     #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
     # * 0.5 assuming 50% female
     
@@ -181,7 +185,7 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F_HYOS <- ((8.664 * size) + 127.3) * 0.5 # hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
+      F_HYOS <- ((8.664 * size) + 127.3) * 0.5 *hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
     }
     
     #---------------------------------------------------
@@ -294,14 +298,16 @@ springs <- tibble(
   y1 = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
   y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
 )
-
-
-# arrows <- tibble (2013-03-31"
-#   x1 = c("2003-01-07"),
-#   x2 = c("2011-01-07"), 
-#   y1 = c(1.0),
-#   y2 = c(1.0)
+# arrows <- tibble(
+#   x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+#   x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+#   y1 = c(1.45, 1.45, 1.45, 1.45), 
+#   y2 = c(1, 1, 1, 1)
 # )
+# 
+# arrows$x1 <- as.Date(arrows$x1)
+# arrows$x2 <- as.Date(arrows$x2)
+
 falls$x1 <- as.Date(falls$x1)
 falls$x2 <- as.Date(falls$x2)
 springs$x1 <- as.Date(springs$x1)
@@ -316,29 +322,55 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
   #            show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
   coord_cartesian(ylim = c(0,1.5)) +
-  ylab(paste0('Hydrospyche spp. Abundance at ', te, "°C")) +
+  ylab(paste0('Hydrospyche spp. Abundance adding ', tempslist[te], "°C")) +
   xlab(" ")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13))+
   scale_x_date(date_labels="%B", date_breaks  ="6 months", limits = as.Date(c("2001-01-27", "2012-12-04"
   )))+
+  
+  # annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
+  #          arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
+  # annotate("text", x = arrows$x1[1], y = 1.5, label = "HI = 0.01", size = 4)+
+  # annotate("text", x = arrows$x1[2], y = 1.5, label = "HI = 0.1", size = 4)+
+  # annotate("text", x = arrows$x1[3], y = 1.5, label = "HI = 0.2", size = 4)+
+  # annotate("text", x = arrows$x1[4], y = 1.5, label = "HI = 0.5", size = 4 )
+
   annotate("segment", x = falls$x1, y = falls$y1, xend = falls$x2, yend = falls$y2,
         arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#a6611a")+
   annotate("text", x = falls$x1[1], y = 0, label = "Fall HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#a6611a")+
   annotate("segment", x = springs$x1, y = springs$y1, xend = springs$x2, yend = springs$y2,
            arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#018571")+
   annotate("text", x = springs$x1[1], y = 0, label = "Spring HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#018571")
+  # 
+  ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
+  #ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te],".png"))
+  plotlist <- append(plotlist, paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
 
-  ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlow_", templist[te],".png"))
-  plotlist <- append(plotlist, paste0("HYOSTempFlow_", tempslist[te],".png"))
-
+  
 }
-
-library(png)
-library(grid)
-library(gridExtra)
-for (te in 1:length(templist)){
-  assign(paste0("p",te), readPNG(plotlist[te]))
+plots <- lapply(ll <- plotlist ,function(x){
+  img <- as.raster(readPNG(x))
+  rasterGrob(img, interpolate = FALSE)
+})
+  ggsave(filename = paste0("HYOSTempFlowHI",peaklist[pe],".pdf"),width=8.5, height=11, 
+       marrangeGrob(grobs = plots, nrow = 3, ncol=2))
+  plotlist <- NULL
 }
-grid.arrange(rasterGrob(p1), rasterGrob(p2), rasterGrob(p3), rasterGrob(p4), rasterGrob(p5), rasterGrob(p6), ncol = 3 )
-
+#   for (te in 1:length(tempslist)){
+#   assign(paste0("p",te), readPNG(plotlist[te]))}
+#   grid.arrange(rasterGrob(p1), rasterGrob(p2), rasterGrob(p3), rasterGrob(p4), rasterGrob(p5), rasterGrob(p6), ncol = 3 )
+# 
+# # 
+# # 
+# pdf(paste0("HYOSTemp_", tempslist[te], "_Flood_HI_", peaklist[pe]), width = 8.27, height = 11.69)
+# gr <- grid.arrange(rasterGrob(p1), rasterGrob(p2), rasterGrob(p3), rasterGrob(p4), rasterGrob(p5), rasterGrob(p6), ncol = 3 )
+# 
+# library(patchwork) 
+# 
+# 
+# plotlist <- append(plotlist, paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
+# 
+# 
+# ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
+# plotlist <- append(plotlist, paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
