@@ -288,7 +288,6 @@ average.yearly.temp <- function(tempdata, temp.column_name, date.column_name){
 # function that creates a repeating yearly cyclical timeseries for n years, also allows temperatures to be manupulated
 rep.avg.year <- function(data, n, change.in.temp = 0, years.at.temp = 0){
   yr <- seq(from = 2000, to = 2000+(n-1), by = 1)
-  
   temp_seq <- do.call("rbind", replicate(n, data, simplify = FALSE))
   temp_seq$dts <- as.Date(temp_seq$dts)
   year(temp_seq$dts) <- rep(yr, each = 26) # want to make different years for each rep of the timestep
