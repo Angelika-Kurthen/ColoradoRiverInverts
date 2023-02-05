@@ -11,6 +11,9 @@ library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
+library(png)
+library(grid)
+library(gridExtra)
 
 # Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 # We have to manually load all tidyverse packages
@@ -31,6 +34,7 @@ source("1spFunctions.R")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
+
 flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
 # read in temp data
 #temp <- temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
@@ -40,11 +44,15 @@ temp <- read.delim("gcmrc20230123125915.tsv", header=T)
 # this chunk of code makes the repeating avg ColRiv temp series
 colnames(temp) <- c("Date", "Temperature")
 temps <- average.yearly.temp(temp, "Temperature", "Date")
+
+plotlist <- ()
+peaklist <- c(0.01, 0.1, 0.2, 0.5)
+for (pe in 1:length(peaklist)){
 n <- 13
 # qr is the temp ramps I want to increase the average Lees Ferry temp by 
-qr <- c(0, 0, 0, 0, 0)
+qr <- 0
 # how many years I want each temp ramp to last
-r <- c(5, 2, 2, 2, 2)
+r <- 13
 temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
 
 degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
@@ -53,7 +61,7 @@ degreedays$dts <- as.Date(degreedays$dts, origin = "1970-01-01")
 
 #-------------------------------------------------------------
 # need to make ramped increasing hydropeaking index 
-hp <- c(rep(0, 130), rep(0.01, 52), rep(0.1, 52), rep(0.2, 52), rep(0.5, 52))
+hp <- c(rep(peaklist[pe], times = length(temps$Temperature)))
 # specify iterations
 iterations <- 50
 
@@ -170,7 +178,7 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
-    F_HYOS = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 #* hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
+    F_HYOS = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 * hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
     #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
     # * 0.5 assuming 50% female
     
@@ -178,7 +186,7 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F_HYOS <- ((8.664 * size) + 127.3) * 0.5 #* hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
+      F_HYOS <- ((8.664 * size) + 127.3) * 0.5 * hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
     }
     
     #---------------------------------------------------
@@ -313,7 +321,7 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
   #            show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
   coord_cartesian(ylim = c(0,1.5)) +
-  ylab('Hydrospyche spp. Abundance') +
+  ylab(paste0('Hydrospyche spp. Abundance at HI = ', peaklist[pe])) +
   xlab(" ")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13))+
@@ -326,3 +334,11 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
            arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#018571")+
   annotate("text", x = springs$x1[1], y = 0, label = "Spring HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#018571")
 
+ggsave(abund.trends.HYOS, filename = paste0("HYOSFlowHI", peaklist[pe],".png"))
+#ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te],".png"))
+plotlist <- append(plotlist, paste0("HYOSTempFlowHI",peaklist[pe],".png"))
+}
+for (pe in 1:length(peaklist)){
+  assign(paste0("p", pe), readPNG(plotlist[pe]))
+}
+grid.arrange(rasterGrob(p1), rasterGrob(p2), rasterGrob(p3), rasterGrob(p4), ncol = 2)
