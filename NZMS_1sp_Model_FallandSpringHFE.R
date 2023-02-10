@@ -247,7 +247,7 @@ for (iter in c(1:iterations)) {
 # summarizing iterations
 
 ## turning replist into a df
-means.list.NZMS <- mean.data.frame(output.N.list, burnin = 25)
+means.list.NZMS <- mean.data.frame(output.N.list[,2:3,], burnin = 25)
 means.list.NZMS <- cbind(means.list.NZMS[27:339,], temps$dts[27:339])
 means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
 # plot abundance over time
