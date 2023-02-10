@@ -45,8 +45,8 @@ temp <- read.delim("gcmrc20230123125915.tsv", header=T)
 colnames(temp) <- c("Date", "Temperature")
 
 plotlist <- vector()
-peaklist <- c(0.01, 0.1, 0.2, 0.5)
-for (pe in 1:length(peaklist)){
+#peaklist <- c(0.01, 0.1, 0.2, 0.5)
+#for (pe in 1:length(peaklist)){
   temps <- average.yearly.temp(temp, "Temperature", "Date")
   
 n <- 13
@@ -62,7 +62,9 @@ degreedays$dts <- as.Date(degreedays$dts, origin = "1970-01-01")
 
 #-------------------------------------------------------------
 # need to make ramped increasing hydropeaking index 
-hp <- c(rep(peaklist[pe], times = length(temps$Temperature)))
+#hp <- c(rep(peaklist[pe], times = length(temps$Temperature)))
+hp <- c(rep(0, 130), rep(0.01, 52), rep(0.1, 52), rep(0.2, 52), rep(0.5, 52))
+
 # specify iterations
 iterations <- 50
 
@@ -117,8 +119,8 @@ output.N.list <- reparray
 #Q <- flow.magnitude$Discharge
 Q <- rep(0.1, length(temps$Temperature))
 # Fall floods
-Q[c(23, 49, 75, 101, 127, 153, 179)] <- 0.45
-Q[c(189, 215, 241, 267, 293, 319)] <-  0.45
+#Q[c(23, 49, 75, 101, 127, 153, 179)] <- 0.45
+#Q[c(189, 215, 241, 267, 293, 319)] <-  0.45
 Qmin <- 0.25
 a <- 0.1
 g <- 0.1
@@ -288,30 +290,34 @@ means.list.HYOS <- cbind(means.list.HYOS[27:339,], temps$dts[27:339])
 means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 # plot abundance over time
 
-falls <- tibble(
-  x1 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
-  x2 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
-  y1 = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
-  y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
- )
-springs <- tibble(
-  x1 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
-  x2 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
-  y1 = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
-  y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
+# falls <- tibble(
+#   x1 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
+#   x2 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
+#   y1 = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
+#   y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
+#  )
+# springs <- tibble(
+#   x1 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
+#   x2 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
+#   y1 = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
+#   y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
+# )
+
+
+arrows <- tibble(
+  x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+  x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+  y1 = c(1.4, 1.4, 1.4, 1.4), 
+  y2 = c(1, 1, 1, 1)
 )
 
+arrows$x1 <- as.Date(arrows$x1)
+arrows$x2 <- as.Date(arrows$x2)
 
-# arrows <- tibble (2013-03-31"
-#   x1 = c("2003-01-07"),
-#   x2 = c("2011-01-07"), 
-#   y1 = c(1.0),
-#   y2 = c(1.0)
-# )
-falls$x1 <- as.Date(falls$x1)
-falls$x2 <- as.Date(falls$x2)
-springs$x1 <- as.Date(springs$x1)
-springs$x2 <- as.Date(springs$x2)
+# falls$x1 <- as.Date(falls$x1)
+# falls$x2 <- as.Date(falls$x2)
+# springs$x1 <- as.Date(springs$x1)
+# springs$x2 <- as.Date(springs$x2)
 
 abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
                                                         y = mean.abund/10000, group = 1)) +
@@ -322,18 +328,28 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
   #            show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
   coord_cartesian(ylim = c(0,1.5)) +
-  ylab(paste0('Hydrospyche spp. Abundance at HI = ', peaklist[pe])) +
+ # ylab(paste0('Hydrospyche spp. Abundance at HI = ', peaklist[pe])) +
+  ylab('Hydrospyche spp. Abundance') +
   xlab(" ")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13))+
   scale_x_date(date_labels="%B", date_breaks  ="6 months", limits = as.Date(c("2001-01-27", "2012-12-04"
   )))+
-  annotate("segment", x = falls$x1, y = falls$y1, xend = falls$x2, yend = falls$y2,
-        arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#a6611a")+
-  annotate("text", x = falls$x1[1], y = 0, label = "Fall HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#a6611a")+
-  annotate("segment", x = springs$x1, y = springs$y1, xend = springs$x2, yend = springs$y2,
-           arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#018571")+
-  annotate("text", x = springs$x1[1], y = 0, label = "Spring HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#018571")
+  # annotate("segment", x = falls$x1, y = falls$y1, xend = falls$x2, yend = falls$y2,
+  #       arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#a6611a")+
+  # annotate("text", x = falls$x1[1], y = 0, label = "Fall HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#a6611a")+
+  # annotate("segment", x = springs$x1, y = springs$y1, xend = springs$x2, yend = springs$y2,
+  #          arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#018571")+
+  # annotate("text", x = springs$x1[1], y = 0, label = "Spring HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#018571")
+  #annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
+  #         arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
+  annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
+           arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
+annotate("text", x = arrows$x1[1], y = 1.5, label = "HI = 0.01", size = 4)+
+annotate("text", x = arrows$x1[2], y = 1.5, label = "HI = 0.1", size = 4)+
+annotate("text", x = arrows$x1[3], y = 1.5, label = "HI = 0.2", size = 4)+
+annotate("text", x = arrows$x1[4], y = 1.5, label = "HI = 0.5", size = 4 )
+
 
 ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlow", peaklist[pe],".png"))
 #ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te],".png"))
