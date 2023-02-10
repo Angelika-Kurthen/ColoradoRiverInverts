@@ -24,6 +24,10 @@ qr <- c(0,1, 2.5, 5, 7.5)
 # how many years I want each temp ramp to last
 r <- c(5, 2, 2, 2, 2)
 temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
+
+temps <- as.data.frame(cbind(seq(from = 1, to = 500, by = 1), rep(12, times = 500)))
+colnames(temps) <- c("dts", "Temperature")
+
 # calculate accumulated degreedays, which is the days above critical threhold * temperature (degC)
 # we assume accumulated degree days = 2-week average * 14
 degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
@@ -37,7 +41,7 @@ degreedays$dts <- as.Date(degreedays$DegreeDay, origin = "1970-01-01") # make da
 # set model parameters
 #----------------------------------------------
 # specify iterations
-iterations <- 50
+iterations <- 1
 
 # baseline K in the absence of disturbance
 Kb <- 10000
@@ -165,7 +169,6 @@ for (iter in c(1:iterations)) {
     # Logistic via Rogosch et al. Fish Model
     # no immediate egg mortality incorporated
     F_BAET <- Logistic.Dens.Dependence(F_BAET, K, Total.N[t-1, iter])
-    
     # add F_BAET to list
     Flist <- append(Flist, F_BAET)
     #-----------------------------------------------
@@ -246,21 +249,21 @@ arrows$x1 <- as.Date(arrows$x1)
 arrows$x2 <- as.Date(arrows$x2)
 
 # note how boom and bust this model is - K is set to be 10,000 not 100,000
-abund.trends.BAET <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,
+abund.trends.BAET <- ggplot(data = means.list.BAET, aes(x = `timesteps`,
                                                         y = mean.abund/10000, group = 1)) +
   geom_line(show.legend = FALSE) +
   coord_cartesian(ylim = c(0,10)) +
   ylab('Baetidae Relative Abundance') +
   xlab(' ')+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13))+
-  scale_x_date(date_labels="%B", date_breaks  ="6 months")+
-  annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
-           arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
-  annotate("text", x = arrows$x1[1], y = 9.5, label = "+1°C", size = 5)+
-  annotate("text", x = arrows$x1[2], y = 9.5, label = "+2.5°C", size = 5)+
-  annotate("text", x = arrows$x1[3], y = 9.5, label = "+5°C", size = 5)+
-  annotate("text", x = arrows$x1[4], y = 9.5, label = "+7.5°C", size = 5 )
+        axis.text.y = element_text(size = 13))#+
+  # scale_x_date(date_labels="%B", date_breaks  ="6 months")+
+  # annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
+  #          arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
+  # annotate("text", x = arrows$x1[1], y = 9.5, label = "+1°C", size = 5)+
+  # annotate("text", x = arrows$x1[2], y = 9.5, label = "+2.5°C", size = 5)+
+  # annotate("text", x = arrows$x1[3], y = 9.5, label = "+5°C", size = 5)+
+  # annotate("text", x = arrows$x1[4], y = 9.5, label = "+7.5°C", size = 5 )
 
 
 
