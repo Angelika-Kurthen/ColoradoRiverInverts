@@ -218,7 +218,7 @@ flood.mortality <- function(N, k, h, Q, Qmin){
 }
 
 #function to summarize code into mean population abundance over iterations
-mean.data.frame <- function(data, stages = c(1,2,3), burnin){
+mean.data.frame <- function(data, stages = NULL, burnin){
   repdf <- plyr::adply(data, c(1,2,3))
   names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
   repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
