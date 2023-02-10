@@ -32,6 +32,8 @@ qr <- tempslist[te]
 # how many years I want each temp ramp to last
 r <- 13
 temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
+
+
 # calculate accumulated degreedays, which is the days above critical threhold * temperature (degC)
 # we assume accumulated degree days = 2-week average * 14
 degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
@@ -145,7 +147,7 @@ for (iter in c(1:iterations)) {
     # Calculate fecundity per adult
     
     # we start by pulling fecundities from normal distribution
-    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 * 0.5 *hydropeaking.mortality(lower = 0.0, upper = 0.2, h = hp[t-1]) #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
+    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 * 0.5 #*hydropeaking.mortality(lower = 0.0, upper = 0.2, h = hp[t-1]) #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
     
     # we can also relate fecundities to body mass.
     # Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
@@ -156,7 +158,7 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- (emergetime[t-1] * 0.55)-0.75
       sizelist <- append(sizelist, size)
-      F_BAET <- ((614 * size) - 300)* 0.5 * 0.5 *hydropeaking.mortality(lower = 0.0, upper = 0.2, h = hp[t-1])
+      F_BAET <- ((614 * size) - 300)* 0.5 * 0.5 #*hydropeaking.mortality(lower = 0.0, upper = 0.2, h = hp[t-1])
     }
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
