@@ -1,5 +1,5 @@
 ##########################
-# NZMS 1 sp model
+# 1 sp model
 ###########################
 library(purrr)
 library(tidyverse)
@@ -32,27 +32,36 @@ source("1spFunctions.R")
 
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
-flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
-temp <- temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
+temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
 temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
+
+temp <- read.delim("gcmrc20230123125915.tsv", header=T)
+colnames(temp) <- c("Date", "Temperature")
+temps <- average.yearly.temp(temp, "Temperature", "Date")
+
 n <- 13
 # qr is the temp ramps I want to increase the average Lees Ferry temp by 
-qr <- c(templist[te])
 # how many years I want each temp ramp to last
-r <- c(13)
+qr <- 0
+r <- 13
+
 temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
+Q <- rep(0.1, times = length(temps$Temperature))
 
 # basically want to create a function where we can read in the spp, a temp list, a flow list, iterations, 
-sppModel <- function(temp.data, flow.data, species, iterations, Kb = 10000, Kd = 40000, Qmin = 0.25, extinction, hydropeaking, h = NULL){
+sppModel <- function(temp.data, flow.data, species, iterations, Kb = 10000, Kd = 40000, Qmin = 0.25, extinction, hydropeaking, hp= NULL){
 # set parameters for model
+  Q <- flow.data
   Qmin <- Qmin
   extinction <- extinction
   Kb <- Kb
   Kd <- Kb
   temps <- temp.data
-  Q <- flow.data
+  hp <- hp
   a <- 0.1
   g <- 0.1
+  degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
+  colnames(degreedays) <- c("dts", "DegreeDay")
   timestep <- seq(2, (length(temps$Temperature) + 1), by = 1)
   # create an array to put our output into
   output.N.array <- array(0, dim = c(length(timestep) + 1))
@@ -161,7 +170,7 @@ sppModel <- function(temp.data, flow.data, species, iterations, Kb = 10000, Kd =
       F3 <- ((614 * size) - 300)* 0.5 * 0.089 * 0.15
     }
     if (hydropeaking == T){
-    F3 <- F3 * hydropeaking.mortality(lower = 0.0, upper = 0.2, h = hp[t-1])
+    F3 <- F3 * hydropeaking.mortality(lower = 0.0, upper = 0.2, h = hp)
     }
     F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter])
     
@@ -190,7 +199,7 @@ sppModel <- function(temp.data, flow.data, species, iterations, Kb = 10000, Kd =
       emergetime <- append(emergetime, back.count.degreedays(t, 1680))
       # Calculate fecundity per adult
       
-      F3 = rnorm(1, mean = 235.6, sd = 11.05102 )
+      F3 = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5
       #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
       # * 0.5 assuming 50% female
       
@@ -202,7 +211,7 @@ sppModel <- function(temp.data, flow.data, species, iterations, Kb = 10000, Kd =
       }
     # add hydropeaking mortality
     if (hydropeaking == T){
-      F3 <- F3 *hydropeaking.mortality(lower = 0.2, upper = 0.4, h = hp[t-1])
+      F3 <- F3 *hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp)
     }
       # denisty dependence
       F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter])
@@ -218,9 +227,6 @@ sppModel <- function(temp.data, flow.data, species, iterations, Kb = 10000, Kd =
     
     A <- rbind(R1, R2, R3)
     
-    #-----------------------------------------------
-    # Calculate new transition probabilities based on temperature
-    # This is the growth v development tradeoff
     #--------------------------------------
     # Calculate abundances for each stage
     
@@ -255,16 +261,16 @@ sppModel <- function(temp.data, flow.data, species, iterations, Kb = 10000, Kd =
   return(output.N.list)
 }
 
-sppModel(temps, flow.data = rep(0.1, times = length(temps$Temperature)), species = "HYOS", iterations = 50, extinction = 500, hydropeaking = F)
+output.N.list <- sppModel(temp.data = temps, flow.data = Q, species = "HYOS", iterations = 50, extinction = 500, hydropeaking = T, hp = 0.1)
 #------------------
 # Analyzing Results
 #-------------------
 # summarizing iterations
 
 ## turning replist into a df
-means.list.NZMS <- mean.data.frame(output.N.list[,2:3,], burnin = 25)
-means.list.NZMS <- cbind(means.list.NZMS[27:339,], temps$dts[27:339])
-means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
+means.list <- mean.data.frame(output.N.list, burnin = 25)
+means.list <- cbind(means.list[27:339,], temps$dts[27:339])
+means.list$`temps$dts` <- as.Date(means.list$`temps$dts`)
 # plot abundance over time
 
 falls <- tibble(
@@ -284,16 +290,16 @@ falls$x2 <- as.Date(falls$x2)
 springs$x1 <- as.Date(springs$x1)
 springs$x2 <- as.Date(springs$x2)
 
-abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
+abund.trends.NZMS <- ggplot(data = means.list, aes(x = `temps$dts`,
                                                         y = mean.abund/10000, group = 1)) +
-  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                 ymax = mean.abund + 1.96 * se.abund),
-  #             colour = 'transparent',
-  #             alpha = .5,
-  #             show.legend = FALSE) +
+  geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+                 ymax = mean.abund + 1.96 * se.abund),
+             colour = 'transparent',
+              alpha = .5,
+              show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
   coord_cartesian(ylim = c(0,2)) +
-  ylab(paste0('New Zealand Mudsnail Abundance at ', templist[te],"°C")) +
+  ylab(" ") +
   xlab(" ")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 12.5))+
