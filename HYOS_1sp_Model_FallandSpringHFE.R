@@ -177,7 +177,7 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
-    F_HYOS = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 *hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
+    F_HYOS = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 *hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
     # * 0.5 assuming 50% female
     
@@ -185,7 +185,7 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F_HYOS <- ((8.664 * size) + 127.3) * 0.5 *hydropeaking.mortality(lower = 0.1, upper = 0.4, h = hp[t-1])
+      F_HYOS <- ((8.664 * size) + 127.3) * 0.5 *hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     }
     
     #---------------------------------------------------
