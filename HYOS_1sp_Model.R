@@ -39,7 +39,7 @@ temps <- TimestepTemperature(temp, "Colorado River") # calculate mean temperatur
 degreedays <- TimestepDegreeDay(temp, "Colorado River")
 
 ## Uncomment if Using Colorado River Temp Ramp 
-degreedays <- as.data.frame(cbind(temp_seq$dts, temps$Temperature * 14))
+degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
 colnames(degreedays) <- c("dts", "DegreeDay")
                             
 
@@ -96,6 +96,7 @@ output.N.list <- reparray
 # Q is equal to average discharge over 14 days
 #Q <- flow.magnitude$Discharge
 Q <- rep(0.1, length(temps$Temperature))
+Q[200] <- 0.45
 Qmin <- 0.25
 a <- 0.1
 g <- 0.1
@@ -259,19 +260,25 @@ for (iter in c(1:iterations)) {
 #-------------------
 # summarizing iterations
 means.list.HYOS <- mean.data.frame(output.N.list, burnin = 10)
+means.list.HYOS <- cbind(means.list.HYOS[27:339,], temps$dts[27:339])
+means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 
-abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x = timesteps,
-                                              y = mean.abund, group = 1)) +
+abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x = `temps$dts`,
+                               y = mean.abund/10000, group = 1)) +
   geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-                  ymax = mean.abund + 1.96 * se.abund),
-              colour = 'transparent',
-              alpha = .5,
-              show.legend = FALSE) +
-  geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,10000)) +
+                 ymax = mean.abund + 1.96 * se.abund),
+         colour = 'transparent',
+      alpha = .5,
+         show.legend = FALSE) +
+  geom_line() +
+  coord_cartesian(ylim = c(0,1.5)) +
+  # ylab(paste0('Hydrospyche spp. Abundance at HI = ', peaklist[pe])) +
   ylab('Hydrospyche spp. Abundance') +
-  xlab('Timestep')
-
+  xlab(" ")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13))+
+  scale_x_date(date_labels="%B", date_breaks  ="6 months", limits = as.Date(c("2001-01-27", "2012-12-04"
+  )))
 
 
 # take a look at results
