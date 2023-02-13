@@ -151,7 +151,7 @@ for (iter in c(1:iterations)) {
   #}
   
   # or we can pull randomw values from a uniform distribution 
-  output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.5*K))
+  output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
   
   # we often want to look at different parameter values after we run code, so we create some lists
   
