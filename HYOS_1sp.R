@@ -11,6 +11,7 @@ library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
+source("1spFunctions.R")
 
 # Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 # We have to manually load all tidyverse packages
@@ -48,14 +49,13 @@ r <- 13
 temps <- average.yearly.temp(temp, "Temperature", "Date")
 
 temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
-
-HYOSmodel <- function(flow.data, temp.data, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct, iteration, peaklist = NULL, peakeach = NULL, burnin = 27){
+discharge <- rep(0.1, times = length(temps$Temperature))
+HYOSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
 #---------------------------------------------------------------
 # set up model
 source("HYOSSurvivorship.R")
-source("1spFunctions.R")
 
-Q <- flow.data
+Q <- as.numeric(flow.data)
 temps <- temp.data
 
 degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
@@ -69,9 +69,9 @@ hp <- c(rep(peaklist, each = peakeach))
 iterations <- iteration
 
 # baseline K in the absence of disturbance
-Kb <- baselineK
+Kb <- as.numeric(baselineK)
 # max K after a big disturbance
-Kd <- disturbanceK
+Kd <- as.numeric(disturbanceK)
 
 # specify baseline transition probabilities for each species
 # 3 stages - we have egg - larval instar V, pupae, and adult
@@ -144,7 +144,7 @@ for (iter in c(1:iterations)) {
     #----------------------------------------------------------
     # Calculate how many timesteps emerging adults have matured
     
-    emergetime <- append(emergetime, back.count.degreedays(t, 1680))
+    emergetime <- append(emergetime, back.count.degreedays(t, 1680, degreedays))
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
@@ -162,15 +162,15 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
-    Qf <- Qf.Function(Q[t-1], Qmin, a)
+    Qf <- as.numeric(Qf.Function(Q[t-1], Qmin, a))
     
     #-------------------------------------------------------------------
     # Calculate K arrying capacity immediately following the disturbance
     # Calculate K arrying capacity immediately following the disturbance
-    K0 <- K + ((Kd-K)*Qf)
+    K0 <- as.numeric(K + ((Kd-K)*Qf))
     
     # Calculate final K for timestep, including relationship between K and time since disturbance
-    K <- post.dist.K(K0, Kb, g)
+    K <- post.dist.K(K0, Kb, g, t, Q, Qmin)
     Klist <- append(Klist, K)
     
     
@@ -246,6 +246,9 @@ for (iter in c(1:iterations)) {
 #----------------------
 return(output.N.list)
 }
+
+
+out <- HYOSmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.24, extinct = 500, iteration = 5, peaklist = 0, peakeach = length(temps$Temperature))
 #------------------
 # Analyzing Results
 #-------------------
