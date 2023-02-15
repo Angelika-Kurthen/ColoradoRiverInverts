@@ -119,7 +119,7 @@ forward.count.degreedays <- function(criticaldegreedays){
 
 
 # backwards looking calculation of timesteps required to reach stage 3
-back.count.degreedays <- function(time, criticaldegreedays){
+back.count.degreedays <- function(time, criticaldegreedays, degreedays){
   # for each timestep, we want to back calculate the number of degree days
   if(time == 1) {print(" ")
     emerg <- NA
@@ -155,7 +155,7 @@ Qf.Function <- function(Q, Qmin, a){
 
 
 # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
-post.dist.K <- function(K0, Kb, g){
+post.dist.K <- function(K0, Kb, g, t, Q, Qmin){
   #calculate tau (times since last distubance)
   tau = (t-1) - (last(which(Q[1:t-1] > Qmin)))
   if (is.na(tau)==T | tau == 0) { tau <-  0
