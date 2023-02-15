@@ -196,7 +196,7 @@ Bev.Holt.Dens.Dependence <- function(r, N, K, fecundity){
 # F_NZMS <- Bev.Holt.Dens.Dependence(r, Total.N[t-1, iter], K, F_NZMS)
 
 # growth.development tradeoff function 
-growth.development.tradeoff <- function(temp, thresholdtemp.min, thresholdtemp.max, min.rate, max.rate, m, b ){  # m and b from y = mx+b 
+growth.development.tradeoff <- function(temp, thresholdtemp.min, thresholdtemp.max, min.rate, max.rate){  # m and b from y = mx+b 
   if (thresholdtemp.min > temp) rate <- min.rate
   if (temp > thresholdtemp.max) rate <- max.rate
   xs <- c(thresholdtemp.min, thresholdtemp.max)
@@ -218,39 +218,35 @@ flood.mortality <- function(N, k, h, Q, Qmin){
 }
 
 #function to summarize code into mean population abundance over iterations
-mean.data.frame <- function(data, stages = NULL, burnin){
+mean.data.frame <- function(data, burnin, iteration){
   repdf <- plyr::adply(data, c(1,2,3))
   names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
   repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
   
-  totn <- plyr::adply(Total.N, c(1,2))
-  names(totn) <- c('timesteps', 'rep', 'tot.abund')
-  totn$timesteps <- as.numeric(as.character(totn$timesteps))
+  # totn <- plyr::adply(Total.N, c(1,2))
+  # names(totmesteps <- as.numeric(as.character(totn$timesteps))n) <- c('timesteps', 'rep', 'tot.abund')
+  # totn$ti
   
   # joining totn and repdf together
-  repdf <- dplyr::left_join(totn, repdf)
+  # repdf <- dplyr::left_join(totn, repdf)
   
   ## calculating relative abundance
-  repdf <- mutate(repdf, rel.abund = abund/tot.abund)
+  # repdf <- mutate(repdf, rel.abund = abund/tot.abund)
   repdf$timesteps <- as.factor(repdf$timesteps)
   ## Taking mean results to cf w/ observed data
   means.list<- repdf %>%
-    select(-tot.abund) %>%
+    # select(-tot.abund) %>%
     dplyr::group_by(timesteps, rep) %>% # combining stages
-    dplyr::summarise(abund = sum(abund),
-                     rel.abund = sum(rel.abund)) %>%
+    dplyr::summarise(abund = sum(abund)) %>%
     ungroup() %>%
     dplyr::group_by(timesteps) %>%
     dplyr::summarise(mean.abund = mean(abund),
                      sd.abund = sd(abund),
-                     se.abund = sd(abund)/sqrt(iterations),
-                     mean.rel.abund = mean(rel.abund),
-                     sd.rel.abund = sd(rel.abund),
-                     se.rel.abund = sd(rel.abund)/sqrt(iterations)) %>%
+                     se.abund = sd(abund)/sqrt(iteration)) %>%
     ungroup()
   
-  if (burnin == T){
-    means.list <- means.list[ , burnin:means.list$timesteps]
+  if (is.null(burnin)== F){
+    means.list <- means.list[burnin:length(means.list$timesteps), ]
   }
   return(means.list)
 }
