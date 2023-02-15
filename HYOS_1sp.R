@@ -76,10 +76,10 @@ Kd <- as.numeric(disturbanceK)
 # specify baseline transition probabilities for each species
 # 3 stages - we have egg - larval instar V, pupae, and adult
 
-G1_HYOS = 0.1 # move onto stage 2
-G2_HYOS = 0.445 # move onto stage 3
-P1_HYOS = 0.7 # remain in stage 1
-P2_HYOS = 0.0 # remain in stage 2
+G1 = 0.1 # move onto stage 2
+G2 = 0.445 # move onto stage 3
+P1 = 0.7 # remain in stage 1
+P2 = 0.0 # remain in stage 2
 
 # want to run this for one year, in 14 day timesteps 
 timestep <- seq(2, (length(temps$Temperature) + 1), by = 1)
@@ -148,7 +148,7 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
-    F_HYOS = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+    F3 = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
     # * 0.5 assuming 50% female
     
@@ -156,7 +156,7 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F_HYOS <- ((8.664 * size) + 127.3) * 0.5 *hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+      F3 <- ((8.664 * size) + 127.3) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     }
     
     #---------------------------------------------------
@@ -178,43 +178,36 @@ for (iter in c(1:iterations)) {
     # Calculate effect of density dependence on fecundity
     
     # Logistic via Rogosch et al. Fish Model
-    F_HYOS <- Logistic.Dens.Dependence(F_HYOS, K, Total.N[t-1, iter]) * 0.5
-    Flist <- append(Flist, F_HYOS)
+    F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter]) * 0.5
+    Flist <- append(Flist, F3)
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
-    HYOS1 <- c(P1_HYOS, 0, F_HYOS)
-    HYOS2 <- c(G1_HYOS, P2_HYOS, 0)
-    HYOS3 <- c(0, G2_HYOS, 0) 
+    H1 <- c(P1, 0, F3)
+    H2 <- c(G1, P2, 0)
+    H3 <- c(0, G2, 0) 
     
-    AHYOS <- rbind( HYOS1, HYOS2, HYOS3)
+    A <- rbind( H1, H2, H3)
     
     #-----------------------------------------------
     # Calculate new transition probabilities based on temperature
     # This is the growth v development tradeoff 
     # don't know if this exists for HYOS - they can emerge under a wide temp gradient (<5 - 25+ C) but relationship between growth and temp 
     
-    # development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    # if (10 > temps$Temperature[t-1]) AHYOS[3,2] <- 0.001
-    # if (temps$Temperature[t-1] > 13) AHYOS[3,2] <- 0.55
-    # if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 13) AHYOS[3,2] <- (0.183 * temps$Temperature[t-1]) -1.829 #(0.2 * temps$Temperature[t-1]) -2
-    # AHYOS[2,1] <- AHYOS[3,2] 
-    # # 
-    # # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
-    # if (10 >= temps$Temperature[t-1]) AHYOS[2,2] <- 0.55
-    # if (temps$Temperature[t-1] > 13) AHYOS[2,2] <- 0.001
-    # if (10 < temps$Temperature[t-1] & temps$Temperature[t-1] <=  13) AHYOS[2,2] <- (-0.183 * temps$Temperature[t-1]) + 2.38 #(-0.1 temps$Temperature[t-1]) - 2.6
-    # # 
-    # AHYOS[1,1] <- AHYOS[2,2] 
-    
-    # 
+    #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
+    if (5 > temps$Temperature[t-1]) A[2,1] <- 0.001
+    if (temps$Temperature[t-1] > 25) A[2,1] <- sum(P1,G1)
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) A[2,1] <- growth.development.tradeoff(temps$Temperature[t-1], 5, 25, 0.001, sum(G1, P1))
+    #
+    # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 
+
     #Glist <-append(Glist, AHYOS[3,2])
     #Plist <- append(Plist, AHYOS[2,2])
     
     #--------------------------------------
     # Calculate abundances for each stage
     
-    output.N.list[t, 1:3, iter] <- AHYOS %*% output.N.list[t-1, 1:3, iter] 
+    output.N.list[t, 1:3, iter] <- A %*% output.N.list[t-1, 1:3, iter] 
     
     #------------------------------------------
     #Calculate immediate mortality due to flows
@@ -253,7 +246,7 @@ out <- HYOSmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000,
 # Analyzing Results
 #-------------------
 # summarizing iterations
-means.list.HYOS <- mean.data.frame(output.N.list, burnin = 27)
+means.list.HYOS <- mean.data.frame(out, burnin = 27, iteration = 5)
 means.list.HYOS <- cbind(means.list.HYOS[27:length(means.list.HYOS$mean.abund),], temps$dts[27:length(means.list.HYOS$mean.abund)])
 means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 
@@ -298,7 +291,7 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
   #            alpha = .5,
   #            show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,1.5)) +
+  coord_cartesian(ylim = c(0,2)) +
   ylab(paste0('Hydrospyche spp. Abundance adding ', tempslist[te], "°C")) +
   xlab(" ")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
