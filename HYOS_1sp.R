@@ -77,9 +77,9 @@ Kd <- as.numeric(disturbanceK)
 # 3 stages - we have egg - larval instar V, pupae, and adult
 
 G1 = 0.1 # move onto stage 2
-G2 = 0.445 # move onto stage 3
+G2 = 0.445# move onto stage 3
 P1 = 0.7 # remain in stage 1
-P2 = 0.0 # remain in stage 2
+P2 = 0 # remain in stage 2
 
 # want to run this for one year, in 14 day timesteps 
 timestep <- seq(2, (length(temps$Temperature) + 1), by = 1)
@@ -186,17 +186,17 @@ for (iter in c(1:iterations)) {
     # don't know if this exists for HYOS - they can emerge under a wide temp gradient (<5 - 25+ C) but relationship between growth and temp 
     
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    if (5 > temps$Temperature[t-1]) {
-      G1 <- 0.001
-      G2 <- 0.001}
-    
-    if (temps$Temperature[t-1] > 25){
-      G1 <-0.799
-      G2 <-0.444}
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 5, 25, 0.001, 0.799)
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 5, 25, 0.001, 0.444)
-    P1 <- 0.8 - G1
-    P2 <- 0.445 - G2
+    # if (5 > temps$Temperature[t-1]) {
+    #   G1 <- 0.001
+    #   G2 <- 0.001}
+    # 
+    # if (temps$Temperature[t-1] > 25){
+    #   G1 <-0.799
+    #   G2 <-0.444}
+    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 5, 25, 0.001, 0.799)
+    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 5, 25, 0.001, 0.444)
+    # P1 <- 0.8 - G1
+    # P2 <- 0.445 - G2
     
    
     #-----------------------------------------------
@@ -252,17 +252,19 @@ return(output.N.list)
 }
 
 
-out <- HYOSmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.24, extinct = 500, iteration = 5, peaklist = 0, peakeach = length(temps$Temperature))
+out <- HYOSmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 5, peaklist = 0, peakeach = length(temps$Temperature))
 #------------------
 # Analyzing Results
 #-------------------
 # summarizing iterations
-means.list.HYOS <- mean.data.frame(out, burnin = 27, iteration = 5)
-means.list.HYOS <- cbind(means.list.HYOS[27:length(means.list.HYOS$mean.abund),], temps$dts[27:length(means.list.HYOS$mean.abund)])
+means.list.HYOS <- mean.data.frame(out, burnin = 1, iteration = 5)
+means.list.HYOS <- cbind(means.list.HYOS[1:length(means.list.HYOS$mean.abund),], temps$dts[1:length(means.list.HYOS$mean.abund)])
 means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 
 
-
+# means.list.HYOS <- as.data.frame(apply(out[, 3, ],MARGIN = 1, FUN = mean))
+# means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[2:339,], temps$dts))
+# means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$V2, origin = "1970-01-01")
 
 
 # plot abundance over time
@@ -302,7 +304,7 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
              alpha = .5,
              show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,2)) +
+  coord_cartesian(ylim = c(0,10)) +
   ylab(paste0('Hydrospyche spp. Abundance adding ', tempslist[te], "°C")) +
   xlab(" ")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
