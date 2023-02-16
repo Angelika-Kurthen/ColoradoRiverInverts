@@ -180,6 +180,25 @@ for (iter in c(1:iterations)) {
     # Logistic via Rogosch et al. Fish Model
     F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter]) * 0.5
     Flist <- append(Flist, F3)
+    
+    # Calculate new transition probabilities based on temperature
+    # This is the growth v development tradeoff 
+    # don't know if this exists for HYOS - they can emerge under a wide temp gradient (<5 - 25+ C) but relationship between growth and temp 
+    
+    #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
+    if (5 > temps$Temperature[t-1]) {
+      G1 <- 0.001
+      G2 <- 0.001}
+    
+    if (temps$Temperature[t-1] > 25){
+      G1 <-0.799
+      G2 <-0.444}
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 5, 25, 0.001, 0.799)
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 5, 25, 0.001, 0.444)
+    P1 <- 0.8 - G1
+    P2 <- 0.445 - G2
+    
+   
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
@@ -190,17 +209,9 @@ for (iter in c(1:iterations)) {
     A <- rbind( H1, H2, H3)
     
     #-----------------------------------------------
-    # Calculate new transition probabilities based on temperature
-    # This is the growth v development tradeoff 
-    # don't know if this exists for HYOS - they can emerge under a wide temp gradient (<5 - 25+ C) but relationship between growth and temp 
-    
-    #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    if (5 > temps$Temperature[t-1]) A[2,1] <- 0.001
-    if (temps$Temperature[t-1] > 25) A[2,1] <- sum(P1,G1)
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) A[2,1] <- growth.development.tradeoff(temps$Temperature[t-1], 5, 25, 0.001, sum(G1, P1))
-    #
+ 
     # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 
-
+    
     #Glist <-append(Glist, AHYOS[3,2])
     #Plist <- append(Plist, AHYOS[2,2])
     
@@ -285,11 +296,11 @@ springs$x2 <- as.Date(springs$x2)
 
 abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
                                                         y = mean.abund/10000, group = 1)) +
-  #geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                ymax = mean.abund + 1.96 * se.abund),
-  #            colour = 'transparent',
-  #            alpha = .5,
-  #            show.legend = FALSE) +
+  geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+                 ymax = mean.abund + 1.96 * se.abund),
+             colour = 'transparent',
+             alpha = .5,
+             show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
   coord_cartesian(ylim = c(0,2)) +
   ylab(paste0('Hydrospyche spp. Abundance adding ', tempslist[te], "°C")) +
