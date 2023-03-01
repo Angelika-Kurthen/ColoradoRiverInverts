@@ -23,24 +23,21 @@ library(dataRetrieval)
 # library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-
+source("1spFunctions.R")
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
 temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
 
-temp <- read.delim("gcmrc20230123125915.tsv", header=T)
-colnames(temp) <- c("Date", "Temperature")
-temps <- average.yearly.temp(temp, "Temperature", "Date")
 
-n <- 13
+n <- 77
 # qr is the temp ramps I want to increase the average Lees Ferry temp by 
 # how many years I want each temp ramp to last
 qr <- 0
-r <- 13
+r <- 77
 
 temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
 discharge <- rep(0.1, times = length(temps$Temperature))
-source("1spFunctions.R")
+#temps$Temperature <- rep(12, times = length(temps$dts))
 
 NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   # source functions
@@ -216,14 +213,16 @@ for (iter in c(1:iterations)) {
 }
   return(output.N.list)
 }
+
+out <- NZMSmodel(flow.data = discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
 #------------------
 # Analyzing Results
 #-------------------
 # summarizing iterations
 
 ## turning replist into a df
-means.list.NZMS <- mean.data.frame(output.N.list,burnin = 25, iteration= 5)
-means.list.NZMS <- cbind(means.list.NZMS[2:339,], temps$dts)
+means.list.NZMS <- mean.data.frame(out,burnin = 1, iteration= 5)
+means.list.NZMS <- cbind(means.list.NZMS, temps$dts[1:length(means.list.NZMS$timesteps)])
 means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
 # plot abundance over time
 
@@ -237,14 +236,14 @@ arrows <- tibble(
 arrows$x1 <- as.Date(arrows$x1)
 arrows$x2 <- as.Date(arrows$x2)
 abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
-                                              y = mean.abund, group = 1)) +
+                                              y = mean.abund/10000, group = 1)) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
   #             alpha = .5,
   #             show.legend = FALSE) +
   geom_line(show.legend = FALSE, linewidth = 0.7) +
-  coord_cartesian(ylim = c(0,15000)) +
+  coord_cartesian(ylim = c(0,1.5)) +
   ylab('New Zealand Mudsnail Abundance') +
   xlab(" ")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
@@ -257,9 +256,6 @@ abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
   annotate("text", x = arrows$x1[3], y = 15000, label = "+5°C", size = 5)+
   annotate("text", x = arrows$x1[4], y = 15000, label = "+7.5°C", size = 5 )
 
-
-
-saveRDS(abund.trends, paste0('BAETplot', '.rds'))
 
 
 
@@ -283,3 +279,9 @@ abline(v = 670, col = "red")
 abline(v = 683, col = "red")
 lines(timestep[9:length(timestep)], Klist[10:(length(timestep)+1)], type = "l", col = "blue")
 lines(timestep, Klist, type = "l", col = "blue")
+
+
+ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
+  geom_line(show.legend = FALSE) +
+  ylab('Hydrospyche spp. Abundance/Reproductive Limit') +
+  xlab(" ")
