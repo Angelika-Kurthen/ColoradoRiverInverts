@@ -39,16 +39,18 @@ colnames(temp) <- c("Date", "Temperature")
 # peaklist <- c(0.01, 0.1, 0.2, 0.5)
 # tempslist <- c(0, 0.5, 1, 2.5, 5, 7.5)
 
-n <- 13
+n <- 77
 
 # qr is the temp ramps I want to increase the average temp by 
 qr <- 0
 # how many years I want each temp ramp to last
-r <- 13
+r <- 77
 
 temps <- average.yearly.temp(temp, "Temperature", "Date")
 
 temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
+
+
 discharge <- rep(0.1, times = length(temps$Temperature))
 HYOSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
 #---------------------------------------------------------------
@@ -80,6 +82,7 @@ G1 = 0.1 # move onto stage 2
 G2 = 0.445# move onto stage 3
 P1 = 0.7 # remain in stage 1
 P2 = 0 # remain in stage 2
+
 
 # want to run this for one year, in 14 day timesteps 
 timestep <- seq(2, (length(temps$Temperature) + 1), by = 1)
@@ -147,8 +150,8 @@ for (iter in c(1:iterations)) {
     emergetime <- append(emergetime, back.count.degreedays(t, 1680, degreedays))
     #---------------------------------------------------------
     # Calculate fecundity per adult
-    
-    F3 = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+    F3 = 235.6* 0.25 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+    #F3 = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
     # * 0.5 assuming 50% female
     
@@ -156,9 +159,9 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F3 <- ((8.664 * size) + 127.3) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+      F3 <- ((8.664 * size) + 127.3) * 0.25 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     }
-    
+
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
@@ -178,25 +181,25 @@ for (iter in c(1:iterations)) {
     # Calculate effect of density dependence on fecundity
     
     # Logistic via Rogosch et al. Fish Model
-    F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter]) * 0.5
+    F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter])
     Flist <- append(Flist, F3)
-    
+    # 
     # Calculate new transition probabilities based on temperature
     # This is the growth v development tradeoff 
     # don't know if this exists for HYOS - they can emerge under a wide temp gradient (<5 - 25+ C) but relationship between growth and temp 
     
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    # if (5 > temps$Temperature[t-1]) {
-    #   G1 <- 0.001
-    #   G2 <- 0.001}
-    # 
-    # if (temps$Temperature[t-1] > 25){
-    #   G1 <-0.799
-    #   G2 <-0.444}
-    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 5, 25, 0.001, 0.799)
-    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 5, 25, 0.001, 0.444)
-    # P1 <- 0.8 - G1
-    # P2 <- 0.445 - G2
+    if (5 > temps$Temperature[t-1]) {
+      G1 <- 0.001
+      G2 <- 0.001}
+
+    if (temps$Temperature[t-1] > 25){
+      G1 <-0.799
+      G2 <-0.444}
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 10, 20, 0.1, 0.2)
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 10, 20, 0.35, 0.445)
+    P1 <- 0.8 - G1
+    P2 <- 0.445 - G2
     
    
     #-----------------------------------------------
@@ -252,12 +255,12 @@ return(output.N.list)
 }
 
 
-out <- HYOSmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 5, peaklist = 0, peakeach = length(temps$Temperature))
+out <- HYOSmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
 #------------------
 # Analyzing Results
 #-------------------
 # summarizing iterations
-means.list.HYOS <- mean.data.frame(out, burnin = 1, iteration = 5)
+means.list.HYOS <- mean.data.frame(out, burnin = 1, iteration = 1)
 means.list.HYOS <- cbind(means.list.HYOS[1:length(means.list.HYOS$mean.abund),], temps$dts[1:length(means.list.HYOS$mean.abund)])
 means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 
@@ -298,14 +301,14 @@ springs$x2 <- as.Date(springs$x2)
 
 abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
                                                         y = mean.abund/10000, group = 1)) +
-  geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-                 ymax = mean.abund + 1.96 * se.abund),
-             colour = 'transparent',
-             alpha = .5,
-             show.legend = FALSE) +
+  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+  #                ymax = mean.abund + 1.96 * se.abund),
+  #            colour = 'transparent',
+  #            alpha = .5,
+  #            show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,10)) +
-  ylab(paste0('Hydrospyche spp. Abundance adding ', tempslist[te], "°C")) +
+  coord_cartesian(ylim = c(0,2.5)) +
+  ylab('Hydrospyche spp. Abundance/Reproductive Limit') +
   xlab(" ")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13))+
@@ -340,6 +343,12 @@ plots <- lapply(ll <- plotlist ,function(x){
        marrangeGrob(grobs = plots, nrow = 3, ncol=2))
   plotlist <- NULL
 }
+
+
+ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
+geom_line(show.legend = FALSE) +
+  ylab('Hydrospyche spp. Abundance/Reproductive Limit') +
+  xlab(" ")
 #   for (te in 1:length(tempslist)){
 #   assign(paste0("p",te), readPNG(plotlist[te]))}
 #   grid.arrange(rasterGrob(p1), rasterGrob(p2), rasterGrob(p3), rasterGrob(p4), rasterGrob(p5), rasterGrob(p6), ncol = 3 )
