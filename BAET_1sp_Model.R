@@ -42,8 +42,11 @@ temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
 # if you want to augment ColRiver temps, set qr to different in C
 qr <- 0
 # if you want to augement how many years at temps, change r
-r <- 13 # I want 13 years
-temps <- rep.avg.year(temps, 13, change.in.temp = qr, years.at.temp = r)
+r <- 77 # I want 13 years
+temps <- rep.avg.year(temps, 77, change.in.temp = qr, years.at.temp = r)
+temps$Temperature <- rep(12, times = length(temps$dts))
+
+
 discharge <- rep(0.1, times = length(temps$Temperature))
 
 
@@ -145,19 +148,21 @@ for (iter in c(1:iterations)) {
     # Calculate fecundity per adult
     
     # we start by pulling fecundities from normal distribution
-    F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
+    # assuming 50 50 sex ration, 0.22 of egg masses 'dissapearred', and 0.2 desiccation because of rock drying
+    F3 = 1104.4 * 0.5 * 0.78 * 0.65
+    #F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
     
     # we can also relate fecundities to body mass.
     # Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
     # That weight is related to fecundity Y = 614X - 300
     # we can "convert" emergetime to mg by multiplying to get dry weights between 0.9 - 2 mg, and then convert to fecunity
     # Issue: this data is for Ephemerella spp, not Baetidae spp
-    
-    if (t > 15) {
-      size <- (emergetime[t-1] * 0.55)-0.75
-      sizelist <- append(sizelist, size)
-      F3 <- ((614 * size) - 300)* 0.5 * 0.5 
-    }
+    # 
+    # if (t > 15) {
+    #   size <- (emergetime[t-1] * 0.55)-0.75
+    #   sizelist <- append(sizelist, size)
+    #   F3 <- ((614 * size) - 300)* 0.5 * 0.5 
+    # }
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
     # Sets to 0 if below the Qmin
@@ -176,8 +181,8 @@ for (iter in c(1:iterations)) {
     
     # Logistic via Rogosch et al. Fish Model
     # no immediate egg mortality incorporated
-    F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter])
-    
+    # F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter])
+    # 
     # add F_BAET to list
     Flist <- append(Flist, F3)
     #-----------------------------------------------
@@ -188,13 +193,13 @@ for (iter in c(1:iterations)) {
     # in this function, we assume that if below the min temp threshold (9) no maturation occurs (slow maturation, large growth)
     # if above the max temp threshold (15), no one remains more than 1 timestep in each stage (fast maturation, small growth)
     
-    # Probabilities of remaining in stages (when temps low, high prob of remaining)
-    P1 <- growth.development.tradeoff(temps$Temperature[t-1],  9, 13, 0.43, 0.0)
-    P2 <- growth.development.tradeoff(temps$Temperature[t-1], 9, 13, 0.43, 0)
-    
-    # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
-    G1 <- 0.43 - P1
-    G2 <- 0.43 - P2
+    # # Probabilities of remaining in stages (when temps low, high prob of remaining)
+    # P1 <- growth.development.tradeoff(temps$Temperature[t-1],  9, 13, 0.43, 0.0)
+    # P2 <- growth.development.tradeoff(temps$Temperature[t-1], 9, 13, 0.43, 0)
+    # 
+    # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
+    # G1 <- 0.43 - P1
+    # G2 <- 0.43 - P2
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
@@ -263,3 +268,7 @@ abund.trends.BAET <- ggplot(data = means.list.BAET, aes(x = timesteps,
   ylab('Baetis Abundance') +
   xlab('Timestep')  
 
+ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
+  geom_line(show.legend = FALSE) +
+  ylab('Baetis spp. Abundance/Reproductive Limit') +
+  xlab(" ")
