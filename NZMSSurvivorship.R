@@ -36,3 +36,17 @@ ggplot(surv.df.NZMS, aes(x = Q, y = surv))+
   theme_bw()+
   xlab('`Max Event Discharge/Bankfull Discharge`')
 
+# calculating temperature fecundity relationship for NZMS using a power function
+# log(y)=log(b*x^z)=log(b)+z*log(x)
+# In this case lm(log(y)~log(x) ) solve your problem
+
+# max recruitment between 16 and 19 C (Dybahl and Kane)
+# recruitment stops below 9C (Bennett )
+# above 27 C everything stops working well (Dybahl and Kane)
+x <- c(9, 16, 17.5, 19, 27)
+y <- c(0.001, 1, 1, 1, 0.001)
+data <- as.data.frame(cbind(x,y))
+nlsLM(y~ -b*(x - 17.5)^4 + 1,start = list(b = 0),data=data)
+
+# eq = y = -0.0001427(x - 17.5)^4 + 1 * F 
+
