@@ -70,11 +70,11 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
   # stage 2 P2 (prob remaining in stage 2)
   # stage 3 P3 (prob remaining in stage 3) 
   
-  G1 = 0.9 * 1/14
-  G2 = 0.9 * 1/7
-  P1 = 0.9 * 6/7
-  P2 = 0.9 * 13/14
-  P3 = 0.9 * 6/7 
+  G1 = 0.9/14
+  G2 = 0.9/7
+  P1 = 6/7
+  P2 = 13/14
+  P3 = 6/7 
   
   # want to run this for one year, in 14 day timesteps 
   timestep <- seq(2, (length(temps$Temperature) + 1), by = 1)
@@ -138,13 +138,11 @@ for (iter in c(1:iterations)) {
     
     # fecundities estimated from McKenzie et al. 2013 - reduced fecundity above 24 C and below 9 C. 
     # optimal temp between 16 and 19 C, but we don't really have parameterization for that
-    if (temps$Temperature[t-1] <= 9 | temps$Temperature[t-1] >= 24) { 
-      F2 <- 2
-      F3 <- 2  
-    } else {
-      F2 <- 8.87473
-      F3 <- 27.89665
-    }
+
+      F2 <- 8.87473 * (-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1)  
+
+      F3 <- 27.89665 * (-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1)  
+    
     
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
