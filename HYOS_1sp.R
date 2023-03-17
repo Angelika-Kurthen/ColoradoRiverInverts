@@ -155,12 +155,12 @@ for (iter in c(1:iterations)) {
     #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
     # * 0.5 assuming 50% female
     
-    # we can scale fecundity based on the 95% CI of 21.66 (min = 213.94, max = 257.26) 
-    if (t > 15) {
-      size <- emergetime[t-1]
-      sizelist <- append(sizelist, size)
-      F3 <- ((8.664 * size) + 127.3) * 0.25 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
-    }
+    # # we can scale fecundity based on the 95% CI of 21.66 (min = 213.94, max = 257.26) 
+    # if (t > 15) {
+    #   size <- emergetime[t-1]
+    #   sizelist <- append(sizelist, size)
+    #   F3 <- ((8.664 * size) + 127.3) * 0.25 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+    # }
 
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
@@ -189,18 +189,18 @@ for (iter in c(1:iterations)) {
     # don't know if this exists for HYOS - they can emerge under a wide temp gradient (<5 - 25+ C) but relationship between growth and temp 
     
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    if (5 > temps$Temperature[t-1]) {
-      G1 <- 0.001
-      G2 <- 0.001}
-
-    if (temps$Temperature[t-1] > 25){
-      G1 <-0.799
-      G2 <-0.444}
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 10, 20, 0.1, 0.2)
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 10, 20, 0.35, 0.445)
-    P1 <- 0.8 - G1
-    P2 <- 0.445 - G2
-    
+    # if (5 > temps$Temperature[t-1]) {
+    #   G1 <- 0.001
+    #   G2 <- 0.001}
+    # 
+    # if (temps$Temperature[t-1] > 25){
+    #   G1 <-0.799
+    #   G2 <-0.444}
+    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 10, 20, 0.1, 0.2)
+    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 10, 20, 0.35, 0.445)
+    # P1 <- 0.8 - G1
+    # P2 <- 0.445 - G2
+    # 
    
     #-----------------------------------------------
     # Create Lefkovitch Matrix
@@ -269,7 +269,8 @@ means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 # means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[2:339,], temps$dts))
 # means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$V2, origin = "1970-01-01")
 
-
+# nt v nt+1
+plot(means.list.HYOS$mean.abund[300:600], means.list.HYOS$mean.abund[301:601], type = "b", xlab = "Nt", ylab= "Nt+1")
 # plot abundance over time
 
 falls <- tibble(
@@ -299,15 +300,16 @@ falls$x2 <- as.Date(falls$x2)
 springs$x1 <- as.Date(springs$x1)
 springs$x2 <- as.Date(springs$x2)
 
-abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
+abund.trends.HYOS <- ggplot(data = means.list.HYOS[300:401,], aes(x =  `temps$dts`,
                                                         y = mean.abund/10000, group = 1)) +
+  geom_point()+
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                ymax = mean.abund + 1.96 * se.abund),
   #            colour = 'transparent',
   #            alpha = .5,
   #            show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,2.5)) +
+  coord_cartesian(ylim = c(0,1.5)) +
   ylab('Hydrospyche spp. Abundance/Reproductive Limit') +
   xlab(" ")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
