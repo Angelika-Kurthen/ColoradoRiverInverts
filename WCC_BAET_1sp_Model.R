@@ -28,6 +28,10 @@ library(dataRetrieval)
 # library(scales, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
+## checkpos makes sure that the K-occupied term is positive, assigns 0 if not
+checkpos <- function(x) {
+  ifelse(x < 0, 0, x)
+}
 
 #read in flow data from USGS gauge at White Clay Creek tributary West Branch Brandywine Creek (39`57'42", 75`48'06") from Vannote and Sweeney, 1980
 flow <- readNWISdv("01480617", "00060", "2018-10-01", "2022-09-05")
@@ -62,9 +66,9 @@ temp$Date <- yday(temp$Date)
 
 # option 1: for each date, calculate mean and standard error so we can create a new dataset
 temp <- temp %>% group_by(Date) %>% dplyr::summarise(Temperature = mean(X_00010_00003), 
-                                             sd = sd(X_00010_00003), 
-                                             count = n(), 
+                                             sd = sd(X_00010_00003),                                             
                                              se = sd(X_00010_00003)/count)
+
 #specify iterations
 iterations <- 356
 # now we want to create some data based on this 
@@ -87,10 +91,10 @@ sizearray <- array(0,
 K = 10000
 
 # specify baseline transition probabilities for each species
-G1_BAET = 0.8
-G2_BAET = 0.8
-P1_BAET = 0.8
-P2_BAET = 0.8
+G1_BAET = 0.25
+G2_BAET = 0.23
+P1_BAET = 0.25
+P2_BAET = 0.23
 
 
 # want to run this for one year, in 14 day timesteps 
@@ -128,10 +132,10 @@ output.N.list <- reparray
 # Q is equal to average discharge over 14 days
 Q <- out
 
-Qmin <- 20000
-a <- 100
+Qmin <- 40000
+a <- 3000
 g <- 0.1
-
+h <- 0.02
 
 
 
@@ -155,12 +159,11 @@ for (iter in c(1:iterations)) {
     temps[day] <- rnorm(1, mean = temp$Temperature[day], sd = temp$se[day])
   }
   
-  meantemp <- mean(temps)
+  #meantemp <- mean(temps)
   # change amplitude
-  temps[which(temps > meantemp)] <- ((temps[which(temps > meantemp)] - meantemp)/2) + meantemp
-  temps[which(temps < meantemp)] <-  meantemp - ((meantemp - temps[which(temps < meantemp)])/2)
+  #temps[which(temps > meantemp)] <- ((temps[which(temps > meantemp)] - meantemp)*2) + meantemp
+  #temps[which(temps < meantemp)] <-  meantemp - ((meantemp - temps[which(temps < meantemp)])*2)
   
-  temparray[,iter] <- temps
   temparray[,iter] <- temps
   
 
@@ -207,7 +210,7 @@ degreeday$dts <- strptime(degreeday$dts, "%j") ###Note need to subtract 365 if l
 #degreeday <- degreeday[order(degreeday$dts),]
 #degreeday <- degreeday[1:363,]
 
-degreeday$DegreeDay <- degreeday$DegreeDay - 100
+degreeday$DegreeDay <- degreeday$DegreeDay
 # can't have negative numbers so turn those into 0s
 degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
 
@@ -268,14 +271,14 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
       # for each value in that sequence, we will add the degree day values of 
       #the timestep prior and check if it adds up to our threshold to emergence
       for (s in degseq) {
-        if(vec <= 266) { vec <- degreeday$DegreeDay[s] + vec
+        if(vec <= 525) { vec <- degreeday$DegreeDay[s] + vec
         }
         else {emerg <- t - s
         emergetime <- append(emergetime, emerg)
                 break}
         # once we hit that threshold, we count the number of timesteps it took to reach that and add that to our emergetime vector  
       }
-      if (vec  <= 266) {
+      if (vec  <= 525) {
         emerg = NA
         emergetime <- append(emergetime, emerg)}
     }
@@ -283,19 +286,15 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
     # Calculate fecundity per adult
     
     # we start by pulling fecundities from normal distribution
-    F_BAET = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5 *0.5  #* H_BAET #Baetidae egg minima and maxima from Degrange, 1960 *0.5 assuming 50% female and * 0.5 assuming 50% mort.
-    
-    # relate fecundities to temperature based on Sweeney et al., 2017  *0.5 assuming 50% female and * 0.5 assuming 50% mort.
-    #F_BAET <- (-379.8021 * (temps$Temperature[t-1]) + 16.4664*(temps$Temperature[t-1]^2) - 0.2684* (temps$Temperature[t-1]^3) + 4196.8608) * 0.5 * 0.5
-    
-    # we can also relate fecundities to body mass. Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
-    # that weight is related to fecundity Y = 614X - 300
-    # we can "convert" emergetime to mg by multiplying by 0.225 (to get dry weights between 0.9 - 2 mg)
+    F_BAET = 656.3* 0.5 *0.5  # Ephem eggs assumed to be between 532.4 and 780.2 per female because that is above average
+    # we can also relate fecundities to body mass. Sweeney and Vannote 1981 have recorded dry body weight between 6.6 and 10.8 mg. 
+    # that weight is related to fecundity Y = 59X - 143
+    # we can "convert" emergetime to mg by multiplying by size = 0.467(emergetime) +  5.199(to get dry weights between 6.6 - 10.8 mg)
    
-    size <- emergetime[t-1] * 0.225
+    size <- (emergetime[t-1] * 0.467) + 5.199
     sizelist <- append(sizelist, size)
     if (!is.na(size[t]) == T){
-    F_BAET <- ((614 * size) - 300) * 0.5 * 0.5}
+    F_BAET <- ((59 * size) - 143) * 0.5 * 0.5}
     
     
     Flist <- append(Flist, F_BAET)
@@ -314,7 +313,16 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
     K <- 10000 + ((40000-10000)*Qf)
     
     # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
-    K <- 10000 + ((K - 10000)*exp(-g*14))
+    
+    tau = (t-1) - (last(which(Q[1:t-1] > Qmin)))
+    
+    if (is.na(tau)==T) { tau <-  0}
+    
+    if (tau > 0) {
+      
+      K <- 10000 + ((Klist[t-1] - 10000)*exp(-g*tau))}
+    Klist <- append(Klist, K)
+    
     
     Klist <- append(Klist, K)
     
@@ -335,7 +343,7 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
     #F_BAET <- F_BAET*exp(-b * Total.N[t-1, iter])
     
     # Ricker model reproductive output, from  (recruitment = axe^r-bx)
-    F_BAET <- F_BAET*exp(r-b * Total.N[t-1, iter])
+    #F_BAET <- F_BAET*exp(r-b * Total.N[t-1, iter])
     
     # beverton holt is Nt+1 = rNt/1-Nt(r-1)/K
     # it is supposed to be depensatory, so as t -> inf, Nt+1 -> K, BUT 
@@ -355,6 +363,8 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
     #F_BAET <- F_BAET*((K - (K-1))/K)
     #}
     
+    # Logistic via Rogosch et al. Fish Model
+    F_BAET <- F_BAET * checkpos((K - Total.N[t-1, iter])/K)
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
@@ -402,13 +412,13 @@ degreeday$DegreeDay[which(degreeday$DegreeDay < 0)] <-  0
     #plot(x = Q, y = 1/(1+exp(-0.02*(Q-100000))))
     
     #s1
-    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-80000))))
+    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] * exp(-h*Q[t-1])
     #s2
-    output.N.list[t,2,iter] <- output.N.list[t,2,iter] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
+    output.N.list[t,2,iter] <- output.N.list[t,2,iter] * exp(-h*Q[t-1])
     #3
-    output.N.list[t,3,iter] <- output.N.list[t,3,iter] - (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000))))
+    output.N.list[t,3,iter] <- output.N.list[t,3,iter] * exp(-h*Q[t-1])
     
-    flowmortlist <- append(flowmortlist, (Q[t-1] * 1/(1+exp(-0.02*(Q[t-1]-100000)))))
+    flowmortlist <- append(flowmortlist, exp(-h*Q[t-1]))
     #replist[[1]][,,1] <- output.N.list[[1]]
     Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
   } #-------------------------
@@ -456,8 +466,8 @@ ggplot(data = means.size, aes(x = date,
   geom_line(show.legend = FALSE) +
   #coord_cartesian(xlim = ylim = c(0)) +
   ylab('Baetis Size (mg)') +
-  xlab('Date') +
-  scale_x_datetime(labels = date_format("%b"))
+  xlab('Date') #+
+  #scale_x_datetime(labels = date_format("%b"))
 
 means_May_BV <- means.size[132:163, ]
 
