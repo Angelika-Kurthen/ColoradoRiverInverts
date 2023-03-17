@@ -158,11 +158,11 @@ for (iter in c(1:iterations)) {
     # we can "convert" emergetime to mg by multiplying to get dry weights between 0.9 - 2 mg, and then convert to fecunity
     # Issue: this data is for Ephemerella spp, not Baetidae spp
     # 
-    if (t > 15) {
-      size <- (emergetime[t-1] * 0.55)-0.75
-      sizelist <- append(sizelist, size)
-      F3 <- ((614 * size) - 300)* 0.5 * 0.78 * 0.65
-    }
+    # if (t > 15) {
+    #   size <- (emergetime[t-1] * 0.55)-0.75
+    #   sizelist <- append(sizelist, size)
+    #   F3 <- ((614 * size) - 300)* 0.5 * 0.78 * 0.65
+    # }
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
     # Sets to 0 if below the Qmin
@@ -195,20 +195,20 @@ for (iter in c(1:iterations)) {
     
     # # Probabilities of remaining in stages (when temps low, high prob of remaining)
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    if (7 > temps$Temperature[t-1]) {
-      G1 <- 0.001
-      G2 <- 0.001}
-    
-    if (temps$Temperature[t-1] > 25){
-      G1 <-0.55
-      G2 <-0.55}
-    
-    if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
-    if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
-
-    # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
-    P1 <- 0.55 - G1
-    P2 <- 0.55 - G2
+    # if (7 > temps$Temperature[t-1]) {
+    #   G1 <- 0.001
+    #   G2 <- 0.001}
+    # 
+    # if (temps$Temperature[t-1] > 25){
+    #   G1 <-0.55
+    #   G2 <-0.55}
+    # 
+    # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
+    # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
+    # 
+    # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
+    # P1 <- 0.55 - G1
+    # P2 <- 0.55 - G2
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
@@ -264,32 +264,39 @@ colnames(adults) <- c("Time","Adult Baetidae")
 
 ## turning replist into a df
 means.list.BAET <- mean.data.frame(out, burnin = 0, iteration = 1)
-
+means.list.BAET <- cbind(means.list.BAET[1:length(means.list.BAET$mean.abund),], temps$dts[1:length(means.list.BAET$mean.abund)])
+means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
 
 # note how boom and bust this model is - K is set to be 10,000 not 100,000
-abund.trends.BAET <- ggplot(data = adults, aes(x = Time,
+abund.trends.BAET <- ggplot(data = adults[300:500,], aes(x = Time,
                                        y = `Adult Baetidae`/10000, group = 1)) +
+  geom_point()+
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
   #            alpha = .5,
   #             show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,1)) +
+  coord_cartesian(ylim = c(0,2)) +
   ylab('Adult Baetis Abundance/ Baseline Reproductive Limit') +
   xlab('Timestep')  
 
-ggplot(data = means.list.BAET, aes(x = timesteps,
+plot(adults$`Adult Baetidae`[300:500], adults$`Adult Baetidae`[301:501], type = "b", xlab = "Adult Baetids t", ylab = "Adult Baetids t+1")
+
+ggplot(data = means.list.BAET[300:500,], aes(x = `temps$dts`,
                           y = mean.abund/10000, group = 1)) +
+  geom_point()+
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
   #            alpha = .5,
   #             show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,20)) +
+  coord_cartesian(ylim = c(0,30)) +
   ylab('Baetis spp. Abundance/Reproductive Limit') +
   xlab('Timestep')  
+
+plot(means.list.BAET$mean.abund[300:500], means.list.BAET$mean.abund[301:501], type = "b", xlab = "Nt", ylab = "Nt+1")
 
 ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
   geom_line(show.legend = FALSE) +
