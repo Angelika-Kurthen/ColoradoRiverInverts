@@ -221,7 +221,7 @@ out <- NZMSmodel(flow.data = discharge, temp.data = temps, baselineK = 10000, di
 # summarizing iterations
 
 ## turning replist into a df
-means.list.NZMS <- mean.data.frame(out,burnin = 1, iteration= 5)
+means.list.NZMS <- mean.data.frame(out,burnin = 1, iteration= 1)
 means.list.NZMS <- cbind(means.list.NZMS, temps$dts[1:length(means.list.NZMS$timesteps)])
 means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
 # plot abundance over time
@@ -235,6 +235,9 @@ arrows <- tibble(
 
 arrows$x1 <- as.Date(arrows$x1)
 arrows$x2 <- as.Date(arrows$x2)
+
+means.list.NZMS <- means.list.NZMS[1300:1501,]
+
 abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
                                               y = mean.abund/10000, group = 1)) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
@@ -243,8 +246,9 @@ abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
   #             alpha = .5,
   #             show.legend = FALSE) +
   geom_line(show.legend = FALSE, linewidth = 0.7) +
+  geom_point()+
   coord_cartesian(ylim = c(0,1.5)) +
-  ylab('New Zealand Mudsnail Abundance') +
+  ylab('New Zealand Mudsnail Abundance/Recruitment Limit') +
   xlab(" ")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13))+
@@ -285,3 +289,7 @@ ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
   geom_line(show.legend = FALSE) +
   ylab('Hydrospyche spp. Abundance/Reproductive Limit') +
   xlab(" ")
+
+os <- as.data.frame(cbind(means.list.NZMS$mean.abund[1:200], means.list.NZMS$mean.abund[2:201]))
+
+plot(os$V1, os$V2, type = "b", xlab = "Nt", ylab = "Nt+1", main = "Snail Abundance")
