@@ -63,7 +63,7 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
   # specify baseline transition probabilities
   # its speculated (Cross et al 2010) that survivorship is between 80 - 100% for NZMS in Grand Canyon - will say 90% survive, 10% baseline mortality
   # from timestep to timestep, we expect 90% to survive so for stage 1 (which lasts aproximately 14 timesteps, survival should be approx 09^14 = 0.2287679
-  # from that, only 1/14th will transition out, 13/14 remain in stage (Caswell 2001, 6.4 p 160-161)
+  # from that, only 1/14th will transition out, 13/14 remain in stage (Birt et al 2009)
   
   # stage 1 G1 (prob transition to stage 2)
   # stage 1 P1 (prob remaining in stage 2) 
@@ -135,13 +135,16 @@ for (iter in c(1:iterations)) {
     
     #---------------------------------------------------------
     # Calculate starting fecundity per adult
-    
+    #temps
     # fecundities estimated from McKenzie et al. 2013 - reduced fecundity above 24 C and below 9 C. 
     # optimal temp between 16 and 19 C, but we don't really have parameterization for that
+# 
+      F2 <- 8.87473 * (-0.0001427 *  (temps$Temperature[t-1] - 17.5)^4 + 1)
 
-      F2 <- 8.87473 * (-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1)  
-
-      F3 <- 27.89665 * (-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1)  
+      F3 <- 27.89665 * (-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1)
+# #       
+#       F2 <- 8.87473
+#       F3 <- 27.89665
     
     
     #---------------------------------------------------
