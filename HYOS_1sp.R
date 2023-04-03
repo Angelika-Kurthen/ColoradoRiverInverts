@@ -77,11 +77,16 @@ Kd <- as.numeric(disturbanceK)
 
 # specify baseline transition probabilities for each species
 # 3 stages - we have egg - larval instar V, pupae, and adult
+# using eqs 3 to 7 from Birt et al 2009
 
-G1 = 0.1 # move onto stage 2
-G2 = 0.445# move onto stage 3
-P1 = 0.7 # remain in stage 1
-P2 = 0 # remain in stage 2
+# using Willis et al 1992, we consolidate life table infor for larval stages I and II (Stage 1),
+# larval stages III, IV, V, and Pupae (Stage 2)
+# and adults/eggs (Stage 3 with prebreeding census)
+
+G1_HYOS = 0.016 # according to Willis et al 1992, average 3 timesteps 
+G2_HYOS = 0.0045  # move onto stage 3
+P1_HYOS = 0.6666667  # remain in stage 1
+P2_HYOS = 0.9583333 # remain in stage 2
 
 
 # want to run this for one year, in 14 day timesteps 
@@ -187,20 +192,28 @@ for (iter in c(1:iterations)) {
     # Calculate new transition probabilities based on temperature
     # This is the growth v development tradeoff 
     # don't know if this exists for HYOS - they can emerge under a wide temp gradient (<5 - 25+ C) but relationship between growth and temp 
+    # at cold temps, takes 20 timesteps to complete Stage 1
+    # at warm temps, take 1 timestep to complete Stage 1
+    # create linear eq to describe this, between temps of 5 and 25 C
+    # Timesteps = -0.95(TEMP) + 24.75 
     
-    #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    # if (5 > temps$Temperature[t-1]) {
-    #   G1 <- 0.001
-    #   G2 <- 0.001}
-    # 
-    # if (temps$Temperature[t-1] > 25){
-    #   G1 <-0.799
-    #   G2 <-0.444}
-    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 10, 20, 0.1, 0.2)
-    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 10, 20, 0.35, 0.445)
-    # P1 <- 0.8 - G1
-    # P2 <- 0.445 - G2
-    # 
+    
+    #development measures at cold temps
+    if (5 > temps$Temperature[t-1]) {
+      G1 <- 0.048/20
+      P1 <- 1-(1/20)
+      }
+
+    if (temps$Temperature[t-1] > 25){
+      G1 <- 0.048
+      P1 <- 0
+      }
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25){
+      G1 <- 0.048/((-0.95 * temps$Temperature[t-1]) + 24.75)
+      P1 <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))
+    } 
+
+
    
     #-----------------------------------------------
     # Create Lefkovitch Matrix
