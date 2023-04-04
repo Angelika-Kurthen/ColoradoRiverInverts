@@ -155,17 +155,17 @@ for (iter in c(1:iterations)) {
     emergetime <- append(emergetime, back.count.degreedays(t, 1680, degreedays))
     #---------------------------------------------------------
     # Calculate fecundity per adult
-    F3 = 235.6* 0.25 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+    F3 = 235.6* 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     #F3 = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
-    # * 0.5 assuming 50% female
+    # * 0.5 assuming 50% female.
     
     # # we can scale fecundity based on the 95% CI of 21.66 (min = 213.94, max = 257.26) 
-    # if (t > 15) {
-    #   size <- emergetime[t-1]
-    #   sizelist <- append(sizelist, size)
-    #   F3 <- ((8.664 * size) + 127.3) * 0.25 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
-    # }
+    if (t > 15) {
+      size <- emergetime[t-1]
+      sizelist <- append(sizelist, size)
+      F3 <- ((8.664 * size) + 127.3) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+    }
 
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
