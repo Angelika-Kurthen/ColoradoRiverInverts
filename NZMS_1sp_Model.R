@@ -164,8 +164,8 @@ for (iter in c(1:iterations)) {
     
     # Logistic Density Dependence on Fecundity via Rogosch et al. Fish Model
     # assume 97% Female poplation, and 30% instant mortality for eggs laid
-    F2 <- Logistic.Dens.Dependence(F2, K, Total.N[t-1, iter]) * 0.97 * 0.7
-    F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter]) * 0.97 * 0.7
+    F2 <- Logistic.Dens.Dependence(F2, K, Total.N[t-1, iter]) * 0.97 * 0.7 *  hydropeaking.mortality(lower = 0.9, upper = 1, h = hp[t-1])
+    F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter]) * 0.97 * 0.7 *  hydropeaking.mortality(lower = 0.9, upper = 1, h = hp[t-1])
     
     Flist <- append(Flist, (F2 + F3))
     #-----------------------------------------------
