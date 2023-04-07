@@ -143,7 +143,7 @@ for (iter in c(1:iterations)) {
     #----------------------------------------------------------
     # Calculate how many timesteps emerging adults have matured
     
-    emergetime <- append(emergetime, back.count.degreedays(t, 559, degreedays)) # value from Perry and Kennedy, 2016 
+    emergetime <- append(emergetime, back.count.degreedays(t, 1356, degreedays)) # value from Lee, Chayoung & Kim, Dong Gun & Baek, Min & Choe, Lak & Bae, Yeon. (2013). Life History and Emergence Pattern of Cloeon dipterum (Ephemeroptera: Baetidae) in Korea. Environmental entomology. 42. 10.1603/EN13012. 
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
@@ -195,20 +195,20 @@ for (iter in c(1:iterations)) {
     
     # # Probabilities of remaining in stages (when temps low, high prob of remaining)
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    # if (7 > temps$Temperature[t-1]) {
-    #   G1 <- 0.001
-    #   G2 <- 0.001}
-    # 
-    # if (temps$Temperature[t-1] > 25){
-    #   G1 <-0.55
-    #   G2 <-0.55}
-    # 
-    # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
-    # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
-    # 
-    # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
-    # P1 <- 0.55 - G1
-    # P2 <- 0.55 - G2
+    if (7 > temps$Temperature[t-1]) {
+      G1 <- 0.001
+      G2 <- 0.001}
+
+    if (temps$Temperature[t-1] > 25){
+      G1 <-0.55
+      G2 <-0.55}
+
+    if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
+    if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
+
+    # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
+    P1 <- 0.55 - G1
+    P2 <- 0.55 - G2
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
