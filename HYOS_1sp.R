@@ -199,7 +199,7 @@ for (iter in c(1:iterations)) {
     
     
     #development measures at cold temps
-    if (5 > temps$Temperature[t-1]) {
+    if (5 > temps$Temperature[t-1])  {
       G1 <- 0.048/20
       P1 <- 1-(1/20)
       }
@@ -208,10 +208,13 @@ for (iter in c(1:iterations)) {
       G1 <- 0.048
       P1 <- 0
       }
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25){
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25 & is.na(emergetime[t] == F)){
+      G1 <- 0.048/emergetime[t]
+      P1 <- 1-(1/emergetime[t])
+    }
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25 & is.na(emergetime[t] == T)) {
       G1 <- 0.048/((-0.95 * temps$Temperature[t-1]) + 24.75)
-      P1 <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))
-    } 
+      P1 <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))}
 
 
    
@@ -265,6 +268,7 @@ for (iter in c(1:iterations)) {
 # End Outer Loop
 #----------------------
 return(output.N.list)
+
 }
 
 
