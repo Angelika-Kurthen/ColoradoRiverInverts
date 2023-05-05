@@ -74,7 +74,7 @@ Kb <- as.numeric(baselineK)
 Kd <- as.numeric(disturbanceK)
 
 # specify baseline transition probabilities for each species
-G1 = 0.25 #move to Stage2 (subimago)
+G1 = 0.3 #move to Stage2 (subimago)
 G2 = 0.25 #move to Stage3 (adult)
 P1 = 0.3 #stay in Stage1 (larvae)
 P2 = 0.3 #stay in Stage2 (subimago)
@@ -158,11 +158,11 @@ for (iter in c(1:iterations)) {
     # we can "convert" emergetime to mg by multiplying to get dry weights between 0.9 - 2 mg, and then convert to fecunity
     # Issue: this data is for Ephemerella spp, not Baetidae spp
     # 
-    # if (t > 15) {
-    #   size <- (emergetime[t-1] * 0.55)-0.75
-    #   sizelist <- append(sizelist, size)
-    #   F3 <- ((614 * size) - 300)* 0.5 * 0.78 * 0.65
-    # }
+    if (t > 15) {
+      size <- emergetime[t-1]
+      sizelist <- append(sizelist, size)
+      F3 <- (57*size)+506 * 0.5 * 0.78 * 0.65
+    }
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
     # Sets to 0 if below the Qmin
@@ -195,20 +195,38 @@ for (iter in c(1:iterations)) {
     
     # # Probabilities of remaining in stages (when temps low, high prob of remaining)
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    if (7 > temps$Temperature[t-1]) {
-      G1 <- 0.001
-      G2 <- 0.001}
+    if (5 > temps$Temperature[t-1]) {
+      P1 <- 1-(1/12.5)
+      P2 <- P1
+      G1 <- 0.29/12.5
+      G1 <- G2
+      }
 
-    if (temps$Temperature[t-1] > 25){
-      G1 <-0.55
-      G2 <-0.55}
+    if (temps$Temperature[t-1] > 21){
+      P1 <- 1-(1/1.5)
+      P2 <- P1
+      G1 <- 0.29/1.5
+      G2 <- G2
+      }
 
-    if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
-    if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
-
-    # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
-    P1 <- 0.55 - G1
-    P2 <- 0.55 - G2
+    
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == F)){
+      G1 <- 0.29/((emergetime[t]-1)/2)
+      G2 <- G1
+      P1 <- 1-(1/((emergetime[t]-1)/2))
+      P2 <- P1
+    }
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
+      G1 <- 0.048/((-0.786 * temps$Temperature[t-1]) + 18)
+      P1 <- 1-(1/((-0.786 * temps$Temperature[t-1]) + 18))}
+    
+    
+    # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
+    # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
+    # 
+    # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
+    # P1 <- 0.55 - G1
+    # P2 <- 0.55 - G2
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
