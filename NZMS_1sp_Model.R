@@ -70,8 +70,8 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
   # stage 2 P2 (prob remaining in stage 2)
   # stage 3 P3 (prob remaining in stage 3) 
   
-  G1 = 0.9/14
-  G2 = 0.9/7
+  G1 = 0.95/14
+  G2 = 0.95/7
   P1 = 6/7
   P2 = 13/14
   P3 = 6/7 
@@ -100,7 +100,7 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
   
   Qmin <- Qmin
   a <- 0.1
-  g <- 0.1
+  g <- 10
   h <- surv.fit.NZMS$m$getPars()[2]  
   k <- surv.fit.NZMS$m$getPars()[1] 
   
@@ -114,7 +114,7 @@ for (iter in c(1:iterations)) {
   
   K = Kb # need to reset K for each iteration
   # we can pull random values from a uniform distribution 
-  output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
+  output.N.list[1,1:3, iter]<- rnbinom(3, size = 5755.649, mu = 1488.661 )/3
   
   # we often want to look at different parameter values after we run code, so we create some lists
   # list to input Ks
@@ -139,10 +139,16 @@ for (iter in c(1:iterations)) {
     # fecundities estimated from McKenzie et al. 2013 - reduced fecundity above 24 C and below 9 C. 
     # optimal temp between 16 and 19 C, but we don't really have parameterization for that
 # 
-      F2 <- 8.87473 * (-0.0001427 *  (temps$Temperature[t-1] - 17.5)^4 + 1)
+      F2 <- 15.1096 * (-0.0001427 *  (temps$Temperature[t-1] - 17.5)^4 + 1)
 
-      F3 <- 27.89665 * (-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1)
-# #       
+      F3 <- 40.6837 * (-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1)
+# #   
+      if (F2 < 0){
+        F2 <- 0
+      }
+      if (F3 < 0){
+        F3 <- 0
+      }
 #       F2 <- 8.87473
 #       F3 <- 27.89665
     
@@ -164,8 +170,15 @@ for (iter in c(1:iterations)) {
     
     # Logistic Density Dependence on Fecundity via Rogosch et al. Fish Model
     # assume 97% Female poplation, and 30% instant mortality for eggs laid
-    F2 <- Logistic.Dens.Dependence(F2, K, Total.N[t-1, iter]) * 0.97 * 0.7 *  hydropeaking.mortality(lower = 0.9, upper = 1, h = hp[t-1])
-    F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter]) * 0.97 * 0.7 *  hydropeaking.mortality(lower = 0.9, upper = 1, h = hp[t-1])
+    F2 <- Logistic.Dens.Dependence(F2, K, Total.N[t-1, iter]) * 0.97 *hydropeaking.mortality(lower = 0.9, upper = 1, h = hp[t-1])
+    F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter]) * 0.97 *hydropeaking.mortality(lower = 0.9, upper = 1, h = hp[t-1])
+    
+    if (F2 < 0){
+      F2 <- 0
+    }
+    if (F3 < 0){
+      F3 <- 0
+    }
     
     Flist <- append(Flist, (F2 + F3))
     #-----------------------------------------------
@@ -189,9 +202,9 @@ for (iter in c(1:iterations)) {
     #Calculate immediate mortality due to flows
 
     #s1
-    output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t,1,iter], k, h, Q[t-1], Qmin)
+    #output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t,1,iter], k, h, Q[t-1], Qmin)
     #s2
-    output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
+    #output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
     #3
     output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
     
