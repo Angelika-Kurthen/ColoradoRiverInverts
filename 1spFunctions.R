@@ -41,7 +41,7 @@ TimestepDischarge <- function(flow, bankfull_discharge){
 }
 
 # function to index and summarize temperature data over timesteps length
-TimestepTemperature <- function(temp, river){
+TimestepTemperature <- function(temp){
   # Make an index to be used for aggregating
   ID <- as.numeric(as.factor(temp$Date))-1
   # want it to be every 14 days, hence the 14
@@ -56,12 +56,7 @@ TimestepTemperature <- function(temp, river){
   outs$dts <- as.POSIXct(temp$Date[(outs$dts*14)+1])
   # order by date in chronological order
   temps <- outs[order(outs$dts),]
-  
-  if (river == "Colorado River"){
-    # there are less temperatures than discharge readings, so we will just repeat the same temp sequence for this exercise
-    temps <- rbind(temps, temps, temps)
-    temps <- temps[1:length(flow.magnitude$Discharge), ]
-  }
+
   return(temps)
 }
 
