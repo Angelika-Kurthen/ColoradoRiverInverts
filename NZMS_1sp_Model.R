@@ -99,7 +99,7 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
   output.N.list <- reparray
   
   Qmin <- Qmin
-  a <- 0.1
+  a <- 0.2
   g <- 10
   h <- surv.fit.NZMS$m$getPars()[2]  
   k <- surv.fit.NZMS$m$getPars()[1] 
@@ -114,7 +114,7 @@ for (iter in c(1:iterations)) {
   
   K = Kb # need to reset K for each iteration
   # we can pull random values from a uniform distribution 
-  output.N.list[1,1:3, iter]<- rnbinom(3, size = 5755.649, mu = 1488.661 )/3
+  output.N.list[1,1:3, iter]<- rnbinom(3, size = 6020.175, mu = 35.11555 )/3
   
   # we often want to look at different parameter values after we run code, so we create some lists
   # list to input Ks
@@ -202,9 +202,9 @@ for (iter in c(1:iterations)) {
     #Calculate immediate mortality due to flows
 
     #s1
-    #output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t,1,iter], k, h, Q[t-1], Qmin)
+    output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t,1,iter], k, h, Q[t-1], Qmin)
     #s2
-    #output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
+    output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
     #3
     output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
     
