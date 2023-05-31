@@ -26,17 +26,17 @@ TimestepDischarge <- function(flow, bankfull_discharge){
   ID <- ID %/% 14
   # aggregate over ID and TYPE for all numeric data.
   out <- aggregate(flow[sapply(flow,is.numeric)],
-                   by=list(ID,flow$X_00060_00003),
+                   by=list(ID), #,flow$X_00060_00003
                    FUN=mean)
   # format output
   names(out)[1:2] <-c("dts","Discharge")
   # add the correct dates as the beginning of every period
-  out$dts <- as.POSIXct(flow$Date[(out$dts*14)+1])
+  out$dts <- format(as.POSIXct(flow$Date[((out$dts*14) + 2)]), "%Y-%m-%d")
+                    # get mean Discharge data for every 14 days
+  #out <- aggregate(out, by = list(out$dts), FUN = mean)
+  out$Discharge <- out$Discharge/bankfull_discharge # standardize to disturbance magnitude by taking discharge/bankfull_discharge
   # order by date in chronological order
   out <- out[order(out$dts),]
-  # get mean Discharge data for every 14 days
-  out <- aggregate(out, by = list(out$dts), FUN = mean)
-  out$Discharge <- out$Discharge/bankfull_discharge # standardize to disturbance magnitude by taking discharge/bankfull_discharge
   return(out)
 }
 
@@ -53,7 +53,7 @@ TimestepTemperature <- function(temp){
   # format output
   names(outs)[1:2] <-c("dts","Temperature")
   # add the correct dates as the beginning of every period
-  outs$dts <- as.POSIXct(temp$Date[(outs$dts*14)+1])
+  outs$dts <- as.POSIXct(temp$Date[((outs$dts*14)+1)])
   # order by date in chronological order
   temps <- outs[order(outs$dts),]
 
