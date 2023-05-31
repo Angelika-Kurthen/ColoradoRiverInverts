@@ -18,7 +18,7 @@ discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 temps <- TimestepTemperature(temp)
-out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 500, baselineK = 1.25, Qmin = 0.19, extinct = 0, iteration = 100, peaklist = 0.27, peakeach = length(temps$Temperature))
+out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 200000, baselineK = 10, Qmin = 0.25, extinct = 0, iteration = 100, peaklist = 0.27, peakeach = length(temps$Temperature))
 
 
 adults<-as.data.frame(cbind(as.Date(temps$dts), out[1:length(temps$dts),2:3,1]))
@@ -38,10 +38,10 @@ abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
                alpha = .5,
                show.legend = T) +
   geom_line(show.legend = T, linewidth = 0.7) +
-  geom_line(data = NZMS.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = sums, color = "Empirical"), show.legend = T)+
+  geom_line(data = NZMS.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = log(sums), color = "Empirical"), show.legend = T)+
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  coord_cartesian(ylim = c(0,600)) +
+  #coord_cartesian(ylim = c(0,2000000)) +
   ylab('New Zealand Mudsnail Abundance Density (m2)') +
   xlab("")+
   labs(colour=" ")
@@ -77,13 +77,13 @@ drift.LF <- drift.data.total[which(drift.data.total$RiverMile >= -3 & drift.data
 
 #View(Baet.samp.LF$Samples)
 #m <- merge(Baet.samp.LF$Statistics, Baet.samp.LF$Samples, by = "BarcodeID", all = T)
-discharge
+
 NZMS.samp.LF <- sampspec(samp = drift.LF, species = "NZMS", stats = T)
 NZMS.samp <- merge(NZMS.samp.LF$Statistics, NZMS.samp.LF$Samples, by = "BarcodeID", all = T)
 NZMS.samp <- NZMS.samp[which(NZMS.samp$GearID == 4),]
 NZMS.samp$Density <- NZMS.samp$CountTotal/NZMS.samp$Volume
 NZMS.samp <- merge(NZMS.samp, discharge[, 3:4], by = "Date")
-NZMS.samp$Density <- 9e-15 *(NZMS.samp$Density/((NZMS.samp$X_00060_00003 * 0.02831683)^4.1))
+#NZMS.samp$Density <- (NZMS.samp$Density/(9e-15 *(NZMS.samp$X_00060_00003 * 0.02831683)^4.1))
 NZMS.samp <- aggregate(NZMS.samp$Density, list(NZMS.samp$Date), FUN = sum)
 
 sums <- vector()
@@ -101,5 +101,7 @@ NZMS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.NZMS$`temps$dts`
 NZMS.samp.sum$V1 <- as.Date(NZMS.samp.sum$V1, origin = "1970-01-01")
 
 
-cor.df <- left_join(NZMS.samp.sum, means.list.NZMS, by=c('V1'='`temps$dts'), copy = T)
-cor.test(cor.df$sums, cor.df$mean.abund, method = "pearson")
+cor.df <- left_join(NZMS.samp.sum, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
+cor.test(log10(cor.df$sums), cor.df$mean.abund, method = "pearson")
+
+
