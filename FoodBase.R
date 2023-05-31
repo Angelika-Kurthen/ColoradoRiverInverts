@@ -25,7 +25,7 @@ adults<-as.data.frame(cbind(as.Date(temps$dts), out[1:length(temps$dts),2:3,1]))
 colnames(adults) <- c("Time","Adult")
 adults$Time <- as.Date(adults$Time, origin = "1970-01-01")
 
-means.list.NZMS <- mean.data.frame(out,burnin = 1, iteration= 1)
+means.list.NZMS <- mean.data.frame(out,burnin = 50, iteration= 1)
 means.list.NZMS <- cbind(means.list.NZMS, temps$dts[1:length(means.list.NZMS$timesteps)])
 means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
 # plot abundance over time
@@ -82,21 +82,9 @@ NZMS.samp.LF <- sampspec(samp = drift.LF, species = "NZMS", stats = T)
 NZMS.samp <- merge(NZMS.samp.LF$Statistics, NZMS.samp.LF$Samples, by = "BarcodeID", all = T)
 NZMS.samp <- NZMS.samp[which(NZMS.samp$GearID == 4),]
 NZMS.samp$Density <- NZMS.samp$CountTotal/NZMS.samp$Volume
-#NZMS.samp <- merge(NZMS.samp, discharge[, 3:4], by = "Date")
-#NZMS.samp$Density <- NZMS.samp$Density/((NZMS.samp$X_00060_00003 * 0.028316832)^4.1)
+NZMS.samp <- merge(NZMS.samp, discharge[, 3:4], by = "Date")
+NZMS.samp$Density <- 9e-15 *(NZMS.samp$Density/((NZMS.samp$X_00060_00003 * 0.02831683)^4.1))
 NZMS.samp <- aggregate(NZMS.samp$Density, list(NZMS.samp$Date), FUN = sum)
-
-calculate_sum_within_interval <- function(start_time, end_time, dates, values) {
-  sum(values[dates >= start_time & dates <= end_time])
-}
-
-# Calculate the sum within each time interval
-interval_sums <- mapply(calculate_sum_within_interval, start_time = temps$dts[-length(temps$dts)], 
-                        end_time = temps$dts[-1], dates = NZMS.samp$Group.1, values = NZMS.samp$x)
-
-
-calculate_sum_within_interval(start_time = temps$dts[31], end_time = temps$dts[32], dates = NZMS.samp$Group.1, values = NZMS.samp$x)
-
 
 sums <- vector()
 for (i in 1:length(temps$dts)){
@@ -107,8 +95,11 @@ for (i in 1:length(temps$dts)){
   s<- sum(d$x)}
   sums <- append(sums, s)
 }
-NZMS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(temps$dts), sums)))
+
+
+NZMS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.NZMS$`temps$dts`), sums)))
 NZMS.samp.sum$V1 <- as.Date(NZMS.samp.sum$V1, origin = "1970-01-01")
 
-cor.df <- left_join(NZMS.samp.sum, means.list.NZMS, by=c('V1'='temps$dts'))
+
+cor.df <- left_join(NZMS.samp.sum, means.list.NZMS, by=c('V1'='`temps$dts'), copy = T)
 cor.test(cor.df$sums, cor.df$mean.abund, method = "pearson")
