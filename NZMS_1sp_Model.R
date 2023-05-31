@@ -156,20 +156,20 @@ for (iter in c(1:iterations)) {
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
     # Sets to 0 if below the Qmin
-    Qf <- Qf.Function(Q[t-1], Qmin, a)
+    #Qf <- Qf.Function(Q[t-1], Qmin, a)
     
     #-------------------------------------------------------------------
     # Calculate K arrying capacity immediately following the disturbance
-    K0 <- K + ((Kd-K)*Qf)
+    #K0 <- K + ((Kd-K)*Qf)
     
     # Calculate final K for timestep, including relationship between K and time since disturbance
-    K <- post.dist.K(K0, Kb, g, t, Q, Qmin)
-    Klist <- append(Klist, K)
+    #K <- post.dist.K(K0, Kb, g, t, Q, Qmin)
+    #Klist <- append(Klist, K)
     #---------------------------------------------
     # Calculate effect of density dependnce on fecundity 
     
     # Logistic Density Dependence on Fecundity via Rogosch et al. Fish Model
-    # assume 97% Female poplation, and 30% instant mortality for eggs laid
+    # assume 97% Female poplation
     F2 <- Logistic.Dens.Dependence(F2, K, Total.N[t-1, iter]) * 0.97 *hydropeaking.mortality(lower = 0.9, upper = 1, h = hp[t-1])
     F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter]) * 0.97 *hydropeaking.mortality(lower = 0.9, upper = 1, h = hp[t-1])
     
