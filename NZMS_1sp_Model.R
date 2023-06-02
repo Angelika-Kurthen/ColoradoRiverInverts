@@ -138,11 +138,13 @@ for (iter in c(1:iterations)) {
     #temps
     # fecundities estimated from McKenzie et al. 2013 - reduced fecundity above 24 C and below 9 C. 
     # optimal temp between 16 and 19 C, but we don't really have parameterization for that
+    # F2 <- -0.209*(temps$Temperature[t-1])^2 + 7.32*temps$Temperature[t-1] - 48.936
+    # F3 <- -0.563*(temps$Temperature[t-1])^2 + 19.708*temps$Temperature[t-1] -131.764
 # 
       F2 <- 15.1096 * (-0.0001427 *  (temps$Temperature[t-1] - 17.5)^4 + 1)
 
       F3 <- 40.6837 * (-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1)
-# #   
+# # #   
       if (F2 < 0){
         F2 <- 0
       }
