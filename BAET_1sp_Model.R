@@ -149,7 +149,7 @@ for (iter in c(1:iterations)) {
     
     # we start by pulling fecundities from normal distribution
     # assuming 50 50 sex ration, 0.22 of egg masses 'dissapearred', and 0.2 desiccation because of rock drying
-    F3 = 1104.4 * 0.5 * 0.78 * 0.65
+    F3 = 1104.4 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
     #F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
     
     # we can also relate fecundities to body mass.
@@ -158,10 +158,10 @@ for (iter in c(1:iterations)) {
     # we can "convert" emergetime to mg by multiplying to get dry weights between 0.9 - 2 mg, and then convert to fecunity
     # Issue: this data is for Ephemerella spp, not Baetidae spp
     # 
-    if (t > 15) {
+    if (t > 19) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F3 <- (57*size)+506 * 0.5 * 0.78 * 0.65
+      F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
     }
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
@@ -219,7 +219,8 @@ for (iter in c(1:iterations)) {
     if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
       G1 <- 0.048/((-0.786 * temps$Temperature[t-1]) + 18)
       P1 <- 1-(1/((-0.786 * temps$Temperature[t-1]) + 18))}
-    
+      G2 <- G1
+      P2 <- P1
     
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
