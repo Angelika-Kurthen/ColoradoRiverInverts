@@ -102,8 +102,8 @@ reparray <- array(0,
 output.N.list <- reparray
 
 Qmin <- Qmin
-a <- 0.1
-g <- 0.1
+a <- 0.0001
+g <- 1
 h <- surv.fit.BAET$m$getPars()[2]  
 k <- surv.fit.BAET$m$getPars()[1] 
 
@@ -143,7 +143,7 @@ for (iter in c(1:iterations)) {
     #----------------------------------------------------------
     # Calculate how many timesteps emerging adults have matured
     
-    emergetime <- append(emergetime, back.count.degreedays(t, 1356, degreedays)) # value from Lee, Chayoung & Kim, Dong Gun & Baek, Min & Choe, Lak & Bae, Yeon. (2013). Life History and Emergence Pattern of Cloeon dipterum (Ephemeroptera: Baetidae) in Korea. Environmental entomology. 42. 10.1603/EN13012. 
+    emergetime <- append(emergetime, back.count.degreedays(t, 250, degreedays)) # value from Sweeney et al 2017
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
@@ -161,7 +161,8 @@ for (iter in c(1:iterations)) {
     if (t > 19) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
+      F3 <- (200*size)+200 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
+      #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
     }
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
@@ -196,9 +197,9 @@ for (iter in c(1:iterations)) {
     # # Probabilities of remaining in stages (when temps low, high prob of remaining)
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
     if (5 > temps$Temperature[t-1]) {
-      P1 <- 1-(1/12.5)
+      P1 <- 1-(1/9)
       P2 <- P1
-      G1 <- 0.29/12.5
+      G1 <- 0.29/9
       G1 <- G2
       }
 
@@ -218,7 +219,8 @@ for (iter in c(1:iterations)) {
     }
     if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
       G1 <- 0.048/((-0.786 * temps$Temperature[t-1]) + 18)
-      P1 <- 1-(1/((-0.786 * temps$Temperature[t-1]) + 18))}
+      P1 <- 1-(1/((-0.786 * temps$Temperature[t-1]) + 18))
+      }
       G2 <- G1
       P2 <- P1
     
@@ -269,7 +271,7 @@ for (iter in c(1:iterations)) {
 } #----------------------
   # End Outer Loop
   #----------------------
-return(output.N.list)
+return(output.N.list[ , 1:2, ])
 }
 #------------------
 # Analyzing Results
