@@ -9,10 +9,7 @@ library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
-#install.packages("devtools")
-library(devtools)
-#install_github(repo = "jmuehlbauer-usgs/R-packages", subdir = "foodbase")
-library(foodbase)
+
 
 # load Baet model
 source("BAET_1sp_Model.R")
