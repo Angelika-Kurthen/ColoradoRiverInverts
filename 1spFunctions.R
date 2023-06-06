@@ -114,22 +114,25 @@ forward.count.degreedays <- function(criticaldegreedays){
 
 
 # backwards looking calculation of timesteps required to reach stage 3
-back.count.degreedays <- function(time, criticaldegreedays, degreedays){
+back.count.degreedays <- function(time.now, criticaldegreedays, degreedays){
   # for each timestep, we want to back calculate the number of degree days
-  if(time == 1) {print(" ")
+  if(time.now == 2) {
     emerg <- NA
   } else {
     # create a sequence of time from last t to current t
-    degseq <- seq(time - 1, 1, by = -1)
+    degseq <- as.vector(seq(time.now - 1, 1, by = -1))
     # create an empty vector to put the total number of degree days accumulated
     vec <- 0
     # for each value in that sequence, we will add the degree day values of 
     #the timestep prior and check if it adds up to our threshold to emergence
     for (s in degseq) {
-      if(vec <= criticaldegreedays) {vec <- degreedays$DegreeDay[s] + vec
-      emerg <- NA}
-      else {emerg <- time - s
-      break}
+      if(vec <= criticaldegreedays) {
+      vec <- as.numeric(degreedays$DegreeDay[s]) + vec
+      emerg <- NA
+      }
+      else {emerg <- time.now - s
+      break
+      }
       # once we hit that threshold, we count the number of timesteps it took to reach that and add that to our emergetime vector
     }
   }
