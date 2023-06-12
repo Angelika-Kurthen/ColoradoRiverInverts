@@ -34,24 +34,24 @@ source("1spFunctions.R")
 #flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
 # read in temp data
 #temp <- temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
-temp <- read.delim("gcmrc20230123125915.tsv", header=T)
-colnames(temp) <- c("Date", "Temperature")
-# peaklist <- c(0.01, 0.1, 0.2, 0.5)
-# tempslist <- c(0, 0.5, 1, 2.5, 5, 7.5)
+# temp <- read.delim("gcmrc20230123125915.tsv", header=T)
+# colnames(temp) <- c("Date", "Temperature")
+# # peaklist <- c(0.01, 0.1, 0.2, 0.5)
+# # tempslist <- c(0, 0.5, 1, 2.5, 5, 7.5)
+# 
+# n <- 77
+# 
+# # qr is the temp ramps I want to increase the average temp by 
+# qr <- 0
+# # how many years I want each temp ramp to last
+# r <- 77
+# 
+# temps <- average.yearly.temp(temp, "Temperature", "Date")
+# 
+# temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
 
-n <- 77
 
-# qr is the temp ramps I want to increase the average temp by 
-qr <- 0
-# how many years I want each temp ramp to last
-r <- 77
-
-temps <- average.yearly.temp(temp, "Temperature", "Date")
-
-temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
-
-
-discharge <- rep(0.1, times = length(temps$Temperature))
+# discharge <- rep(0.1, times = length(temps$Temperature))
 HYOSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
 #---------------------------------------------------------------
 # set up model
@@ -62,7 +62,7 @@ temps <- temp.data
 
 degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
 colnames(degreedays) <- c("dts", "DegreeDay")
-degreedays$dts <- as.Date(degreedays$dts, origin = "1970-01-01")
+degreedays$dts <- as.POSIXct(degreedays$dts, origin = "1970-01-01")
 
 # need to make ramped increasing hydropeaking index 
 hp <- c(rep(peaklist, each = peakeach))
@@ -80,13 +80,13 @@ Kd <- as.numeric(disturbanceK)
 # using eqs 3 to 7 from Birt et al 2009
 
 # using Willis et al 1992, we consolidate life table infor for larval stages I and II (Stage 1),
-# larval stages III, IV, V, and Pupae (Stage 2)
+# larval stages 
 # and adults/eggs (Stage 3 with prebreeding census)
 
-G1_HYOS = 0.016 # according to Willis et al 1992, average 3 timesteps 
-G2_HYOS = 0.0045  # move onto stage 3
-P1_HYOS = 0.6666667  # remain in stage 1
-P2_HYOS = 0.9583333 # remain in stage 2
+G1 = 0.016  # according to Willis et al 1992, average 3 timesteps (0.05/3)
+G2 = 0.11/3  # move onto stage 3 (0.11/2) 2 instead of 20
+P1 = 0.6666667  # remain in stage (1 1-(1/3))
+P2 = 1 - (1/3) # remain in stage 2 (1 - (1/3)) 2 instead of 20
 
 
 # want to run this for one year, in 14 day timesteps 
@@ -112,8 +112,8 @@ reparray <- array(0,
 output.N.list <- reparray
 
 Qmin <- Qmin
-a <- 0.1
-g <- 0.1
+a <- 0.001
+g <- 1
 h <- surv.fit.HYOS$m$getPars()[2]  
 k <- surv.fit.HYOS$m$getPars()[1] 
 
@@ -133,7 +133,7 @@ for (iter in c(1:iterations)) {
   
   # list to input Ks
   Klist <- vector()
-  Klist[1] <- 10000
+  Klist[1] <- K
   
   # list to imput flow morts
   flowmortlist <- vector()
@@ -152,10 +152,10 @@ for (iter in c(1:iterations)) {
     #----------------------------------------------------------
     # Calculate how many timesteps emerging adults have matured
     
-    emergetime <- append(emergetime, back.count.degreedays(t, 1680, degreedays))
+    emergetime <- append(emergetime, back.count.degreedays(t, 1680, degreedays)) #mean from hauer and stanford 1728.889
     #---------------------------------------------------------
     # Calculate fecundity per adult
-    F3 = 235.6* 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+    F3 = 235.6*  hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     #F3 = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
     # * 0.5 assuming 50% female.
@@ -164,9 +164,8 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F3 <- ((8.664 * size) + 127.3) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+      F3 <- ((7.219 * size) + 163.4) *hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     }
-
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
@@ -197,27 +196,31 @@ for (iter in c(1:iterations)) {
     # create linear eq to describe this, between temps of 5 and 25 C
     # Timesteps = -0.95(TEMP) + 24.75 
     
-    
-    #development measures at cold temps
+    #development measures# at cold temps
     if (5 > temps$Temperature[t-1])  {
-      G1 <- 0.048/20
+      G1 <- 0.05/20
       P1 <- 1-(1/20)
-      }
+    }
+    if (16 > temps$Temperature[t-1]){
+      G2 <- 0.0038 #no emergence
+      P2 <- 0.9615385 # all remain in larval form
+    } else {
+      G2 = 0.11/3  # move onto stage 3 
+      P2 = 1 - (1/3)
+    }
 
     if (temps$Temperature[t-1] > 25){
-      G1 <- 0.048
+      G1 <- 0.05
       P1 <- 0
       }
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25 & is.na(emergetime[t] == F)){
-      G1 <- 0.048/emergetime[t]
-      P1 <- 1-(1/emergetime[t])
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <=25 & is.na(emergetime[t] == F)){
+      G1 <- 0.05/(emergetime[t] - 3)
+      P1 <- 1-(1/(emergetime[t] - 3))
     }
     if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25 & is.na(emergetime[t] == T)) {
-      G1 <- 0.048/((-0.95 * temps$Temperature[t-1]) + 24.75)
-      P1 <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))}
-
-
-   
+      G1 <- 0.05/((-0.95 * temps$Temperature[t-1]) + 24.75)
+      P1 <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))
+    }
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
@@ -272,116 +275,134 @@ return(output.N.list)
 }
 
 
-out <- HYOSmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
-#------------------
-# Analyzing Results
-#-------------------
-# summarizing iterations
-means.list.HYOS <- mean.data.frame(out, burnin = 1, iteration = 1)
-means.list.HYOS <- cbind(means.list.HYOS[1:length(means.list.HYOS$mean.abund),], temps$dts[1:length(means.list.HYOS$mean.abund)])
-means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
-
-
-# means.list.HYOS <- as.data.frame(apply(out[, 3, ],MARGIN = 1, FUN = mean))
-# means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[2:339,], temps$dts))
-# means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$V2, origin = "1970-01-01")
-
-# nt v nt+1
-plot(means.list.HYOS$mean.abund[300:600], means.list.HYOS$mean.abund[301:601], type = "b", xlab = "Nt", ylab= "Nt+1")
-# plot abundance over time
-
-falls <- tibble(
-  x1 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
-  x2 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
-  y1 = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
-  y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
- )
-springs <- tibble(
-  x1 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
-  x2 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
-  y1 = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
-  y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
-)
-# arrows <- tibble(
-#   x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-#   x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-#   y1 = c(1.45, 1.45, 1.45, 1.45), 
-#   y2 = c(1, 1, 1, 1)
+# out <- HYOSmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
+# #------------------
+# # Analyzing Results
+# #-------------------
+# # summarizing iterations
+# means.list.HYOS <- mean.data.frame(out, burnin = 1, iteration = 1)
+# means.list.HYOS <- cbind(means.list.HYOS[1:length(means.list.HYOS$mean.abund),], temps$dts[1:length(means.list.HYOS$mean.abund)])
+# means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
+# 
+# 
+# # means.list.HYOS <- as.data.frame(apply(out[, 3, ],MARGIN = 1, FUN = mean))
+# # means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[2:339,], temps$dts))
+# # means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$V2, origin = "1970-01-01")
+# 
+# # nt v nt+1
+# plot(means.list.HYOS$mean.abund[300:600], means.list.HYOS$mean.abund[301:601], type = "b", xlab = "Nt", ylab= "Nt+1")
+# # plot abundance over time
+# 
+# falls <- tibble(
+#   x1 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
+#   x2 = c("2001-11-10", "2002-11-10", "2003-11-10", "2004-11-10", "2005-11-10", "2006-10-10"),
+#   y1 = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
+#   y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
+#  )
+# springs <- tibble(
+#   x1 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
+#   x2 = c("2007-03-31", "2008-03-31", "2009-03-31", "2010-03-31", "2011-03-31", "2012-03-31"),
+#   y1 = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
+#   y2 = c(0.23, 0.23, 0.23, 0.23, 0.23, 0.23)
 # )
+# # arrows <- tibble(
+# #   x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+# #   x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
+# #   y1 = c(1.45, 1.45, 1.45, 1.45), 
+# #   y2 = c(1, 1, 1, 1)
+# # )
+# # 
+# # arrows$x1 <- as.Date(arrows$x1)
+# # arrows$x2 <- as.Date(arrows$x2)
 # 
-# arrows$x1 <- as.Date(arrows$x1)
-# arrows$x2 <- as.Date(arrows$x2)
-
-falls$x1 <- as.Date(falls$x1)
-falls$x2 <- as.Date(falls$x2)
-springs$x1 <- as.Date(springs$x1)
-springs$x2 <- as.Date(springs$x2)
-
-abund.trends.HYOS <- ggplot(data = means.list.HYOS[300:401,], aes(x =  `temps$dts`,
-                                                        y = mean.abund/10000, group = 1)) +
-  geom_point()+
-  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                ymax = mean.abund + 1.96 * se.abund),
-  #            colour = 'transparent',
-  #            alpha = .5,
-  #            show.legend = FALSE) +
-  geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,1.5)) +
-  ylab('Hydrospyche spp. Abundance/Reproductive Limit') +
-  xlab(" ")+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13))+
-  scale_x_date(date_labels="%B", date_breaks  ="6 months", limits = as.Date(c("2001-01-27", "2012-12-04"
-  )))+
-  
-  # annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
-  #          arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
-  # annotate("text", x = arrows$x1[1], y = 1.5, label = "HI = 0.01", size = 4)+
-  # annotate("text", x = arrows$x1[2], y = 1.5, label = "HI = 0.1", size = 4)+
-  # annotate("text", x = arrows$x1[3], y = 1.5, label = "HI = 0.2", size = 4)+
-  # annotate("text", x = arrows$x1[4], y = 1.5, label = "HI = 0.5", size = 4 )
-
-  annotate("segment", x = falls$x1, y = falls$y1, xend = falls$x2, yend = falls$y2,
-        arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#a6611a")+
-  annotate("text", x = falls$x1[1], y = 0, label = "Fall HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#a6611a")+
-  annotate("segment", x = springs$x1, y = springs$y1, xend = springs$x2, yend = springs$y2,
-           arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#018571")+
-  annotate("text", x = springs$x1[1], y = 0, label = "Spring HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#018571")
-  # 
-  ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
-  #ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te],".png"))
-  plotlist <- append(plotlist, paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
-
-  
-}
-plots <- lapply(ll <- plotlist ,function(x){
-  img <- as.raster(readPNG(x))
-  rasterGrob(img, interpolate = FALSE)
-})
-  ggsave(filename = paste0("HYOSTempFlowHI",peaklist[pe],".pdf"),width=8.5, height=11, 
-       marrangeGrob(grobs = plots, nrow = 3, ncol=2))
-  plotlist <- NULL
-}
-
-
-ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
-geom_line(show.legend = FALSE) +
-  ylab('Hydrospyche spp. Abundance/Reproductive Limit') +
-  xlab(" ")
-#   for (te in 1:length(tempslist)){
-#   assign(paste0("p",te), readPNG(plotlist[te]))}
-#   grid.arrange(rasterGrob(p1), rasterGrob(p2), rasterGrob(p3), rasterGrob(p4), rasterGrob(p5), rasterGrob(p6), ncol = 3 )
+# falls$x1 <- as.Date(falls$x1)
+# falls$x2 <- as.Date(falls$x2)
+# springs$x1 <- as.Date(springs$x1)
+# springs$x2 <- as.Date(springs$x2)
 # 
+# abund.trends.HYOS <- ggplot(data = means.list.HYOS[300:401,], aes(x =  `temps$dts`,
+#                                                         y = mean.abund/10000, group = 1)) +
+#   geom_point()+
+#   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+#   #                ymax = mean.abund + 1.96 * se.abund),
+#   #            colour = 'transparent',
+#   #            alpha = .5,
+#   #            show.legend = FALSE) +
+#   geom_line(show.legend = FALSE) +
+#   coord_cartesian(ylim = c(0,1.5)) +
+#   ylab('Hydrospyche spp. Abundance/Reproductive Limit') +
+#   xlab(" ")+
+#   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13))+
+#   scale_x_date(date_labels="%B", date_breaks  ="6 months", limits = as.Date(c("2001-01-27", "2012-12-04"
+#   )))+
+#   
+#   # annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
+#   #          arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
+#   # annotate("text", x = arrows$x1[1], y = 1.5, label = "HI = 0.01", size = 4)+
+#   # annotate("text", x = arrows$x1[2], y = 1.5, label = "HI = 0.1", size = 4)+
+#   # annotate("text", x = arrows$x1[3], y = 1.5, label = "HI = 0.2", size = 4)+
+#   # annotate("text", x = arrows$x1[4], y = 1.5, label = "HI = 0.5", size = 4 )
+# 
+#   annotate("segment", x = falls$x1, y = falls$y1, xend = falls$x2, yend = falls$y2,
+#         arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#a6611a")+
+#   annotate("text", x = falls$x1[1], y = 0, label = "Fall HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#a6611a")+
+#   annotate("segment", x = springs$x1, y = springs$y1, xend = springs$x2, yend = springs$y2,
+#            arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "#018571")+
+#   annotate("text", x = springs$x1[1], y = 0, label = "Spring HFE (0.45 Bankflow)" ,hjust = 0, size = 5, color = "#018571")
+#   # 
+#   ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
+#   #ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te],".png"))
+#   plotlist <- append(plotlist, paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
+# 
+#   
+# 
+# plots <- lapply(ll <- plotlist ,function(x){
+#   img <- as.raster(readPNG(x))
+#   rasterGrob(img, interpolate = FALSE)
+# })
+#   ggsave(filename = paste0("HYOSTempFlowHI",peaklist[pe],".pdf"),width=8.5, height=11, 
+#        marrangeGrob(grobs = plots, nrow = 3, ncol=2))
+#   plotlist <- NULL
+# 
+# 
+# 
+# ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
+# geom_line(show.legend = FALSE) +
+#   ylab('Hydrospyche spp. Abundance/Reproductive Limit') +
+#   xlab(" ")
+# #   for (te in 1:length(tempslist)){
+# #   assign(paste0("p",te), readPNG(plotlist[te]))}
+# #   grid.arrange(rasterGrob(p1), rasterGrob(p2), rasterGrob(p3), rasterGrob(p4), rasterGrob(p5), rasterGrob(p6), ncol = 3 )
+# # 
+# # # 
+# # # 
+# # pdf(paste0("HYOSTemp_", tempslist[te], "_Flood_HI_", peaklist[pe]), width = 8.27, height = 11.69)
+# # gr <- grid.arrange(rasterGrob(p1), rasterGrob(p2), rasterGrob(p3), rasterGrob(p4), rasterGrob(p5), rasterGrob(p6), ncol = 3 )
+# # 
+# # library(patchwork) 
 # # 
 # # 
-# pdf(paste0("HYOSTemp_", tempslist[te], "_Flood_HI_", peaklist[pe]), width = 8.27, height = 11.69)
-# gr <- grid.arrange(rasterGrob(p1), rasterGrob(p2), rasterGrob(p3), rasterGrob(p4), rasterGrob(p5), rasterGrob(p6), ncol = 3 )
+# # plotlist <- append(plotlist, paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
+# # 
+# # 
+# # ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
+# # plotlist <- append(plotlist, paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
+# if (7 > temps$Temperature[t-1])  {
+#   G1 <- 0.05/17
+#   P1 <- 1-(1/17)
+#   G2 <- 0 #no emergence
+#   P2 <- 0.95# all remain in larval form
+# }
 # 
-# library(patchwork) 
-# 
-# 
-# plotlist <- append(plotlist, paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
-# 
-# 
-# ggsave(abund.trends.HYOS, filename = paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
-# plotlist <- append(plotlist, paste0("HYOSTempFlowHI", tempslist[te], peaklist[pe],".png"))
+# if (temps$Temperature[t-1] > 17.5){
+#   G1 <- 0.05
+#   P1 <- 0
+# }
+# if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <=17.5 & is.na(emergetime[t] == F)){
+#   G1 <- 0.05/emergetime[t]
+#   P1 <- 1-(1/emergetime[t])
+# }
+# if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 17.5 & is.na(emergetime[t] == T)) {
+#   G1 <- 0.05/((-0.95 * temps$Temperature[t-1]) + 24.75)
+#   P1 <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))}
