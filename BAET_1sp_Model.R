@@ -32,23 +32,23 @@ source("1spFunctions.R")
 # Set up location specific data
 #-----------------------------------------------------------
 #if looking at ColRiver temps read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
-temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
+# temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
 #-------------------------------------------------------------
 # create a series of average 2 weekly data
 #-------------------------------------------------------------
 # calculate mean temperature data for each timestep (2 week interval)
-temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
+# temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
 
 # if you want to augment ColRiver temps, set qr to different in C
-qr <- 0
-# if you want to augement how many years at temps, change r
-r <- 77 # I want 13 years
-temps <- rep.avg.year(temps, 77, change.in.temp = qr, years.at.temp = r)
-#temps$Temperature <- rep(12, times = length(temps$dts))
-
-
-discharge <- rep(0.1, times = length(temps$Temperature))
-
+# qr <- 0
+# # if you want to augement how many years at temps, change r
+# r <- 77 # I want 13 years
+# temps <- rep.avg.year(temps, 77, change.in.temp = qr, years.at.temp = r)
+# #temps$Temperature <- rep(12, times = length(temps$dts))
+# 
+# 
+# discharge <- rep(0.1, times = length(temps$Temperature))
+# 
 
 BAETmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   
@@ -278,48 +278,48 @@ return(output.N.list[ , 1:2, ])
 #-------------------
 # summarizing iterations
 
-out <- BAETmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
-
-adults <-as.data.frame(cbind(temps$dts, out[1:length(temps$dts),3,1]))
-colnames(adults) <- c("Time","Adult Baetidae")
-
-## turning replist into a df
-means.list.BAET <- mean.data.frame(out, burnin = 0, iteration = 1)
-means.list.BAET <- cbind(means.list.BAET[1:length(means.list.BAET$mean.abund),], temps$dts[1:length(means.list.BAET$mean.abund)])
-means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
-
-# note how boom and bust this model is - K is set to be 10,000 not 100,000
-abund.trends.BAET <- ggplot(data = adults[300:500,], aes(x = Time,
-                                       y = `Adult Baetidae`/10000, group = 1)) +
-  geom_point()+
-  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                 ymax = mean.abund + 1.96 * se.abund),
-  #             colour = 'transparent',
-  #            alpha = .5,
-  #             show.legend = FALSE) +
-  geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,2)) +
-  ylab('Adult Baetis Abundance/ Baseline Reproductive Limit') +
-  xlab('Timestep')  
-
-plot(adults$`Adult Baetidae`[300:500], adults$`Adult Baetidae`[301:501], type = "b", xlab = "Adult Baetids t", ylab = "Adult Baetids t+1")
-
-ggplot(data = means.list.BAET[300:500,], aes(x = `temps$dts`,
-                          y = mean.abund/10000, group = 1)) +
-  geom_point()+
-  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                 ymax = mean.abund + 1.96 * se.abund),
-  #             colour = 'transparent',
-  #            alpha = .5,
-  #             show.legend = FALSE) +
-  geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,30)) +
-  ylab('Baetis spp. Abundance/Reproductive Limit') +
-  xlab('Timestep')  
-
-plot(means.list.BAET$mean.abund[300:500], means.list.BAET$mean.abund[301:501], type = "b", xlab = "Nt", ylab = "Nt+1")
-
-ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
-  geom_line(show.legend = FALSE) +
-  ylab('Baetis spp. Abundance/Reproductive Limit') +
-  xlab(" ")
+# out <- BAETmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
+# 
+# adults <-as.data.frame(cbind(temps$dts, out[1:length(temps$dts),3,1]))
+# colnames(adults) <- c("Time","Adult Baetidae")
+# 
+# ## turning replist into a df
+# means.list.BAET <- mean.data.frame(out, burnin = 0, iteration = 1)
+# means.list.BAET <- cbind(means.list.BAET[1:length(means.list.BAET$mean.abund),], temps$dts[1:length(means.list.BAET$mean.abund)])
+# means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
+# 
+# # note how boom and bust this model is - K is set to be 10,000 not 100,000
+# abund.trends.BAET <- ggplot(data = adults[300:500,], aes(x = Time,
+#                                        y = `Adult Baetidae`/10000, group = 1)) +
+#   geom_point()+
+#   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+#   #                 ymax = mean.abund + 1.96 * se.abund),
+#   #             colour = 'transparent',
+#   #            alpha = .5,
+#   #             show.legend = FALSE) +
+#   geom_line(show.legend = FALSE) +
+#   coord_cartesian(ylim = c(0,2)) +
+#   ylab('Adult Baetis Abundance/ Baseline Reproductive Limit') +
+#   xlab('Timestep')  
+# 
+# plot(adults$`Adult Baetidae`[300:500], adults$`Adult Baetidae`[301:501], type = "b", xlab = "Adult Baetids t", ylab = "Adult Baetids t+1")
+# 
+# ggplot(data = means.list.BAET[300:500,], aes(x = `temps$dts`,
+#                           y = mean.abund/10000, group = 1)) +
+#   geom_point()+
+#   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+#   #                 ymax = mean.abund + 1.96 * se.abund),
+#   #             colour = 'transparent',
+#   #            alpha = .5,
+#   #             show.legend = FALSE) +
+#   geom_line(show.legend = FALSE) +
+#   coord_cartesian(ylim = c(0,30)) +
+#   ylab('Baetis spp. Abundance/Reproductive Limit') +
+#   xlab('Timestep')  
+# 
+# plot(means.list.BAET$mean.abund[300:500], means.list.BAET$mean.abund[301:501], type = "b", xlab = "Nt", ylab = "Nt+1")
+# 
+# ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
+#   geom_line(show.legend = FALSE) +
+#   ylab('Baetis spp. Abundance/Reproductive Limit') +
+#   xlab(" ")
