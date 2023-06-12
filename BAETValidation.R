@@ -37,27 +37,29 @@ BAETdata <- bugdata[which(bugdata$Date >= "1986-10-01" & bugdata$Family == "Baet
 
 BAET.samp <- aggregate(BAETdata$Density, list(BAETdata$Date), FUN = sum)
 
-sums <- vector()
+means <- vector()
 for (i in 1:length(temps$dts)){
   d <- BAET.samp[which(BAET.samp$Group.1 >= temps$dts[i] & BAET.samp$Group.1 < temps$dts[i+1]),]
-  if (sum(d$x) == 0 || is.na(d$x) == T) {
+  if (is.nan(mean(d$x)) == T || is.na(d$x) == T) {
     s = NA
   } else {
-    s<- sum(d$x)}
-  sums <- append(sums, s)
+    s<- mean(d$x)}
+  means <- append(means, s)
   # we know the last value doesn't fit into interval and needs to be manually added
 }
-sums[length(temps$dts)] <- BAET.samp$x[length(BAET.samp$x)]
+means[length(temps$dts)] <- BAET.samp$x[length(BAET.samp$x)]
 
 means.list.BAET <- mean.data.frame(out, burnin = 188, iteration= 999)
 means.list.BAET <- cbind(means.list.BAET, temps$dts[188:last(means.list.BAET$timesteps)])
 means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
 
-BAET.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.BAET$`temps$dts`), sums[188:340])))
+BAET.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.BAET$`temps$dts`), means[188:340])))
 BAET.samp.sum$V1 <- as.Date(BAET.samp.sum$V1, origin = "1970-01-01")
 
+BAET.samp.sum <- BAET.samp.sum[which(BAET.samp.sum$V1 %in% sample(BAET.samp.sum$V1, size = 30)),]
+
 cor.df <- left_join(BAET.samp.sum, means.list.BAET, by=c('V1'="temps$dts"), copy = T)
-cor.test(log(cor.df$V2), log(cor.df$mean.abund), method = "pearson")
+cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 abund.trends.NZMS <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,
                                                         y = mean.abund, group = 1, color = "Model")) +
