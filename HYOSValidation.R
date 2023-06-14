@@ -16,6 +16,7 @@ library(devtools)
 library(foodbase)
 
 source("1spFunctions.R")
+source("HYOS_1sp.R")
 # load Water Temperature data from above Diamond Creek Confluence (RM226)
 temp <- read.delim("CRaboveDC_Temp.tsv", header=T)
 colnames(temp) <- c("Date", "Temperature")
@@ -28,9 +29,9 @@ temps <- temps[-c(1:82),]
 discharge <- readNWISdv("09404200", "00060", "2000-12-26", "2023-05-01")
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 
-out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 20000, baselineK = 5000, Qmin = 0.20, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 20000, baselineK = 5000, Qmin = 0.20, extinct = 50, iteration = 999, peaklist = 0.17, peakeach = length(temps$Temperature))
 
-#drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = TRUE)
+drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = TRUE)
 
 drift.CR <- drift.data.total[which(drift.data.total$Region == "GrandCanyon" & drift.data.total$RiverMile >= 119 & drift.data.total$RiverMile <= 225),]
 
@@ -69,6 +70,17 @@ HYOS.samp.sum$V1 <- as.Date(HYOS.samp.sum$V1, origin = "1970-01-01")
 HYOS.samp.sum <- HYOS.samp.sum[which(HYOS.samp.sum$V1 < "2022-01-01"),]
 
 cor.df <- left_join(HYOS.samp.sum, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+
+summary(cor.lm)
+ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
+  geom_point()+
+  stat_smooth(method = "lm",
+              formula = y ~ x,
+              geom = "smooth")+
+  geom_text(x = 3, y = 300, label = "y = 7.77e-11x, R^2 = 0.22")+
+  labs(y = "Hydropsychidae Model Output", x = "Hydropsychidae Empirical Data")
+
 rho <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 
