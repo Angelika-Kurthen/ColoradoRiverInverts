@@ -56,10 +56,21 @@ means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
 BAET.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.BAET$`temps$dts`), means[188:340])))
 BAET.samp.sum$V1 <- as.Date(BAET.samp.sum$V1, origin = "1970-01-01")
 
-BAET.samp.sum <- BAET.samp.sum[which(BAET.samp.sum$V1 %in% sample(BAET.samp.sum$V1, size = 30)),]
+#BAET.samp.sum <- BAET.samp.sum[which(BAET.samp.sum$V1 %in% sample(BAET.samp.sum$V1, size = 30)),]
 
 cor.df <- left_join(BAET.samp.sum, means.list.BAET, by=c('V1'="temps$dts"), copy = T)
+cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+
+
+summary(cor.lm)
+ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
+  geom_point()+
+  stat_smooth(method = "lm",
+              formula = y ~ x,
+              geom = "smooth")+
+  geom_text(x = 1000, y = 3250, label = "y = 0.00021x, R^2 = 0.37")+
+  labs(y = "Baetidae Model Output", x = "Baetidae Emprical Data")
 
 abund.trends.NZMS <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,
                                                         y = mean.abund, group = 1, color = "Model")) +
