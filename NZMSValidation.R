@@ -22,7 +22,7 @@ flow.magnitude <- TimestepDischarge(discharge, 85000)
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 temps <- TimestepTemperature(temp)
 
-out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 999, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 
 # adults<-as.data.frame(cbind(as.Date(temps$dts), out[1:length(temps$dts),2:3,1]))
@@ -38,11 +38,11 @@ drift.data.total <- readDB(gear = "Drift", type = "Sample", updater = TRUE)
 
 drift.LF <- drift.data.total[which(drift.data.total$RiverMile >= -6 & drift.data.total$RiverMile <= 0),]
 
-
 NZMS.samp.LF <- sampspec(samp = drift.LF, species = "NZMS", stats = T)
 NZMS.samp <- merge(NZMS.samp.LF$Statistics, NZMS.samp.LF$Samples, by = "BarcodeID", all = T)
 NZMS.samp <- NZMS.samp[which(NZMS.samp$GearID == 4),] 
 NZMS.samp$Density <- NZMS.samp$CountTotal/NZMS.samp$Volume
+N
 NZMS.samp <- merge(NZMS.samp, discharge[, 3:4], by = "Date")
 NZMS.samp$Density <- (NZMS.samp$Density/(9e-15 *(NZMS.samp$X_00060_00003 * 0.02831683)^4.1))
 NZMS.samp <- aggregate(NZMS.samp$Density, list(NZMS.samp$Date), FUN = mean)
@@ -60,13 +60,46 @@ for (i in 1:length(temps$dts)){
 
 NZMS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.NZMS$`temps$dts`, format = "%Y-%m-%d"), means[51:406])))
 NZMS.samp.sum$V1 <- as.Date(NZMS.samp.sum$V1, origin = "1970-01-01")
-# 
 
-NZMS.samp.sum <- NZMS.samp.sum[which(NZMS.samp.sum$V1 %in% sample(NZMS.samp.sum$V1, size = 30)),]
-
+# culling data by lags - Temporal autocorrelation: a neglected factor in the study of behavioral repeatability and plasticity  
 
 cor.df <- left_join(NZMS.samp.sum, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
-rho <- cor.test((cor.df$V2+1), (cor.df$mean.abund+1), method = "spearman")
+cor.lm <- lm((cor.df$mean.abund) ~ (cor.df$V2))
+cor.test((cor.df$V2+1), (cor.df$mean.abund+1), method = "spearman")
+
+NZMS.samp.sum1 <- NZMS.samp.sum %>% slice(which(row_number() %% 3 == 0))
+NZMS.samp.sum2 <- NZMS.samp.sum %>%  slice(which(row_number() %% 3 == 1))
+NZMS.samp.sum3 <- NZMS.samp.sum %>%  slice(which(row_number() %% 3 == 2))
+  
+cor.df1 <- left_join(NZMS.samp.sum1, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
+cor.lm1 <- lm(cor.df1$mean.abund ~ cor.df1$V2)
+summary(cor.lm1)
+plot(cor.df1$V2, cor.df1$mean.abund)
+rho1 <- cor.test((cor.df1$V2+1), (cor.df1$mean.abund+1), method = "spearman")
+
+cor.df2 <- left_join(NZMS.samp.sum2, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
+cor.lm2 <- lm(cor.df2$mean.abund ~ cor.df2$V2)
+rho2 <- cor.test((cor.df2$V2+1), (cor.df2$mean.abund+1), method = "spearman")
+
+cor.df3 <- left_join(NZMS.samp.sum3, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
+cor.lm3 <- lm(cor.df3$mean.abund ~ cor.df3$V2)
+summary(cor.lm3)
+rho3 <- cor.test((cor.df3$V2+1), (cor.df3$mean.abund+1), method = "spearman")
+
+rho <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate))
+sd <- sd(c(rho1$estimate, rho2$estimate, rho3$estimate))
+
+summary(cor.df)
+ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
+  geom_point()+
+  stat_smooth(method = "lm",
+              formula = y ~ x,
+              geom = "smooth")+
+  geom_text(x = 3e+05, y = 6100, label = "y = 0.0047x, R^2 = 0.05")+
+  labs(y = "NZMS Model Output", x = "NZMS Emprical Data")
+  
+
+
 
 
 abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
@@ -109,3 +142,8 @@ ggplot(data = adults, aes(x = Time,
   scale_x_date(date_labels="%B", date_breaks  ="6 months")
 
 
+
+#NZMS.samp.sum <- NZMS.samp.sum[which(NZMS.samp.sum$V1 %in% sample(NZMS.samp.sum$V1, size = 30)),]
+
+#forecast::auto.arima(NZMS.samp.sum$V2, ic = "bic")
+#NZMS.samp.sum$V2[2:125] <- diff(NZMS.samp.sum$V2, differences=1)
