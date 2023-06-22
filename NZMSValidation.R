@@ -42,7 +42,7 @@ NZMS.samp.LF <- sampspec(samp = drift.LF, species = "NZMS", stats = T)
 NZMS.samp <- merge(NZMS.samp.LF$Statistics, NZMS.samp.LF$Samples, by = "BarcodeID", all = T)
 NZMS.samp <- NZMS.samp[which(NZMS.samp$GearID == 4),] 
 NZMS.samp$Density <- NZMS.samp$CountTotal/NZMS.samp$Volume
-N
+
 NZMS.samp <- merge(NZMS.samp, discharge[, 3:4], by = "Date")
 NZMS.samp$Density <- (NZMS.samp$Density/(9e-15 *(NZMS.samp$X_00060_00003 * 0.02831683)^4.1))
 NZMS.samp <- aggregate(NZMS.samp$Density, list(NZMS.samp$Date), FUN = mean)
