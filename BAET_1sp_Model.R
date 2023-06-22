@@ -102,7 +102,7 @@ reparray <- array(0,
 output.N.list <- reparray
 
 Qmin <- Qmin
-a <- 0.0001
+a <- 0.001
 g <- 1
 h <- surv.fit.BAET$m$getPars()[2]  
 k <- surv.fit.BAET$m$getPars()[1] 
