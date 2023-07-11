@@ -4,8 +4,8 @@
 library(tidyverse)
 library(ggplot2)
 library(lattice)
+library(latticeExtra)
 library(RColorBrewer)
-
 ## Plot setup
 clrs <- colorRampPalette(brewer.pal(9, "YlOrRd"))
 trellis.par.set("axis.line", list(col = NA, lty = 1, lwd = 1))
@@ -67,12 +67,13 @@ z_labs <- c("1e+4", "2e+4", "3e+4", "4e+4")
 wireframe(K ~ t + Q, data = KQT, # distance =c(2, 5, 8)
           aspect = c(1, .4),
           drape = TRUE,
-          shade = FALSE,
+          shade = F,
           colorkey = FALSE,
           col = alpha('#ffeda0', 0.08),
           scales = list(arrows = FALSE, col = 'black', z = list(at = z_at, lab = z_labs), distance = 1.5),
           screen = list(z = -40, x = -70),
-          par.settings = theme.novpadding,
+          #panel.3d.wireframe = panel.3d.contour, # can't use because Rtools is deprecated
+          #par.settings = theme.novpadding,
           col.regions = clrs(1000),
           main = 'Baetis spp. K')
 
