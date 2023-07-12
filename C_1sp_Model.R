@@ -53,7 +53,7 @@ iteration <- 1
 baselineK <- 10000
 disturbanceK <- 40000
 
-Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
+Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   
   # set up model
   source("NegExpSurv.R")
@@ -152,7 +152,7 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       
       # we start by pulling fecundities from normal distribution
       # assuming 50 50 sex ration, 0.22 of egg masses 'dissapearred', and 0.2 desiccation because of rock drying
-      F3 = 1000 * 0.5 * hydropeaking.mortality(0.4, 0.6, h = hp[t-1]) * 0.78 * 0.65
+      F3 = 200 * 0.5 * hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
       #F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
       
       # we can also relate fecundities to body mass.
@@ -164,7 +164,7 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       if (t > 19) {
         size <- emergetime[t-1]
         sizelist <- append(sizelist, size)
-        F3 <- (10*size)+110 * 0.5 * hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
+        F3 <- (5*size)+220 * 0.5 * hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
         #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
       }
       #--------------------------------------------------
@@ -197,17 +197,17 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       # in this function, we assume that if below the min temp threshold (9) no maturation occurs (slow maturation, large growth)
       # if above the max temp threshold (15), no one remains more than 1 timestep in each stage (fast maturation, small growth)
       if (5 > temps$Temperature[t-1]) {
-      P1 <- 1-(1/4)
-      P2 <- 1-(1/4)
-      G1 <- 0.5/4
-      G2 <- 0.3/4
+      P1 <- 1-(1/6)
+      P2 <- 1-(1/6)
+      G1 <- 0.5/6
+      G2 <- 0.3/6
     }
     
     if (temps$Temperature[t-1] > 20){
-      P1 <- 1-(1/3)
-      P2 <- 1-(1/3)
-      G1 <- 0.5/3
-      G2 <- 0.3/3
+      P1 <- 1-(1/2)
+      P2 <- 1-(1/2)
+      G1 <- 0.5/2
+      G2 <- 0.3/2
     }
     
     
@@ -219,10 +219,10 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
     }
       
       if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == T)) {
-        G1 <- 0.5/((-0.056 * temps$Temperature[t-1]) + 4.168)
-        P1 <- 1-(1/((-0.056 * temps$Temperature[t-1]) + 4.168))
-        G2 <- 0.3/((-0.056 * temps$Temperature[t-1]) + 4.168)
-        P2 <- 1-(1/((-0.056 * temps$Temperature[t-1]) + 4.168))
+        G1 <- 0.5/((-0.471 * temps$Temperature[t-1]) + 14.413)
+        P1 <- 1-(1/((-0.471 * temps$Temperature[t-1]) + 14.413))
+        G2 <- 0.3/((-0.471 * temps$Temperature[t-1]) + 14.413)
+        P2 <- 1-(1/((-0.471 * temps$Temperature[t-1]) + 14.413))
       }
       
       
