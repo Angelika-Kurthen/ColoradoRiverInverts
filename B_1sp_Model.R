@@ -152,7 +152,7 @@ for (iter in c(1:iterations)) {
     
     # we start by pulling fecundities from normal distribution
     # assuming 50 50 sex ration, 0.22 of egg masses 'dissapearred', and 0.2 desiccation because of rock drying
-    F3 = 1000 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
+    F3 = 1000 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
     #F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
     
     # we can also relate fecundities to body mass.
@@ -164,7 +164,7 @@ for (iter in c(1:iterations)) {
     if (t > 19) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F3 <- (100*size)+500 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
+      F3 <- (33.333*size)+ 800 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
       #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
     }
     #--------------------------------------------------
@@ -200,10 +200,10 @@ for (iter in c(1:iterations)) {
     # # Probabilities of remaining in stages (when temps low, high prob of remaining)
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
     if (5 > temps$Temperature[t-1]) {
-      P1 <- 1-(1/2.5)
-      P2 <- 1-(1/2.5)
-      G1 <- 0.1/2.5
-      G2 <- 0.5/2.5
+      P1 <- 1-(1/4)
+      P2 <- 1-(1/4)
+      G1 <- 0.1/4
+      G2 <- 0.5/4
       }
 
     if (temps$Temperature[t-1] > 20){
@@ -221,17 +221,17 @@ for (iter in c(1:iterations)) {
       P2 <- 1-(1/((emergetime[t]-1)/2))
     }
     if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
-      G1 <- 0.1/((-0.083 * temps$Temperature[t-1]) + 2.749)
-      P1 <- 1-(1/((-0.083 * temps$Temperature[t-1]) + 2.749))
-      G2 <- 0.5/((-0.083 * temps$Temperature[t-1]) + 2.749)
-      P2 <- 1-(1/((-0.083 * temps$Temperature[t-1]) + 2.749))
+      G1 <- 0.1/((-0.353 * temps$Temperature[t-1]) + 10.059)
+      P1 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))
+      G2 <- 0.5/((-0.353 * temps$Temperature[t-1]) + 10.059)
+      P2 <- 1-(1/((--0.353 * temps$Temperature[t-1]) + 10.059))
       }
 
     
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
     # 
-    # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
+    # # growth (if below-0.353x 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
     # P1 <- 0.55 - G1
     # P2 <- 0.55 - G2
     #-----------------------------------------------
