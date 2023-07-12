@@ -37,18 +37,17 @@ source("1spFunctions.R")
 # create a series of average 2 weekly data
 #-------------------------------------------------------------
 # calculate mean temperature data for each timestep (2 week interval)
-# temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
+# # temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
+# 
+# Time <- c(1:1825)
+# Date <- rep(c(1:365), times = 5)
+# Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
+# Day <- Day[-which(Day == "2024-02-29")]
 
-# if you want to augment ColRiver temps, set qr to different in C
-# qr <- 0
-# # if you want to augement how many years at temps, change r
-# r <- 77 # I want 13 years
-# temps <- rep.avg.year(temps, 77, change.in.temp = qr, years.at.temp = r)
-# #temps$Temperature <- rep(12, times = length(temps$dts))
-# 
-# 
-# discharge <- rep(0.1, times = length(temps$Temperature))
-# 
+Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
+
+temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
+
 
 BAETmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   
