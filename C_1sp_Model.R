@@ -11,6 +11,12 @@ library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
+library(doMC)
+library(foreach)
+registerDoMC(4)
+#packages for every foreach 
+pkgs <- c("purrr", "tidyverse", "lubridate", "plyr", "dplyr")
+
 
 # Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 # We have to manually load all tidyverse packages
@@ -39,19 +45,19 @@ source("1spFunctions.R")
 # calculate mean temperature data for each timestep (2 week interval)
 # temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
 
-Time <- c(1:1825)
-Date <- rep(c(1:365), times = 5)
-Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
-Day <- Day[-which(Day == "2024-02-29")]
-
-Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
-
-temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
-peaklist <- 0 
-peakeach <- length(temp$Temperature)
-iteration <- 1
-baselineK <- 10000
-disturbanceK <- 40000
+# Time <- c(1:1825)
+# Date <- rep(c(1:365), times = 5)
+# Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
+# Day <- Day[-which(Day == "2024-02-29")]
+# 
+# Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
+# 
+# temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
+# peaklist <- 0 
+# peakeach <- length(temp$Temperature)
+# iteration <- 1
+# baselineK <- 10000
+# disturbanceK <- 40000
 
 Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   
@@ -110,15 +116,26 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   h <- med$m$getPars()[2]  
   k <- med$m$getPars()[1] 
   
+  iterlist <- c(1:iterations)
   extinction <- extinct
   
   #-------------------------
   # Outer Loop of Iterations
   #--------------------------
-  
+  # Initializes the progress bar
+  # pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+  #                      max = iterations, # Maximum value of the progress bar
+  #                      style = 3,    # Progress bar style (also available style = 1 and style = 2)
+  #                      width = 50,   # Progress bar width. Defaults to getOption("width")
+  #                      char = "=")   # Character used to create the bar
   
   for (iter in c(1:iterations)) {
-    K = Kb # need to reset K for each iteration
+  #foreach (iter = c(1:iterations), .combine=cbind, .packages = pkgs) %dopar% {
+    #source("1spFunctions.R")
+    # Sets the progress bar to the current state
+    # setTxtProgressBar(pb, iter)
+  
+        K = Kb # need to reset K for each iteration
     
     # pull random values from a uniform distribution 
     output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
@@ -265,8 +282,9 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
     } #-------------------------
     # End Inner Loop  
     #------------------------- 
+    # close(pb) # close progress bar
   } #----------------------
   # End Outer Loop
   #----------------------
-  return(output.N.list[ , 1:2, ])
+  return(output.N.list[ , 1:3, ])
 }
