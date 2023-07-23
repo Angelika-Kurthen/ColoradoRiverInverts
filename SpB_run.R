@@ -191,32 +191,53 @@ ggplot(data = jday.df, aes(x = all.dates, y = jday_max/10000, group = 1))+
 ##Figure 4: Importance of Disturbance Timing
 # Importance of Disturbance Timing is just comparing delta(max) to delta(max)
 # could also be a value (min(max)/max(max)) <- the larger the number, the bigger the difference between max values
-max(jday.df$jday_max)-min(jday.df$jday_max)
+#max(jday.df$jday_max)-min(jday.df$jday_max)
 #vs
-min(jday.df$jday_max)/max(jday.df$jday_max)
+#min(jday.df$jday_max)/max(jday.df$jday_max)
+source("B_1sp_Model.R")
+source("1spFunctions.R")
+Time <- c(1:36500)
+Date <- rep(1:365, times = 100)
+Day <- seq(as.Date("2022-01-01"), as.Date("2121-12-31"), by="days")
+# find and remove leap days
+find_leap = function(x){
+  day(x) == 29 & month(x) == 2 
+}
+Day <- Day[which(find_leap(Day) == F)]
+
+
+Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
+
+temp <- as.data.frame(cbind(Time, Day, Temperature))
+temp$Day <- as.Date(temp$Day, origin= "1970-01-01")
+colnames(temp) <- c("Time", "Date", "Temperature")
+temp <- TimestepTemperature(temp)
+temp <- temp[c(1,3)]
 
 # we can now iterate (similar to a sensitivity analysis) and see how importance of disturbance timing impacts 
 # what if we iterated fecundities 
 fecs <- seq(675,1125, by = 9)
 # # Initializes the progress bar
-pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
-                     max = length(fecs),  # Maximum value of the progress bar
-                     style = 3,    # Progress bar style (also available style = 1 and style = 2)
-                     width = 50,   # Progress bar width. Defaults to getOption("width")
-                     char = "=")   # Character used to create the bar
+# pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+#                      max = length(fecs),  # Maximum value of the progress bar
+#                      style = 3,    # Progress bar style (also available style = 1 and style = 2)
+#                      width = 50,   # Progress bar width. Defaults to getOption("width")
+#                      char = "=")   # Character used to create the bar
 all.dates <- unique(format(temp$dts, "%m-%d"))[order(unique(format(temp$dts, "%m-%d")))]
 IDT <- vector()
 IDT.ratio <- vector()
 
 for (f in 1:length(fecs)) {
   # Sets the progress bar to the current state
-  setTxtProgressBar(pb, f)
+  # setTxtProgressBar(pb, f)
   # loop to select a date from a Week-Month combo from each unique year
   means <- list()
     for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
       sample_dates <- temp$dts[which(format(temp$dts, "%m-%d")== all.dates[d])]
       samp <- which(temp$dts == sample(sample_dates[which(sample_dates > temps$dts[300] & sample_dates < temps$dts[2508])], size = 1))
       dates <- temp[(samp-300):(samp+100),]
+      discharge <- rep(0.1, time = length(dates$dts)) # create a list of non-disturbance discharges
+      discharge[match(samp, dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
       print(length(dates$dts))
       source("B_1sp_Model.R")
       # run model
@@ -232,7 +253,7 @@ for (f in 1:length(fecs)) {
   jday.df$all.dates <- yday(as.Date(jday.df$all.dates, "%m-%d"))
   IDT[f] <- max(jday.df$jday_max)-min(jday.df$jday_max)
   IDT.ratio[f] <- min(jday.df$jday_max)/max(jday.df$jday_max)
-  close(pb) # close progress bar
+  # close(pb) # close progress bar
 }
 
 IDT.df <- as.data.frame(cbind(IDT, fecs))
