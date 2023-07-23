@@ -123,17 +123,17 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   # Outer Loop of Iterations
   #--------------------------
   # Initializes the progress bar
-  # pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
-  #                      max = iterations, # Maximum value of the progress bar
-  #                      style = 3,    # Progress bar style (also available style = 1 and style = 2)
-  #                      width = 50,   # Progress bar width. Defaults to getOption("width")
-  #                      char = "=")   # Character used to create the bar
+  pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+                      max = iterations, # Maximum value of the progress bar
+                      style = 3,    # Progress bar style (also available style = 1 and style = 2)
+                      width = 50,   # Progress bar width. Defaults to getOption("width")
+                      char = "=")   # Character used to create the bar
   
   for (iter in c(1:iterations)) {
   #foreach (iter = c(1:iterations), .combine=cbind, .packages = pkgs) %dopar% {
     #source("1spFunctions.R")
     # Sets the progress bar to the current state
-    # setTxtProgressBar(pb, iter)
+    setTxtProgressBar(pb, iter)
   
         K = Kb # need to reset K for each iteration
     
@@ -282,7 +282,7 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
     } #-------------------------
     # End Inner Loop  
     #------------------------- 
-    # close(pb) # close progress bar
+    close(pb) # close progress bar
   } #----------------------
   # End Outer Loop
   #----------------------
