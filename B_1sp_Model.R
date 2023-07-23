@@ -55,7 +55,7 @@ source("1spFunctions.R")
 # extinct = 50
 # flow.data <- discharge
 # temp.data <- temp
-Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
+Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 900){
   
 # set up model
 source("NegExpSurv.R")
@@ -65,10 +65,10 @@ temps <- temp.data
   
 degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
 colnames(degreedays) <- c("dts", "DegreeDay")
-degreedays$dts <- as.Date(degreedays$dts, origin = "1970-01-01")
+degreedays$dts <- as.Date(as.POSIXct(degreedays$dts, origin = "1970-01-01"))
   
 # need to make ramped increasing hydropeaking index 
-hp <- c(rep(peaklist, each = peakeach))
+hp <- c(rep(peaklist, peakeach))
   
 # specify iterations
 iterations <- iteration
@@ -81,8 +81,8 @@ Kd <- as.numeric(disturbanceK)
 # specify baseline transition probabilities for each species at mean temps
 G1 =  0.04#move to Stage2 (subimago)
 G2 =  0.2 #move to Stage3 (adult)
-P1 =  0.6#stay in Stage1 (larvae)
-P2 =  0.6  #stay in Stage2 (subimago)
+P1 =  0.3#stay in Stage1 (larvae)
+P2 =  0.3  #stay in Stage2 (subimago)
 
 # want to run this for one year, in 14 day timesteps 
 timestep <- seq(2, (length(temps$Temperature) + 1), by = 1)
@@ -117,10 +117,20 @@ extinction <- extinct
 #-------------------------
 # Outer Loop of Iterations
 #--------------------------
-
+# 
+# # Initializes the progress bar
+# pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+#                      max = iterations, # Maximum value of the progress bar
+#                      style = 3,    # Progress bar style (also available style = 1 and style = 2)
+#                      width = 50,   # Progress bar width. Defaults to getOption("width")
+#                      char = "=")   # Character used to create the bar
 
 for (iter in c(1:iterations)) {
-  K = Kb # need to reset K for each iteration
+ 
+  # Sets the progress bar to the current state
+  #setTxtProgressBar(pb, iter)
+  
+   K = Kb # need to reset K for each iteration
   
   # pull random values from a uniform distribution 
   output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
@@ -154,19 +164,21 @@ for (iter in c(1:iterations)) {
     
     # we start by pulling fecundities from normal distribution
     # assuming 50 50 sex ration, 0.22 of egg masses 'dissapearred', and 0.2 desiccation because of rock drying
-    F3 = 1000 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
+    F3 = fecundity * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
     #F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
     
     # we can also relate fecundities to body mass.
-    # Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
-    # That weight is related to fecundity Y = 614X - 300
-    # we can "convert" emergetime to mg by multiplying to get dry weights between 0.9 - 2 mg, and then convert to fecunity
-    # Issue: this data is for Ephemerella spp, not Baetidae spp
-    # 
-    if (t > 19) {
+    # in order to iterate through different fecundities
+    # emergetimes for our temp regime are between 3 and 9 
+    # create a lm for that data, with +10% and -10% of fecundity
+    x <- c(3,9)
+    y <- c(fecundity*0.9, fecundity*1.1)
+    mod <- lm(y~x)
+    
+    if (t > 19) { # will be erased in burn
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F3 <- (33.333*size)+ 800 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
+      F3 <- ((size*mod$coefficients[2])+mod$coefficients[1])* 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
       #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
     }
     #--------------------------------------------------
@@ -201,32 +213,32 @@ for (iter in c(1:iterations)) {
     
     # # Probabilities of remaining in stages (when temps low, high prob of remaining)
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    if (5 > temps$Temperature[t-1]) {
+    if (9 > temps$Temperature[t-1]) {
       P1 <- 1-(1/4)
       P2 <- 1-(1/4)
       G1 <- 0.1/4
-      G2 <- 0.5/4
+      G2 <- 0.3/4
       }
 
     if (temps$Temperature[t-1] > 20){
-      P1 <- 1-(1/1)
-      P2 <- 1-(1/1)
-      G1 <- 0.1/1
-      G2 <- 0.5/1
+      P1 <- 1-(1/1.5)
+      P2 <- 1-(1/1.5)
+      G1 <- 0.1/1.5
+      G2 <- 0.3/1.5
       }
 
     
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == F)){
+    if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == F)){
       G1 <- 0.1/((emergetime[t]-1)/2)
-      G2 <- 0.5/((emergetime[t]-1)/2)
+      G2 <- 0.3/((emergetime[t]-1)/2)
       P1 <- 1-(1/((emergetime[t]-1)/2))
       P2 <- 1-(1/((emergetime[t]-1)/2))
     }
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
+    if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == T)) {
       G1 <- 0.1/((-0.353 * temps$Temperature[t-1]) + 10.059)
       P1 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))
-      G2 <- 0.5/((-0.353 * temps$Temperature[t-1]) + 10.059)
-      P2 <- 1-(1/((--0.353 * temps$Temperature[t-1]) + 10.059))
+      G2 <- 0.3/((-0.353 * temps$Temperature[t-1]) + 10.059)
+      P2 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))
       }
 
     
@@ -274,10 +286,11 @@ for (iter in c(1:iterations)) {
   } #-------------------------
     # End Inner Loop  
     #------------------------- 
+  #close(pb) # close progress bar
 } #----------------------
   # End Outer Loop
   #----------------------
-return(output.N.list[ , 1:2, ])
+return(output.N.list[ , 1:3, ])
 }
 #------------------
 # Analyzing Results
