@@ -3,28 +3,26 @@
 ###########################
 
 
-library(purrr)
-library(tidyverse)
-library(lubridate)
-library(plyr)
-library(dplyr)
-library(ggplot2)
-# data retrieval tool from USGS
-library(dataRetrieval)
+# library(purrr)
+# library(tidyverse)
+# library(lubridate)
+# library(plyr)
+# library(dplyr)
+# library(ggplot2)
+# # data retrieval tool from USGS
+# library(dataRetrieval)
 
 # Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 # We have to manually load all tidyverse packages
-# library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(forcats, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(plyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(plyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
 source("1spFunctions.R")
 
@@ -55,7 +53,7 @@ source("1spFunctions.R")
 # extinct = 50
 # flow.data <- discharge
 # temp.data <- temp
-Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 900){
+Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 900, dds = 500){
   
 # set up model
 source("NegExpSurv.R")
@@ -158,7 +156,7 @@ for (iter in c(1:iterations)) {
     # Calculate how many timesteps emerging adults have matured
 
    
-    emergetime <- append(emergetime, back.count.degreedays(t, 500, degreedays)) # value from Sweeney et al 2017
+    emergetime <- append(emergetime, back.count.degreedays(t, dds, degreedays)) # value from Sweeney et al 2017
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
