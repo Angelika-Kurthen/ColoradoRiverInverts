@@ -178,7 +178,7 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       # in order to iterate through different fecundities
       # emergetimes for our temp regime are between 3 and 9 
       # create a lm for that data, with +10% and -10% of fecundity
-      x <- c(3,9)
+      x <- c(5,13)
       y <- c(fecundity*0.9, fecundity*1.1)
       mod <- lm(y~x)
       
@@ -240,10 +240,10 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
     }
       
       if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == T)) {
-        G1 <- 0.5/((-0.471 * temps$Temperature[t-1]) + 14.413)
-        P1 <- 1-(1/((-0.471 * temps$Temperature[t-1]) + 14.413))
-        G2 <- 0.3/((-0.471 * temps$Temperature[t-1]) + 14.413)
-        P2 <- 1-(1/((-0.471 * temps$Temperature[t-1]) + 14.413))
+        G1 <- 0.5/((-0.72 * temps$Temperature[t-1]) + 19.54)
+        P1 <- 1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54))
+        G2 <- 0.3/((-0.72 * temps$Temperature[t-1]) + 19.54)
+        P2 <- 1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54))
       }
       
       

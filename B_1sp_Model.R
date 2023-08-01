@@ -131,8 +131,8 @@ for (iter in c(1:iterations)) {
    K = Kb # need to reset K for each iteration
   
   # pull random values from a uniform distribution 
-  # output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
-  output.N.list[1,1:3, iter]<- c(5000, 3000, 100)
+  output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
+  #output.N.list[1,1:3, iter]<- c(5000, 3000, 100)
   # we often want to look at different parameter values after we run code, so we create some lists
   
   # list to input Ks
@@ -211,7 +211,7 @@ for (iter in c(1:iterations)) {
     
     # # Probabilities of remaining in stages (when temps low, high prob of remaining)
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    if (9 > temps$Temperature[t-1]) {
+    if (5 > temps$Temperature[t-1]) {
       P1 <- 1-(1/4)
       P2 <- 1-(1/4)
       G1 <- 0.1/4
@@ -226,13 +226,13 @@ for (iter in c(1:iterations)) {
       }
 
     
-    if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == F)){
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == F)){
       G1 <- 0.1/((emergetime[t]-1)/2)
       G2 <- 0.3/((emergetime[t]-1)/2)
       P1 <- 1-(1/((emergetime[t]-1)/2))
       P2 <- 1-(1/((emergetime[t]-1)/2))
     }
-    if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == T)) {
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == T)) {
       G1 <- 0.1/((-0.353 * temps$Temperature[t-1]) + 10.059)
       P1 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))
       G2 <- 0.3/((-0.353 * temps$Temperature[t-1]) + 10.059)
@@ -265,11 +265,11 @@ for (iter in c(1:iterations)) {
     # mortality due to flooding follows N0 = Nz*e^-hQ
     
     #s1
-    output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t, 1, iter], k, h, Q[t-1], Qmin)
+    output.N.list[t-1, 1, iter] <- flood.mortality(output.N.list[t-1, 1, iter], k, h, Q[t-1], Qmin)
     #s2Q
-    output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
+    output.N.list[t-1,2,iter] <- flood.mortality(output.N.list[t-1,2,iter], k, h, Q[t-1], Qmin)
     
-    output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
+    output.N.list[t-1,3,iter] <- flood.mortality(output.N.list[t-1,3,iter], k, h, Q[t-1], Qmin)
     
     flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
     
@@ -288,7 +288,7 @@ for (iter in c(1:iterations)) {
 } #----------------------
   # End Outer Loop
   #----------------------
-return(output.N.list[ , 1:3, ])
+return(output.N.list[ ,1:3, ])
 }
 #------------------
 # Analyzing Results
