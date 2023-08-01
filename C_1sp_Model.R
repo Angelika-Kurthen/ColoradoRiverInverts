@@ -11,9 +11,9 @@ library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
-library(doMC)
-library(foreach)
-registerDoMC(4)
+#library(doMC)
+#library(foreach)
+#registerDoMC(4)
 #packages for every foreach 
 pkgs <- c("purrr", "tidyverse", "lubridate", "plyr", "dplyr")
 
