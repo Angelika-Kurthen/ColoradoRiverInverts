@@ -59,15 +59,14 @@ for (f in 1:length(dds)) {
   means <- list()
   for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
     sample_dates <- temp$dts[which(format(temp$dts, "%m-%d")== all.dates[d])]
-    samp <- which(temp$dts == sample(sample_dates[which(sample_dates > temps$dts[300] & sample_dates < temps$dts[2508])], size = 1))
+    samp <- which(temp$dts == sample(sample_dates[which(sample_dates > temp$dts[300] & sample_dates < temp$dts[2508])], size = 1))
     dates <- temp[(samp-300):(samp+100),]
     discharge <- rep(0.1, time = length(dates$dts)) # create a list of non-disturbance discharges
     discharge[match(samp, dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
     print(length(dates$dts))
     source("B_1sp_Model.R")
     # run model
-    out <- Bmodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0, peakeach = length(temp$Temperature), dds <- [f])
-    # create summary dataframe 
+    out <- Bmodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0, peakeach = length(temp$Temperature), dds = dds[f])
     m <- mean.data.frame(out, burnin = 250, iteration = 9)
     means[d] <- list(m)
   }
