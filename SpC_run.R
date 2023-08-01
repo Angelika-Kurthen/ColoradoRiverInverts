@@ -128,7 +128,7 @@ jday_max <- unlist(lapply(means, function(x)
   return(max(x$mean.abund)))) # would mean +/- se or just maximum (and maybe minimum values) be valuable
 jday.df <- as.data.frame(cbind(jday_max, all.dates))
 jday.df$jday_max <- as.numeric(jday.df$jday_max)
-jday.df$all.dates <- yday(as.POSIXct(jday.df$all.dates, format = "%m-%d"))
+jday.df$all.dates <- yday(as.POSIXct(jday.df$all.dates, format = "%Y-%m-%d"))
 ggplot(data = jday.df, aes(x = all.dates, y = jday_max/10000, group = 1))+
   geom_line(linewidth = 1)+
   coord_cartesian(ylim = c(0,2.75)) +
