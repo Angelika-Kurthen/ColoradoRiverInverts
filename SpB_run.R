@@ -37,18 +37,19 @@ out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0
 # create summary dataframe 
 m <- mean.data.frame(out, burnin = 250, iteration = 9)
 # add dates
-m <- as.data.frame(cbind(m, temps$dts[249:2608]))
+m <- as.data.frame(cbind(m, temp$dts[249:2608]))
 m$`temps$dts[249:2608]`<- as.Date(m$`temps$dts[249:2608]`)
 # only want to look a little subset
 m <- m[100:165,]
 # plot
+x11()
 ggplot(data = m, aes(x = `temps$dts[249:2608]`, y = mean.abund/10000, group = 1))+
   geom_line(linewidth = 1, mapping = aes(color = "January Disturbance +/- S.E."))+
-  geom_ribbon(aes(ymin = (mean.abund - 1.96 * se.abund)/10000,
-                  ymax = (mean.abund + 1.96 * se.abund)/10000),
-              colour = 'transparent',
-              fill = "#F5793A",
-              alpha = .15, show.legend = T) +
+  # geom_ribbon(aes(ymin = (mean.abund - 1.96 * se.abund)/10000,
+  #                 ymax = (mean.abund + 1.96 * se.abund)/10000),
+  #             colour = 'transparent',
+  #             fill = "#F5793A",
+  #             alpha = .15, show.legend = T) +
   labs(colour = " ")+
   ylab('Mayfly Abundance Relative to Baseline Recuritment Limit') +
   xlab("Time")+
@@ -64,7 +65,24 @@ ggplot(data = m, aes(x = `temps$dts[249:2608]`, y = mean.abund/10000, group = 1)
   scale_color_manual(values=c("#F5793A"))+
   scale_x_date(date_labels="%B", date_breaks  ="2 month")
 
-
+kdf <- as.data.frame(cbind(temp$dts, Klist[2:2609]))
+kdf <- kdf[349:414,]
+kdf$V1 <- as.Date(as.POSIXct(kdf$V1, origin = "1970-01-01"))
+ggplot(data = kdf, aes(x = V1, y = V2, group = 1))+
+  geom_line()+
+  # geom_ribbon(aes(ymin = (mean.abund - 1.96 * se.abund)/10000,
+  #                 ymax = (mean.abund + 1.96 * se.abund)/10000),
+  #             colour = 'transparent',
+  #             fill = "#F5793A",
+  #             alpha = .15, show.legend = T) +
+  labs(colour = " ")+
+  ylab('Mayfly Recuritment Limit') +
+  xlab("Time")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13))+
+  scale_color_manual(values=c("#F5793A"))+
+  scale_x_date(date_labels="%B", date_breaks  ="2 month")
 ## Figure 2: Yearly Averages --> this plot is ugly and not very informative
 # pull one random day in either January, April, July, or Octorber for each year
 Year <- year(temp$dts) # make a list of years
@@ -163,7 +181,7 @@ for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
     samp <- which(temp$dts == sample(sample_dates[which(sample_dates > temp$dts[300] & sample_dates < temp$dts[2508])], size = 1))
     dates <- temp[(samp-300):(samp+100),]
     discharge <- rep(0.1, time = length(dates$dts)) # create a list of non-disturbance discharges
-    discharge[match(samp, dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
+!    discharge[match(temp$dts[samp], dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
 
     source("B_1sp_Model.R")
     # run model
@@ -269,3 +287,9 @@ ggplot(data = IDT.ratio.df, aes(x = fecs, y = IDT.ratio))+
   ylab('Importance of Disturbance Timing')+
   xlab("Mean Fecundity")+
   theme_bw()
+
+kdf <- as.data.frame(cbind(temp$dts, Klist[2:2609]))
+kdf$V1 <- as.Date(kdf$V1)
+ggplot(kdf, aes(x = V1, y = V2))+
+  geom_line()
+  
