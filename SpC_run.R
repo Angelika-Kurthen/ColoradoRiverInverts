@@ -18,7 +18,7 @@
 # flow.magnitude <- as.data.frame(cbind(temp$dts, discharge))
 # 
 library(lubridate)
-library(parallel)
+
 
 
 
@@ -101,3 +101,41 @@ means.list.C <- cbind(means.list.C, temp$dts[1:length(means.list.C$timesteps)])
 means.list.C$`temp$dts` <- as.Date(means.list.C$`temp$dts`)
 
 plot(means.list.C$`temp$dts`, means.list.C$mean.abund, type = "l", xlab = "Time", ylab = "Type C species")
+
+## Figure 2: Calculate Julian Date Effect - in each iteration, we want to create a disturbance at a specific date
+# a few ways to do this- for every date, run out 300 timesteps prior (burn-in + some change) --> (Date - 300:Date+100)
+# pull one random day in either January, April, July, or Octorber for each year
+all.dates <- unique(format(temp$dts, "%m-%d"))[order(unique(format(temp$dts, "%m-%d")))]
+# loop to select a date from a Week-Month combo from each unique year
+means <- list()
+system.time(
+  for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
+    sample_dates <- temp$dts[which(format(temp$dts, "%m-%d")== all.dates[d])]
+    samp <- which(temp$dts == sample(sample_dates[which(sample_dates > temp$dts[300] & sample_dates < temp$dts[2508])], size = 1))
+    dates <- temp[(samp-300):(samp+100),]
+    discharge <- rep(0.1, time = length(dates$dts)) # create a list of non-disturbance discharges
+    discharge[match(temp$dts[samp], dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
+    
+    source("C_1sp_Model.R")
+    # run model
+    out <- Cmodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 30, peaklist = 0, peakeach = length(temp$Temperature))
+    # create summary dataframe 
+    m <- mean.data.frame(out, burnin = 250, iteration = 30)
+    means[d] <- list(m)
+  })
+
+jday_max <- unlist(lapply(means, function(x)
+  return(max(x$mean.abund)))) # would mean +/- se or just maximum (and maybe minimum values) be valuable
+jday.df <- as.data.frame(cbind(jday_max, all.dates))
+jday.df$jday_max <- as.numeric(jday.df$jday_max)
+jday.df$all.dates <- yday(as.POSIXct(jday.df$all.dates, format = "%m-%d"))
+ggplot(data = jday.df, aes(x = all.dates, y = jday_max/10000, group = 1))+
+  geom_line(linewidth = 1)+
+  coord_cartesian(ylim = c(0,2.75)) +
+  theme_bw()+
+  ylab('Max Values of Caddisfly Abundance Relative to Baseline Recuritment Limit') +
+  xlab("Julian Date")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  scale_x_continuous(n.breaks = 11)
+
