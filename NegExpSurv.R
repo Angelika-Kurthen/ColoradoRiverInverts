@@ -5,8 +5,8 @@
 
 # Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 
-library(minpack.lm, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-
+#library(minpack.lm, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(minpack.lm)
 
 flow.surv.fit <- function(magnitude, mortality, Qmin){
   x <- magnitude # rename x and y
