@@ -32,26 +32,40 @@ flow.magnitude <- as.data.frame(cbind(temp$dts, discharge)) #match to dates
 
 source("B_1sp_Model.R")
 
+
+temp$dts <- as.Date(as.POSIXct(temp$dts))
+
+ggplot(data = temp[349:414,], aes(x = dts, y = Temperature) )+
+  geom_line(col = "#0077b6", size = 1)+
+  theme_bw()+
+  ylab('Water Temperature C') +
+  xlab("Time")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13))+
+  scale_x_date(date_labels="%B", date_breaks  ="2 months")
+
+
 # run model
-out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0, peakeach = length(temp$Temperature))
+out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 15, peaklist = 0, peakeach = length(temp$Temperature))
 # create summary dataframe 
-m <- mean.data.frame(out, burnin = 250, iteration = 9)
+m <- mean.data.frame(out, burnin = 250, iteration = 15)
 # add dates
 m <- as.data.frame(cbind(m, temp$dts[249:2608]))
-m$`temps$dts[249:2608]`<- as.Date(m$`temps$dts[249:2608]`)
+m$`temp$dts[249:2608]`<- as.Date(m$`temp$dts[249:2608]`)
 # only want to look a little subset
 m <- m[100:165,]
 # plot
 x11()
-ggplot(data = m, aes(x = `temps$dts[249:2608]`, y = mean.abund/10000, group = 1))+
-  geom_line(linewidth = 1, mapping = aes(color = "January Disturbance +/- S.E."))+
-  # geom_ribbon(aes(ymin = (mean.abund - 1.96 * se.abund)/10000,
-  #                 ymax = (mean.abund + 1.96 * se.abund)/10000),
-  #             colour = 'transparent',
-  #             fill = "#F5793A",
-  #             alpha = .15, show.legend = T) +
+ggplot(data = m, aes(x = `temp$dts[249:2608]`, y = mean.abund/10000, group = 1))+
+  geom_line(mapping = aes(color = "January Disturbance"), size = 1
+            )+
+#  geom_ribbon(aes(ymin = (mean.abund - 1.96 * se.abund)/10000,
+#                   ymax = (mean.abund + 1.96 * se.abund)/10000),
+#              colour = 'transparent',
+#               fill = "#F5793A",
+#               alpha = .15, show.legend = T) +
   labs(colour = " ")+
-  ylab('Mayfly Abundance Relative to Baseline Recuritment Limit') +
+  ylab('Mayfly Abundance Relative to Baseline K') +
   xlab("Time")+
   theme_bw()+
   theme(
@@ -63,7 +77,7 @@ ggplot(data = m, aes(x = `temps$dts[249:2608]`, y = mean.abund/10000, group = 1)
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13))+
   scale_color_manual(values=c("#F5793A"))+
-  scale_x_date(date_labels="%B", date_breaks  ="2 month")
+  scale_x_date(date_labels="%B", date_breaks  ="2 months")
 
 kdf <- as.data.frame(cbind(temp$dts, Klist[2:2609]))
 kdf <- kdf[349:414,]
@@ -76,13 +90,32 @@ ggplot(data = kdf, aes(x = V1, y = V2, group = 1))+
   #             fill = "#F5793A",
   #             alpha = .15, show.legend = T) +
   labs(colour = " ")+
-  ylab('Mayfly Recuritment Limit') +
+  ylab('Mayfly Baseline K') +
   xlab("Time")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13))+
   scale_color_manual(values=c("#F5793A"))+
   scale_x_date(date_labels="%B", date_breaks  ="2 month")
+
+
+# if just adults
+m <- rowMeans(out)
+m <- as.data.frame(cbind(temp$dts, m[2:2609]))
+m <- m[349:414, ]
+m$V1 <- as.Date(m$V1, origin = "1970-01-01")
+ggplot(data = m, aes(x = V1, y = V2/10000, group = 1))+
+  geom_line(size = 1)+
+  labs(colour = " ")+
+  ylab('Mayfly Adult Relative to Baseline K') +
+  xlab("Time")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13))+
+  scale_color_manual(values=c("#F5793A"))+
+  scale_x_date(date_labels="%B", date_breaks  ="2 month")
+  
+
 ## Figure 2: Yearly Averages --> this plot is ugly and not very informative
 # pull one random day in either January, April, July, or Octorber for each year
 Year <- year(temp$dts) # make a list of years
@@ -181,13 +214,13 @@ for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
     samp <- which(temp$dts == sample(sample_dates[which(sample_dates > temp$dts[300] & sample_dates < temp$dts[2508])], size = 1))
     dates <- temp[(samp-300):(samp+100),]
     discharge <- rep(0.1, time = length(dates$dts)) # create a list of non-disturbance discharges
-!    discharge[match(temp$dts[samp], dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
+    discharge[match(temp$dts[samp], dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
 
-    source("B_1sp_Model.R")
+    source("C:/Users/jelly/Downloads/B_1sp_ModelJune16.R")
     # run model
-    out <- Bmodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 30, peaklist = 0, peakeach = length(temp$Temperature))
+    out <- Bmodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 100, peaklist = 0, peakeach = length(temp$Temperature))
     # create summary dataframe 
-    m <- mean.data.frame(out, burnin = 250, iteration = 30)
+    m <- mean.data.frame(out, burnin = 250, iteration = 100)
     means[d] <- list(m)
 })
 
@@ -195,12 +228,13 @@ jday_max <- unlist(lapply(means, function(x)
         return(max(x$mean.abund)))) # would mean +/- se or just maximum (and maybe minimum values) be valuable
 jday.df <- as.data.frame(cbind(jday_max, all.dates))
 jday.df$jday_max <- as.numeric(jday.df$jday_max)
-jday.df$all.dates <- yday(jday.df$all.dates)
+jday.df$all.dates <- yday(as.POSIXct(jday.df$all.dates, format = "%m-%d"))
+x11()
 ggplot(data = jday.df, aes(x = all.dates, y = jday_max/10000, group = 1))+
-  geom_line(linewidth = 1)+
-  coord_cartesian(ylim = c(0,2.75)) +
+  geom_line(size = 1)+
+  coord_cartesian(ylim = c(0,12)) +
   theme_bw()+
-  ylab('Max Values of Mayfly Abundance Relative to Baseline Recuritment Limit') +
+  ylab('Max Values of Mayfly Abundance Relative to Baseline K') +
   xlab("Julian Date")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
