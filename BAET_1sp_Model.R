@@ -60,7 +60,8 @@ temps <- temp.data
 degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
 colnames(degreedays) <- c("dts", "DegreeDay")
 degreedays$dts <- as.Date(degreedays$dts, origin = "1970-01-01")
-  
+
+
 # need to make ramped increasing hydropeaking index 
 hp <- c(rep(peaklist, each = peakeach))
   
@@ -143,6 +144,7 @@ for (iter in c(1:iterations)) {
     # Calculate how many timesteps emerging adults have matured
     
     emergetime <- append(emergetime, back.count.degreedays(t, 250, degreedays)) # value from Sweeney et al 2017
+    delta <- append(round(1/devtime(temps[t-1])/14)) 
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
@@ -157,6 +159,11 @@ for (iter in c(1:iterations)) {
     # we can "convert" emergetime to mg by multiplying to get dry weights between 0.9 - 2 mg, and then convert to fecunity
     # Issue: this data is for Ephemerella spp, not Baetidae spp
     # 
+    
+    
+    if (t > delta[1]){
+      
+    }
     if (t > 19) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
@@ -222,6 +229,8 @@ for (iter in c(1:iterations)) {
       }
       G2 <- G1
       P2 <- P1
+    
+      
     
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
