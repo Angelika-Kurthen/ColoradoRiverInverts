@@ -39,22 +39,15 @@ polyfit <- nlsLM(dev_days ~ a*temperature^4 + b*temperature^3 + c*temperature^2 
 # equation=== maturation rate/day = -2.246e-06*temperature^4 + 1.778e-04*temperature^3 -5.062e-03*temperature^2 + 6.483e-02*temperature -3.020e-01 
 # equation ==== development time = 2.525e-03*temperature^4 -2.508e-01*temperature^3+  9.379e+00*temperature^2 -1.580e+02*temperature+  1.040e+03 
 
-temps <- c(5, 6, 7, 8, 6, 4)
-m_t <- function(temps){
-  -2.246e-06*temps^4 + 1.778e-04*temps^3 -5.062e-03*temps^2 + 6.483e-02*temps -3.020e-01 
+MaturationRate <- function(x){
+  a <- 1/x
+  return(a)
 }
-d_t <- function(temps){
-  2.525e-03*temps^4 -2.508e-01*temps^3+  9.379e+00*temps^2 -1.580e+02*temps +  1.040e+03 
-}
+devtime <- function(temps){
+  a <- 2.525e-03*temps^4 -2.508e-01*temps^3+  9.379e+00*temps^2 -1.580e+02*temps +  1.040e+03 
+return(a)
+  }
 
-
-
-originaltaus <- 32.47879 27.05311 22.40065 18.44206 27.05311 38.76137
-
-d(t)  = d(t - tau(t))*(m(T)/m(T(t-tau(t)))
-
-d(t)  = d(t - tau(t))*(m(T)/m(T(t-tau(t))) 
-round(1/d(t))/14.
 
 ggplot(surv.df.BAET, aes(x = Q, y = surv))+
   geom_line()+
