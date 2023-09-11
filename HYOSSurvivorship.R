@@ -34,5 +34,3 @@ ggplot(surv.df.HYOS, aes(x = Q, y = surv))+
   ylab('Immediate Post-Disturbance Survival') +
   theme_bw()+
   xlab('`Max Event Discharge/Bankfull Discharge`')
-
-  
