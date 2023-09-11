@@ -46,8 +46,12 @@ source("1spFunctions.R")
 
 Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
 
-temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
 
+temp <- as.data.frame(cbind(Time, Day, Temperature))
+temp$Day <- as.Date(temp$Day, origin= "1970-01-01")
+colnames(temp) <- c("Time", "Date", "Temperature")
+temp <- TimestepTemperature(temp)
+temp <- temp[c(1,3)]
 
 BAETmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   
@@ -134,6 +138,8 @@ for (iter in c(1:iterations)) {
   emergetime <- vector()
   
   sizelist <- vector()
+  delta <- vector()
+  development <- vector()
   #-------------------------
   # Inner Loop of Timesteps
   #-------------------------
@@ -144,7 +150,13 @@ for (iter in c(1:iterations)) {
     # Calculate how many timesteps emerging adults have matured
     
     emergetime <- append(emergetime, back.count.degreedays(t, 250, degreedays)) # value from Sweeney et al 2017
-    delta <- append(round(1/devtime(temps[t-1])/14)) 
+    delta <- append(delta, round(devtime(temps$Temperature[t-1])/14))
+  #   if (t < 7){
+  #     development <- append(development, delta[t-1]*(MaturationRate(devtime(temps$Temperature[t-1])/14)))
+  #   } else {
+  #   development <- append(development, development[t-delta[t]]*((MaturationRate(devtime(temps$Temperature[t-1])/14))/(MaturationRate(devtime(temps$Temperature[t-delta[t]])/14))))
+  #   }
+  # }
     #---------------------------------------------------------
     # Calculate fecundity per adult
     
@@ -160,16 +172,15 @@ for (iter in c(1:iterations)) {
     # Issue: this data is for Ephemerella spp, not Baetidae spp
     # 
     
-    
-    if (t > delta[1]){
-      
-    }
     if (t > 19) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
       F3 <- (200*size)+200 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
       #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
     }
+    size <- delta[t-1]
+    sizelist <- append(sizelist, size)
+    F3 <- F3 <- (41.86*size)+200 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
     # Sets to 0 if below the Qmin
@@ -202,36 +213,44 @@ for (iter in c(1:iterations)) {
     
     # # Probabilities of remaining in stages (when temps low, high prob of remaining)
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
+    # 
     if (5 > temps$Temperature[t-1]) {
-      P1 <- 1-(1/9)
-      P2 <- P1
-      G1 <- 0.29/9
+      G1 <- 0.29/((delta[t-1]-1)/2)
       G1 <- G2
+      P1 <- 1-(1/((delta[t-1]-1)/2))
+      P2 <- P1
       }
 
     if (temps$Temperature[t-1] > 21){
-      P1 <- 1-(1/1.5)
-      P2 <- P1
-      G1 <- 0.29/1.5
+      G1 <- 0.29/((delta[t-1]/2))
       G2 <- G2
+      P1 <- 1-(1/((delta[t-1]/2)))
+      P2 <- P1
       }
 
-    
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == F)){
-      G1 <- 0.29/((emergetime[t]-1)/2)
-      G2 <- G1
-      P1 <- 1-(1/((emergetime[t]-1)/2))
-      P2 <- P1
-    }
+    #
+    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == F)){
+    #   G1 <- 0.29/((emergetime[t]-1)/2)
+    #   G2 <- G1
+    #   P1 <- 1-(1/((emergetime[t]-1)/2))
+    #   P2 <- P1
+    # }
     if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
       G1 <- 0.048/((-0.786 * temps$Temperature[t-1]) + 18)
       P1 <- 1-(1/((-0.786 * temps$Temperature[t-1]) + 18))
       }
       G2 <- G1
       P2 <- P1
-    
       
-    
+      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == F)){
+        G1 <- 0.29/((delta[t-1]-1)/2)
+        G2 <- G1
+        P1 <- 1-( 1-(1/((delta[t-1]-1)/2)))
+        P2 <- P1
+      }
+
+      
+    # if temp dependent surival curve is know, we can also use that, applying either a) constant mortality to all stages or b) giving specific weights of survival to different stages 
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
     # 
