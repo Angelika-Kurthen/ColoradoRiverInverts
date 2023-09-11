@@ -53,7 +53,7 @@ TimestepTemperature <- function(temp){
   # format output
   names(outs)[1:2] <-c("dts","Temperature")
   # add the correct dates as the beginning of every period
-  outs$dts <- as.POSIXct(temp$Date[((outs$dts*14)+1)])
+  outs$dts <- as.POSIXct(temp$Date[((outs$dts*14)+1)], origin = "1970-01-01")
   # order by date in chronological order
   temps <- outs[order(outs$dts),]
 
