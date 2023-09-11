@@ -305,31 +305,34 @@ return(output.N.list[ , 1:2, ])
 #-------------------
 # summarizing iterations
 
-# out <- BAETmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
+out <- BAETmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
 # 
-# adults <-as.data.frame(cbind(temps$dts, out[1:length(temps$dts),3,1]))
-# colnames(adults) <- c("Time","Adult Baetidae")
+adults <-as.data.frame(cbind(temps$dts, out[1:length(temps$dts),3,1]))
+colnames(adults) <- c("Time","Adult Baetidae")
 # 
-# ## turning replist into a df
-# means.list.BAET <- mean.data.frame(out, burnin = 0, iteration = 1)
-# means.list.BAET <- cbind(means.list.BAET[1:length(means.list.BAET$mean.abund),], temps$dts[1:length(means.list.BAET$mean.abund)])
-# means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
+## turning replist into a df
+means.list.BAET <- mean.data.frame(out, burnin = 0, iteration = 1)
+means.list.BAET <- cbind(means.list.BAET[1:length(means.list.BAET$mean.abund),], temps$dts[1:length(means.list.BAET$mean.abund)])
+means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
+
+# note how boom and bust this model is - K is set to be 10,000 not 100,000
+abund.trends.BAET <- ggplot(data = adults[300:500,], aes(x = Time,
+                                       y = `Adult Baetidae`/10000, group = 1)) +
+  geom_point()+
+  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+  #                 ymax = mean.abund + 1.96 * se.abund),
+  #             colour = 'transparent',
+  #            alpha = .5,
+  #             show.legend = FALSE) +
+  geom_line(show.legend = FALSE) +
+  coord_cartesian(ylim = c(0,2)) +
+  ylab('Adult Baetis Abundance/ Baseline Reproductive Limit') +
+  xlab('Timestep')
 # 
-# # note how boom and bust this model is - K is set to be 10,000 not 100,000
-# abund.trends.BAET <- ggplot(data = adults[300:500,], aes(x = Time,
-#                                        y = `Adult Baetidae`/10000, group = 1)) +
-#   geom_point()+
-#   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-#   #                 ymax = mean.abund + 1.96 * se.abund),
-#   #             colour = 'transparent',
-#   #            alpha = .5,
-#   #             show.legend = FALSE) +
-#   geom_line(show.legend = FALSE) +
-#   coord_cartesian(ylim = c(0,2)) +
-#   ylab('Adult Baetis Abundance/ Baseline Reproductive Limit') +
-#   xlab('Timestep')  
-# 
-# plot(adults$`Adult Baetidae`[300:500], adults$`Adult Baetidae`[301:501], type = "b", xlab = "Adult Baetids t", ylab = "Adult Baetids t+1")
+plot(out[80:105, 2], type = "b", xlab = "Timesteps Jan 1 to Dec 31", ylab = "BAET adult abundace (max on Aug 23 after prolonged warm period)" )
+
+
+plot(adults$`Adult Baetidae`[300:500], adults$`Adult Baetidae`[301:501], type = "b", xlab = "Adult Baetids t", ylab = "Adult Baetids t+1")
 # 
 # ggplot(data = means.list.BAET[300:500,], aes(x = `temps$dts`,
 #                           y = mean.abund/10000, group = 1)) +
