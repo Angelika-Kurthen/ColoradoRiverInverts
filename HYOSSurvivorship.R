@@ -34,3 +34,18 @@ ggplot(surv.df.HYOS, aes(x = Q, y = surv))+
   ylab('Immediate Post-Disturbance Survival') +
   theme_bw()+
   xlab('`Max Event Discharge/Bankfull Discharge`')
+
+# original rates and temps from McCarty et al 2022, critical thermal max from Kremer and Caldwell 2022
+rate <- c(0.0037, 0.0164,0.0293,0.0293,0.00956,0.00321,0.00857,0.00539, 0.0037)
+temps <- c(6.9,7.66,8.67,12,2.86,3.28,1.35,1.09, 34.4)
+df <- as.data.frame(cbind(temps, rate))
+plot(temps, rate)
+
+polyfit <- nlsLM(1/rate ~ a * temps^2 + b * temps + c, start = c(a = 1, b = 1, c = 1))
+
+devtime <- function(x){
+  y = 0.598*x^2-19.224*x+219.578
+  return(y)
+}
+
+
