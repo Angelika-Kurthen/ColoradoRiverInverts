@@ -235,12 +235,6 @@ for (iter in c(1:iterations)) {
     #   P1 <- 1-(1/((emergetime[t]-1)/2))
     #   P2 <- P1
     # }
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
-      G1 <- 0.048/((-0.786 * temps$Temperature[t-1]) + 18)
-      P1 <- 1-(1/((-0.786 * temps$Temperature[t-1]) + 18))
-      }
-      G2 <- G1
-      P2 <- P1
       
       if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == F)){
         G1 <- 0.29/((delta[t-1]-1)/2)
