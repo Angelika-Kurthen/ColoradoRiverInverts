@@ -143,6 +143,8 @@ for (iter in c(1:iterations)) {
   emergetime <- vector()
   
   sizelist <- vector()
+  delta <- vector()
+  development <- vector()
   #-------------------------
   # Inner Loop of Timesteps
   #-------------------------
@@ -153,6 +155,8 @@ for (iter in c(1:iterations)) {
     # Calculate how many timesteps emerging adults have matured
     
     emergetime <- append(emergetime, back.count.degreedays(t, 1680, degreedays)) #mean from hauer and stanford 1728.889
+    delta <- append(delta, round(devtime(temps$Temperature[t-1])/14))
+    
     #---------------------------------------------------------
     # Calculate fecundity per adult
     F3 = 235.6*  hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
@@ -166,6 +170,10 @@ for (iter in c(1:iterations)) {
       sizelist <- append(sizelist, size)
       F3 <- ((7.219 * size) + 163.4) *hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     }
+    size <- delta[t-1]
+    sizelist <- append(sizelist, size)
+    F3 <- F3 <- (41.86*size)+200 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
+    
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
@@ -221,6 +229,29 @@ for (iter in c(1:iterations)) {
       G1 <- 0.05/((-0.95 * temps$Temperature[t-1]) + 24.75)
       P1 <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))
     }
+    
+    if (5 > temps$Temperature[t-1]) {
+      G1 <- 0.29/((delta[t-1]-1)/2)
+      G1 <- G2
+      P1 <- 1-(1/((delta[t-1]-1)/2))
+      P2 <- P1
+    }
+    
+    if (temps$Temperature[t-1] > 21){
+      G1 <- 0.29/((delta[t-1]/2))
+      G2 <- G2
+      P1 <- 1-(1/((delta[t-1]/2)))
+      P2 <- P1
+    }
+    
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21){
+      G1 <- 0.29/((delta[t-1]-1)/2)
+      G2 <- G1
+      P1 <- 1-( 1-(1/((delta[t-1]-1)/2)))
+      P2 <- P1
+    }
+    
+    
     #-----------------------------------------------
     # Create Lefkovitch Matrix
     
