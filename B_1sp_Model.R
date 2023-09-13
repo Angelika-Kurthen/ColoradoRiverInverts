@@ -240,18 +240,18 @@ for (iter in c(1:iterations)) {
       }
 
     
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == F)){
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 ){
       G1 <- 0.1/((delta[t-1]-1)/2)
       G2 <- 0.3/((delta[t-1]-1)/2)
       P1 <- 1-(1/((delta[t-1]-1)/2))
       P2 <- 1-(1/((delta[t-1]-1)/2))
     }
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
-      G1 <- 0.1/((-0.353 * temps$Temperature[t-1]) + 10.059)
-      P1 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))
-      G2 <- 0.3/((-0.353 * temps$Temperature[t-1]) + 10.059)
-      P2 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))
-      }
+    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
+    #   G1 <- 0.1/((-0.353 * temps$Temperature[t-1]) + 10.059)
+    #   P1 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))
+    #   G2 <- 0.3/((-0.353 * temps$Temperature[t-1]) + 10.059)
+    #   P2 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))
+    #   }
 
     
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
