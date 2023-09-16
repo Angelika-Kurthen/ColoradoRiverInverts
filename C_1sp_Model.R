@@ -155,6 +155,8 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
     emergetime <- vector()
     
     sizelist <- vector()
+    delta <- vector()
+    development <- vector()
     #-------------------------
     # Inner Loop of Timesteps
     #-------------------------
@@ -165,6 +167,7 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       
       
       emergetime <- append(emergetime, back.count.degreedays(t, dds, degreedays)) # value from Sweeney et al 2017
+      delta <- append(delta, round(devtime(temps$Temperature[t-1])/14))
       #---------------------------------------------------------
       # Calculate fecundity per adult
       
@@ -188,6 +191,10 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
         F3 <- ((size*mod$coefficients[2])+mod$coefficients[1])* 0.5 * hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
         #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
       }
+      size <- delta[t-1]
+      sizelist <- append(sizelist, size)
+      F3 <- F3 <- (41.86*size)+200 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
+      
       #--------------------------------------------------
       # Calculate the disturbance magnitude-K relationship
       # Sets to 0 if below the Qmin
@@ -218,34 +225,34 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       # in this function, we assume that if below the min temp threshold (9) no maturation occurs (slow maturation, large growth)
       # if above the max temp threshold (15), no one remains more than 1 timestep in each stage (fast maturation, small growth)
       if (9 > temps$Temperature[t-1]) {
-      P1 <- 1-(1/6)
-      P2 <- 1-(1/6)
-      G1 <- 0.5/6
-      G2 <- 0.3/6
+      P1 <- 1-(1/((delta[t-1]-1)/2))
+      P2 <- 1-(1/((delta[t-1]-1)/2))
+      G1 <- 0.5/((delta[t-1]-1)/2)
+      G2 <- 0.3/((delta[t-1]-1)/2)
     }
     
     if (temps$Temperature[t-1] > 20){
-      P1 <- 1-(1/2)
-      P2 <- 1-(1/2)
-      G1 <- 0.5/2
-      G2 <- 0.3/2
+      P1 <- 1-(1/((delta[t-1])/2))
+      P2 <- 1-(1/((delta[t-1])/2))
+      G1 <- 0.5/((delta[t-1])/2)
+      G2 <- 0.3/((delta[t-1])/2)
     }
     
     
-    if (9<= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == F)){
-      G1 <- 0.5/((emergetime[t]-1)/2)
-      G2 <- 0.3/((emergetime[t]-1)/2)
-      P1 <- 1-(1/((emergetime[t]-1)/2))
-      P2 <- 1-(1/((emergetime[t]-1)/2))
+    if (9<= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20){
+      G1 <- 0.5/((delta[t-1]-1)/2)
+      G2 <- 0.3/((delta[t-1]-1)/2)
+      P1 <- 1-(1/((delta[t-1]-1)/2))
+      P2 <- 1-(1/((delta[t-1]-1)/2))
     }
       
-      if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == T)) {
-        G1 <- 0.5/((-0.72 * temps$Temperature[t-1]) + 19.54)
-        P1 <- 1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54))
-        G2 <- 0.3/((-0.72 * temps$Temperature[t-1]) + 19.54)
-        P2 <- 1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54))
-      }
-      
+      # if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == T)) {
+      #   G1 <- 0.5/((-0.72 * temps$Temperature[t-1]) + 19.54)
+      #   P1 <- 1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54))
+      #   G2 <- 0.3/((-0.72 * temps$Temperature[t-1]) + 19.54)
+      #   P2 <- 1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54))
+      # }
+      # 
       
       # P2 <- 0.55 - G2
       #-----------------------------------------------
