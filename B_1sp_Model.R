@@ -189,10 +189,10 @@ for (iter in c(1:iterations)) {
       F3 <- ((size*mod$coefficients[2])+mod$coefficients[1])* 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
       #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
     }
-    size <- delta[t-1]
-    sizelist <- append(sizelist, size)
-    F3 <- F3 <- (41.86*size)+200 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
-    
+    # size <- delta[t-1]
+    # sizelist <- append(sizelist, size)
+    # F3 <- F3 <- (41.86*size)+200 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
+    # 
     #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
     # Sets to 0 if below the Qmin
