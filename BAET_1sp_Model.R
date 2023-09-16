@@ -178,10 +178,10 @@ for (iter in c(1:iterations)) {
       F3 <- (200*size)+200 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
       #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
     }
-    size <- delta[t-1]
-    sizelist <- append(sizelist, size)
-    F3 <- F3 <- (41.86*size)+200 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
-    #--------------------------------------------------
+    # size <- delta[t-1]
+    # sizelist <- append(sizelist, size)
+    # F3 <- F3 <- (41.86*size)+200 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
+    # #--------------------------------------------------
     # Calculate the disturbance magnitude-K relationship
     # Sets to 0 if below the Qmin
     Qf <- Qf.Function(Q[t-1], Qmin, a)
@@ -266,9 +266,9 @@ for (iter in c(1:iterations)) {
     output.N.list[t, 1:3, iter] <- A %*% output.N.list[t-1, 1:3, iter] 
     
     #------------------------------------------
+    # Calculate immediate mortality due to temperature regime (outside of thermal optima)
     #Calculate immediate mortality due to flows
     # mortality due to flooding follows N0 = Nz*e^-hQ
-    
     #s1
     output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t, 1, iter], k, h, Q[t-1], Qmin)
     #s2Q
