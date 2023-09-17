@@ -4,6 +4,9 @@
 library(readxl)
 library(minpack.lm)
 library(tidyverse)
+library(car)
+library(boot)
+library(data.table)
 HYOSVitalRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Mortality Rates")
 HYOSVitalRates <- as.data.frame(HYOSVitalRates)
 
@@ -48,4 +51,13 @@ devtime <- function(x){
   return(y)
 }
 
+# from Gaufin et al 1972, table 2
+s <- c(0.0001, 1,1,1,0.9, 0.6, 0.79, 0.45, 0.00001, 0.0001)
+temp <- c(0, 18.8, 20.4, 22.1, 24, 28, 29.2, 31.1, 32.7, 36.5)
+fit <- nlsLM(logit(s) ~ a*temp^2 + b*temp + c, start = c(a = 1, b = 1, c = 1))
+
+TempSurv <- function(temps){
+  a <- -0.0230*temps^2 + 0.8086*temps -3.5611
+  return(inv.logit(a))
+}
 
