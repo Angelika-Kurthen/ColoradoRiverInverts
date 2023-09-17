@@ -274,6 +274,10 @@ for (iter in c(1:iterations)) {
     output.N.list[t, 1:3, iter] <- A %*% output.N.list[t-1, 1:3, iter] 
     
     #------------------------------------------
+    # Calculate immediate mortality due to temperature regime (outside of thermal optima)
+    output.N.list[t, 1:3, iter] <- output.N.list[t, 1:3, iter]*TempSurv(temps$temperature[t])
+    
+    
     #Calculate immediate mortality due to flows
     # mortality due to flooding follows N0 = Nz*e^-hQ
     # but what about using a sigmoidal logistic function so we can control the threshold point and rate of growth
