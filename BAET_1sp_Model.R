@@ -267,6 +267,7 @@ for (iter in c(1:iterations)) {
     
     #------------------------------------------
     # Calculate immediate mortality due to temperature regime (outside of thermal optima)
+    output.N.list[t, 1:3, iter] <- output.N.list[t, 1:3, iter]*TempSurv(temps$temperature[t])
     #Calculate immediate mortality due to flows
     # mortality due to flooding follows N0 = Nz*e^-hQ
     #s1
@@ -299,7 +300,7 @@ return(output.N.list[ , 1:2, ])
 #-------------------
 # summarizing iterations
 
-out <- BAETmodel(flow.data = discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
+out <- BAETmodel(flow.data = discharge, temp.data = temp, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
 # 
 adults <-as.data.frame(cbind(temps$dts, out[1:length(temps$dts),3,1]))
 colnames(adults) <- c("Time","Adult Baetidae")
