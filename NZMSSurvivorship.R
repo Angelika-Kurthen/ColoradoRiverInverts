@@ -5,6 +5,8 @@
 library(readxl)
 library(minpack.lm)
 library(tidyverse)
+library(car)
+library(boot)
 NZMSVitalRates <- read_excel("VitalRates.xlsx", sheet = "NZMS Mortality Rates")
 NZMSVitalRates <- as.data.frame(NZMSVitalRates)
 
@@ -50,3 +52,11 @@ nlsLM(y~ -b*(x - 17.5)^4 + 1,start = list(b = 0),data=data)
 
 # eq = y = -0.0001427(x - 17.5)^4 + 1 * F 
 
+# Calculating Temperature Dependent Mortality
+NZMSSurvRates <- read_excel("VitalRates.xlsx", sheet = "NZMS Survival Rates")
+NZMSSurvRates <- as.data.frame(NZMSSurvRates)
+fit <- nlsLM(logit(Survival) ~ a*Temperature^2+ b*Temperature + c, data = NZMSSurvRates, start = c(a = 1, b = 1, c = 1))
+TempSurv <- function(x){
+  y = -0.08814*x^2 + 3.09981*x -9.18655 
+  return(inv.logit(y))
+}
