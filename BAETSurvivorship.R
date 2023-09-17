@@ -30,39 +30,28 @@ flow.surv.rate <- function(h, k, max, min, interval, Qmin) {
 surv.fit.BAET <- flow.surv.fit(BAETVitalRates$`Max Event Discharge/Bankfull Discharge`, BAETVitalRates$Mortality, 0.25)
 surv.df.BAET <- flow.surv.rate(surv.fit.BAET$m$getPars()[2] , surv.fit.BAET$m$getPars()[1], 4, 0.001, 0.001, 0.25)
 
+# Calculate Development Time Based on Literature
+BAETDevRates <- read_excel("VitalRates.xlsx", sheet = "Baetid Development")
+BAETDevRates <- as.data.frame(BAETDevRates)
+polyfit <- nlsLM(DevelopmentTime ~ a*Temperature^4 + b* Temperature ^3 + c*Temperature ^2 +d*Temperature  + e, data = BAETDevRates, start = c(a = 1, b =1, c = 1, d = 1, e = 1))
 
-#Sweeney et al 2017, Baetidae development rate follows 4th degree polynomial eq
-# data from Supplementary Material
-#dev_days <- c(110.3, 72.6, 46.9, 29, 25.5, 20.6, 16, 13.5, 16.9)
-#temperature <- c(12.1, 14.3, 16.2, 20.2, 21.2, 23.9, 27.8, 30, 31.7)
-#df <- as.data.frame(cbind(dev_days, temperature))
-#polyfit <- nlsLM(dev_days ~ a*temperature^4 + b* temperature ^3 + c*temperature ^2 +d*temperature  + e, start = c(a = 1, b =1, c = 1, d = 1, e = 1))
-
-# equation=== maturation rate/day = -2.246e-06*temperature^4 + 1.778e-04*temperature^3 -5.062e-03*temperature^2 + 6.483e-02*temperature -3.020e-01 
-# equation ==== development time = 2.525e-03*temperature^4 -2.508e-01*temperature^3+  9.379e+00*temperature^2 -1.580e+02*temperature+  1.040e+03 
+devtime <- function(x){
+  a <- 2.525e-03*x^4 -2.508e-01*x^3+  9.379e+00*x^2 -1.580e+02*x +  1.040e+03 
+}
 
 MaturationRate <- function(x){
   a <- 1/x
   return(a)
 }
-devtime <- function(x){
-  a <- 2.525e-03*x^4 -2.508e-01*x^3+  9.379e+00*x^2 -1.580e+02*x +  1.040e+03 
-}
-#survivorship over time
-# temp<- c(12.1, 14.3, 16.2, 20.2, 21.2, 23.9, 27.8, 30, 31.7, 33.5)
-# temp <- temp/100
-# s <- c(43.1, 62.9, 85.4, 87.1, 87, 79, 70.5, 74.3, 57.3,0.001)
-# s <- s/100
-#Sweeney and vannote 2017 found 2nd deg polynomial relationship
-#Biology bounds survival by 0 and 1, thus we cannot have negatives
-#Take logit of survival, calculate 2nd deg polynomial, and back transform
-#fit <- nlsLM(logit(s) ~ a*temp^2 + b*temp + c, start = c(a = 1, b = 1, c = 1))
+
+# Calculate Temperature Dependent Survival
+BAETSurvRate <- read_excel("VitalRates.xlsx", sheet = "Baetid Survival Rates")
+BAETSurvRate <- as.data.frame(BAETSurvRate)
+fit <- nlsLM(logit(Survival) ~ a*Temperature^2 + b*Temperature + c, data = BAETSurvRate, start = c(a = 1, b = 1, c = 1))
 #inv.logit(predict(fit))
 
-
-
 TempSurv <- function(x){
-  a <-  -0.05795*x^2 + 2.40764*x -21.94990 
+  a <-  -0.02837*x^2 + 1.21299*x  -10.92723 
   return(inv.logit(a))
 }
 
