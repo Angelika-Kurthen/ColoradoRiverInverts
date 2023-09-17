@@ -5,6 +5,8 @@
 library(readxl)
 library(minpack.lm)
 library(tidyverse)
+library(car)
+library(boot)
 BAETVitalRates <- read_excel("VitalRates.xlsx", sheet = "Baetid Mortality Rates")
 BAETVitalRates <- as.data.frame(BAETVitalRates)
 
@@ -31,10 +33,10 @@ surv.df.BAET <- flow.surv.rate(surv.fit.BAET$m$getPars()[2] , surv.fit.BAET$m$ge
 
 #Sweeney et al 2017, Baetidae development rate follows 4th degree polynomial eq
 # data from Supplementary Material
-dev_days <- c(110.3, 72.6, 46.9, 29, 25.5, 20.6, 16, 13.5, 16.9)
-temperature <- c(12.1, 14.3, 16.2, 20.2, 21.2, 23.9, 27.8, 30, 31.7)
-df <- as.data.frame(cbind(dev_days, temperature))
-polyfit <- nlsLM(dev_days ~ ((l^temperature)/factorial(temperature)) * exp(-l), start = c(l = 1))
+#dev_days <- c(110.3, 72.6, 46.9, 29, 25.5, 20.6, 16, 13.5, 16.9)
+#temperature <- c(12.1, 14.3, 16.2, 20.2, 21.2, 23.9, 27.8, 30, 31.7)
+#df <- as.data.frame(cbind(dev_days, temperature))
+#polyfit <- nlsLM(dev_days ~ a*temperature^4 + b* temperature ^3 + c*temperature ^2 +d*temperature  + e, start = c(a = 1, b =1, c = 1, d = 1, e = 1))
 
 # equation=== maturation rate/day = -2.246e-06*temperature^4 + 1.778e-04*temperature^3 -5.062e-03*temperature^2 + 6.483e-02*temperature -3.020e-01 
 # equation ==== development time = 2.525e-03*temperature^4 -2.508e-01*temperature^3+  9.379e+00*temperature^2 -1.580e+02*temperature+  1.040e+03 
@@ -43,29 +45,27 @@ MaturationRate <- function(x){
   a <- 1/x
   return(a)
 }
-devtime <- function(temps){
-  a <- 2.525e-03*temps^4 -2.508e-01*temps^3+  9.379e+00*temps^2 -1.580e+02*temps +  1.040e+03 
+devtime <- function(x){
+  a <- 2.525e-03*x^4 -2.508e-01*x^3+  9.379e+00*x^2 -1.580e+02*x +  1.040e+03 
 }
+#survivorship over time
+# temp<- c(12.1, 14.3, 16.2, 20.2, 21.2, 23.9, 27.8, 30, 31.7, 33.5)
+# temp <- temp/100
+# s <- c(43.1, 62.9, 85.4, 87.1, 87, 79, 70.5, 74.3, 57.3,0.001)
+# s <- s/100
+#Sweeney and vannote 2017 found 2nd deg polynomial relationship
+#Biology bounds survival by 0 and 1, thus we cannot have negatives
+#Take logit of survival, calculate 2nd deg polynomial, and back transform
+#fit <- nlsLM(logit(s) ~ a*temp^2 + b*temp + c, start = c(a = 1, b = 1, c = 1))
+#inv.logit(predict(fit))
 
-TempSurv <- function(temps){
-  a <-0.914*exp(-((temps-21)^2)/(2*8.27^2))
-return(a)
-}
 
-TempSurv <- function(temps){
-  a <-  -0.05795*temp^2 + 2.40764*temp -21.94990 
+
+TempSurv <- function(x){
+  a <-  -0.05795*x^2 + 2.40764*x -21.94990 
   return(inv.logit(a))
 }
 
-devtime(temp)
-#survivorship over time
-temp<- c(12.1, 14.3, 16.2, 20.2, 21.2, 23.9, 27.8, 30, 31.7, 33.5)
-temp <- temp/100
-s <- c(43.1, 62.9, 85.4, 87.1, 87, 79, 70.5, 74.3, 57.3,0.001)
-s <- s/100
-s <- logit(s)
-# fit <- nlsLM(s ~ a*temp^4+b*temp^3+ c*temp^2 + d*temp + e, start = c(a =1,b=1,c=1, d = 1, e = 1))
-# fit1 <- nlsLM(s ~ a*temp^2+b*temp + c, start = c(a =1, b = 1, c = 1))
 
 ggplot(surv.df.BAET, aes(x = Q, y = surv))+
   geom_line()+
@@ -75,21 +75,11 @@ ggplot(surv.df.BAET, aes(x = Q, y = surv))+
   theme_bw()+
   xlab('`Max Event Discharge/Bankfull Discharge`')
 
-# fit.betalogit <- betareg(s~ temp)
-# fit.betalogit2 <- betareg(s ~ a*temp^2 + b*temp + c, start = c(a=1, c=1, c=1))
-# predict(fit.betalogit)
-# exp(-0.117*(temp^2)+2.736)/(1+(exp((-0.117*temp^2) + 2.736)))
-
-# fit4 <- nlsLM(logit(s) ~ a*temp^4 + b*temp^3 + c*temp^2 + d*temp + e, start = c(a = 1, b = 1, c = 1, d = 1, e = 1) )
-fit2 <- nlsLM(logit(s) ~ a*temp^2 + b*temp + c, start = c(a = 1, b = 1, c = 1))
-# inv.logit(predict(fit4))
-inv.logit(predict(fit2))
 
 
-
-plot(temp, s, xlab = "Temperature C", ylab = "Survival", col = "red", pch = 16, cex = 1.5, xlim = c(0,40), ylim = c(0,1))
-points(temp, predict(fit.betalogit), col = "blue", pch = 1)
-points(temp, inv.logit(predict(fit4)), col = "hotpink", pch = 2)
-points(temp, inv.logit(predict(fit2)), col = "green", pch = 5)     
-legend(-0.5, 1, legend=c("Data", "Beta Regression 2D Poly", "Logit 4D Poly", "Logit 2D Poly"),
-       col=c("red", "blue", "hotpink", "green"), pch=c(16, 1, 2, 5), cex=0.8)     
+# plot(temp, s, xlab = "Temperature C", ylab = "Survival", col = "red", pch = 16, cex = 1.5, xlim = c(0,40), ylim = c(0,1))
+# points(temp, predict(fit.betalogit), col = "blue", pch = 1)
+# points(temp, inv.logit(predict(fit4)), col = "hotpink", pch = 2)
+# points(temp, inv.logit(predict(fit2)), col = "green", pch = 5)     
+# legend(-0.5, 1, legend=c("Data", "Beta Regression 2D Poly", "Logit 4D Poly", "Logit 2D Poly"),
+#        col=c("red", "blue", "hotpink", "green"), pch=c(16, 1, 2, 5), cex=0.8)     
