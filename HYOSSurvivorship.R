@@ -38,26 +38,23 @@ ggplot(surv.df.HYOS, aes(x = Q, y = surv))+
   theme_bw()+
   xlab('`Max Event Discharge/Bankfull Discharge`')
 
-# original rates and temps from McCarty et al 2022, critical thermal max from Kremer and Caldwell 2022
-rate <- c(0.0037, 0.0164,0.0293,0.0293,0.00956,0.00321,0.00857,0.00539, 0.0037)
-temps <- c(6.9,7.66,8.67,12,2.86,3.28,1.35,1.09, 34.4)
-df <- as.data.frame(cbind(temps, rate))
-plot(temps, rate)
+# Calculate temperature dependent development time
+HYOSDevRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Development Rates")
+HYOSDevRates <- as.data.frame(HYOSDevRates)
 
-polyfit <- nlsLM(1/rate ~ a * temps^2 + b * temps + c, start = c(a = 1, b = 1, c = 1))
+polyfit <- nlsLM(logit(MaturationRate) ~ a*Temperature^2 + b*Temperature + c, data = HYOSDevRates, start = c(a = 1, b = 1, c = 1))
 
 devtime <- function(x){
-  y = 0.598*x^2-19.224*x+219.578
-  return(y)
+  y = -0.01385  *x^2+ 0.30973*x -5.72982 
+  return(inv.logit(y))
 }
 
-# from Gaufin et al 1972, table 2
-s <- c(0.0001, 1,1,1,0.9, 0.6, 0.79, 0.45, 0.00001, 0.0001)
-temp <- c(0, 18.8, 20.4, 22.1, 24, 28, 29.2, 31.1, 32.7, 36.5)
-fit <- nlsLM(logit(s) ~ a*temp^2 + b*temp + c, start = c(a = 1, b = 1, c = 1))
+HYOSSurvRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Survival Rates ")
+HYOSSurvRates <- as.data.frame(HYOSSurvRates)
 
-TempSurv <- function(temps){
-  a <- -0.0230*temps^2 + 0.8086*temps -3.5611
+fit <- nlsLM(logit(Survival)~ a*Temperature^2 + b*Temperature + c, data = HYOSSurvRates, start = c(a= 1, b=1, c = 1))
+
+TempSurv <- function(x){
+  a <- -0.09934 *x^2 +  3.44127  *x -15.47038 
   return(inv.logit(a))
 }
-
