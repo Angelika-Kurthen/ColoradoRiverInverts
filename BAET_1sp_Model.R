@@ -39,10 +39,10 @@ source("1spFunctions.R")
 # calculate mean temperature data for each timestep (2 week interval)
 # # temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
 # 
-# Time <- c(1:1825)
-# Date <- rep(c(1:365), times = 5)
-# Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
-# Day <- Day[-which(Day == "2024-02-29")]
+Time <- c(1:1825)
+Date <- rep(c(1:365), times = 5)
+Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
+Day <- Day[-which(Day == "2024-02-29")]
 
 Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
 
@@ -53,13 +53,15 @@ colnames(temp) <- c("Time", "Date", "Temperature")
 temp <- TimestepTemperature(temp)
 temp <- temp[c(1,3)]
 
+discharge <- rep(0.1, times = length(temp$Temperature))
+
 BAETmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   
 # set up model
 source("BAETSurvivorship.R")
 
-Q <- as.numeric(flow.data)
-temps <- temp.data
+Q <<- as.numeric(flow.data)
+temps <<- temp.data
   
 degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
 colnames(degreedays) <- c("dts", "DegreeDay")
@@ -84,26 +86,26 @@ P1 = 0.3 #stay in Stage1 (larvae)
 P2 = 0.3 #stay in Stage2 (subimago)
 
 # want to run this for one year, in 14 day timesteps 
-timestep <- seq(2, (length(temps$Temperature) + 1), by = 1)
+timestep <<- seq(2, (length(temps$Temperature) + 1), by = 1)
 
 # create an array to put our output into
-output.N.array <- array(0, dim = c(length(timestep) + 1))
+output.N.array <<- array(0, dim = c(length(timestep) + 1))
 
-output.N.list <- list(output.N.array)
+output.N.list <<- list(output.N.array)
 
 # create array to put the total N of all species into
-Total.N <- array(0,
+Total.N <<- array(0,
                  dim  <-c((length(timestep) +1 ), iterations),
                  dimnames <- list(1:(length(timestep) + 1), 1:iterations))
 
 # create list of arrays w/ abundance data for each spp
-reparray <- array(0,
+reparray <<- array(0,
                   
                   dim = c(length(timestep) + 1, 3, iterations),
                   dimnames = list(1:(length(timestep)+1), c("S1", "S2", "S3"), 1:iterations)
 )
 
-output.N.list <- reparray
+output.N.list <<- reparray
 
 Qmin <- Qmin
 a <- 0.001
@@ -122,7 +124,7 @@ for (iter in c(1:iterations)) {
   K = Kb # need to reset K for each iteration
   
   # pull random values from a uniform distribution 
-  output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
+  output.N.list[1,1:3, iter] <<- runif(3, min = 1, max = (0.3*K))
   
   # we often want to look at different parameter values after we run code, so we create some lists
   
@@ -140,6 +142,7 @@ for (iter in c(1:iterations)) {
   sizelist <- vector()
   delta <- vector()
   development <- vector()
+  surv <- TempSurv(temps$Temperature)
   #-------------------------
   # Inner Loop of Timesteps
   #-------------------------
@@ -148,7 +151,7 @@ for (iter in c(1:iterations)) {
     
     #----------------------------------------------------------
     # Calculate how many timesteps emerging adults have matured
-    
+    t <- t
     emergetime <- append(emergetime, back.count.degreedays(t, 250, degreedays)) # value from Sweeney et al 2017
     delta <- append(delta, round(devtime(temps$Temperature[t-1])/14))
   #   if (t < 7){
@@ -267,7 +270,7 @@ for (iter in c(1:iterations)) {
     
     #------------------------------------------
     # Calculate immediate mortality due to temperature regime (outside of thermal optima)
-    output.N.list[t, 1:3, iter] <- output.N.list[t, 1:3, iter]*TempSurv(temps$temperature[t])
+    output.N.list[t, 1:2, iter] <- output.N.list[t, 1:2, iter]*surv[t-1]
     #Calculate immediate mortality due to flows
     # mortality due to flooding follows N0 = Nz*e^-hQ
     #s1
@@ -293,7 +296,7 @@ for (iter in c(1:iterations)) {
 } #----------------------
   # End Outer Loop
   #----------------------
-return(output.N.list[ , 1:2, ])
+return(output.N.list[ , 1:3, ])
 }
 #------------------
 # Analyzing Results
