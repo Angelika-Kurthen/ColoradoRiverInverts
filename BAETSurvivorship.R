@@ -65,7 +65,9 @@ ggplot(surv.df.BAET, aes(x = Q, y = surv))+
   xlab('`Max Event Discharge/Bankfull Discharge`')
 
 
-
+tem <- seq(0, 40, by = 1)
+plot(BAETSurvRate$Temperature, BAETSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+lines(tem, TempSurv(tem))
 # plot(temp, s, xlab = "Temperature C", ylab = "Survival", col = "red", pch = 16, cex = 1.5, xlim = c(0,40), ylim = c(0,1))
 # points(temp, predict(fit.betalogit), col = "blue", pch = 1)
 # points(temp, inv.logit(predict(fit4)), col = "hotpink", pch = 2)
