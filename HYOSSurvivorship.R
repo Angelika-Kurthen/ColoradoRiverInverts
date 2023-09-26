@@ -54,7 +54,24 @@ HYOSSurvRates <- as.data.frame(HYOSSurvRates)
 
 fit <- nlsLM(logit(Survival)~ a*Temperature^2 + b*Temperature + c, data = HYOSSurvRates, start = c(a= 1, b=1, c = 1))
 
-TempSurv <- function(x){
-  a <- -0.09934 *x^2 +  3.44127  *x -15.47038 
-  return(inv.logit(a))
+# TempSurv <- function(x){
+#   a <- -0.09934 *x^2 +3.44127*x -15.47038 
+#   return(inv.logit(a))
+# }
+min.RSS <- function(par){
+  mod <- dnbinom(as.integer(-HYOSSurvRates$Temperature + 33), size = par[2], prob = par[1])
+  a <- sum(HYOSSurvRates$Survival - (mod*(max(HYOSSurvRates$Survival)/max(mod))))^2
 }
+params <- optim(par = c(4.5, 0.23), fn = min.RSS, method = "BFGS")
+
+TempSurv <- function(x){
+  a <-  dnbinom(-x + 33, size = params$par[2] , prob = params$par[1])*(max(HYOSSurvRates$Survival)/max(dnbinom(as.integer(-HYOSSurvRates$Temperature + 34), size =params$par[2], prob = params$par[1])))
+  return((a))
+}
+
+
+
+tem <- seq(0, 40, by = 1)
+plot(HYOSSurvRates$Temperature, HYOSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+lines(tem, TempSurv(tem))
+
