@@ -57,6 +57,30 @@ NZMSSurvRates <- read_excel("VitalRates.xlsx", sheet = "NZMS Survival Rates")
 NZMSSurvRates <- as.data.frame(NZMSSurvRates)
 fit <- nlsLM(logit(Survival) ~ a*Temperature^2+ b*Temperature + c, data = NZMSSurvRates, start = c(a = 1, b = 1, c = 1))
 TempSurv <- function(x){
-  y = -0.08814*x^2 + 3.09981*x -9.18655 
+  y = -0.08814*x^2 + 3.09981*x -9.18655
   return(inv.logit(y))
 }
+
+# based on the two fits we have neg binom and inv logit 2nd deg I think the neg inv. binom fits the best, based on 
+
+min.RSS <- function(par){
+  mod <- dnbinom(as.integer(-NZMSSurvRates$Temperature + 34), size = par[2], prob = par[1])
+  a <- sum(NZMSSurvRates$Survival - (mod*(max(NZMSSurvRates$Survival)/max(mod))))^2
+}
+params <- optim(par = c(0.2, 2), fn = min.RSS, method = "BFGS")
+
+TempSurv <- function(x){
+  a <-  dnbinom(-x + 34, size = params$par[2] , prob = params$par[1])*(max(NZMSSurvRates$Survival)/max(dnbinom(as.integer(-NZMSSurvRates$Temperature + 34), size =params$par[2], prob = params$par[1])))
+  return((a))
+}
+
+TempSurv <- function(x){
+  a <-  dnbinom(-x + 32, size = 3, prob = 0.2)
+  return((a))
+}
+
+tem <- seq(0, 40, by = 1)
+plot(NZMSSurvRates$Temperature, NZMSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+lines(tem, TempSurv(tem))
+
+
