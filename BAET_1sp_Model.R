@@ -44,7 +44,7 @@ Date <- rep(c(1:365), times = 5)
 Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
 Day <- Day[-which(Day == "2024-02-29")]
 
-Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
+Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 20.95 #+ 10.956243
 
 
 temp <- as.data.frame(cbind(Time, Day, Temperature))
@@ -60,11 +60,12 @@ BAETmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
 # set up model
 source("BAETSurvivorship.R")
 
-Q <<- as.numeric(flow.data)
-temps <<- temp.data
+Q <- as.numeric(flow.data)
+temps <- temp.data
   
 degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
 colnames(degreedays) <- c("dts", "DegreeDay")
+degreedays$DegreeDay[degreedays$DegreeDay<0] <- 0
 degreedays$dts <- as.Date(degreedays$dts, origin = "1970-01-01")
 
 
@@ -79,33 +80,27 @@ Kb <- as.numeric(baselineK)
 # max K after a big disturbance
 Kd <- as.numeric(disturbanceK)
 
-# specify baseline transition probabilities for each species
-G1 = 0.3 #move to Stage2 (subimago)
-G2 = 0.25 #move to Stage3 (adult)
-P1 = 0.3 #stay in Stage1 (larvae)
-P2 = 0.3 #stay in Stage2 (subimago)
-
 # want to run this for one year, in 14 day timesteps 
-timestep <<- seq(2, (length(temps$Temperature) + 1), by = 1)
+timestep <- seq(2, (length(temps$Temperature) + 1), by = 1)
 
 # create an array to put our output into
-output.N.array <<- array(0, dim = c(length(timestep) + 1))
+output.N.array <- array(0, dim = c(length(timestep) + 1))
 
-output.N.list <<- list(output.N.array)
+output.N.list <- list(output.N.array)
 
 # create array to put the total N of all species into
-Total.N <<- array(0,
+Total.N <- array(0,
                  dim  <-c((length(timestep) +1 ), iterations),
                  dimnames <- list(1:(length(timestep) + 1), 1:iterations))
 
 # create list of arrays w/ abundance data for each spp
-reparray <<- array(0,
+reparray <- array(0,
                   
                   dim = c(length(timestep) + 1, 3, iterations),
                   dimnames = list(1:(length(timestep)+1), c("S1", "S2", "S3"), 1:iterations)
 )
 
-output.N.list <<- reparray
+output.N.list <- reparray
 
 Qmin <- Qmin
 a <- 0.001
@@ -124,7 +119,7 @@ for (iter in c(1:iterations)) {
   K = Kb # need to reset K for each iteration
   
   # pull random values from a uniform distribution 
-  output.N.list[1,1:3, iter] <<- runif(3, min = 1, max = (0.3*K))
+  output.N.list[1,1:3, iter] <- runif(3, min = 1, max = (0.3*K))
   
   # we often want to look at different parameter values after we run code, so we create some lists
   
@@ -142,7 +137,12 @@ for (iter in c(1:iterations)) {
   sizelist <- vector()
   delta <- vector()
   development <- vector()
-  surv <- TempSurv(temps$Temperature)
+  
+  TempSurvival <- vector()
+  for(c in temps$Temperature){
+    b <- TempSurv(c)
+    TempSurvival <- append(TempSurvival, b)
+  }
   #-------------------------
   # Inner Loop of Timesteps
   #-------------------------
@@ -218,16 +218,16 @@ for (iter in c(1:iterations)) {
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
     # 
     if (5 > temps$Temperature[t-1]) {
-      G1 <- 0.29/((delta[t-1]-1)/2)
-      G1 <- G2
-      P1 <- 1-(1/((delta[t-1]-1)/2))
+      G1 <- 0.29/((delta[t-1])/2)
+      G2 <- G1
+      P1 <- 0.29*(1-1/(delta[t-1]/2))
       P2 <- P1
       }
 
     if (temps$Temperature[t-1] > 21){
       G1 <- 0.29/((delta[t-1]/2))
-      G2 <- G2
-      P1 <- 1-(1/((delta[t-1]/2)))
+      G2 <- G1
+      P1 <- 0.29*(1-1/((delta[t-1]/2)))
       P2 <- P1
       }
 
@@ -240,9 +240,9 @@ for (iter in c(1:iterations)) {
     # }
       
       if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21){
-        G1 <- 0.29/((delta[t-1]-1)/2)
+        G1 <- 0.29/((delta[t-1]/2))
         G2 <- G1
-        P1 <- 1-( 1-(1/((delta[t-1]-1)/2)))
+        P1 <- 0.29*(1-1/(delta[t-1]/2))
         P2 <- P1
       }
 
@@ -270,12 +270,13 @@ for (iter in c(1:iterations)) {
     
     #------------------------------------------
     # Calculate immediate mortality due to temperature regime (outside of thermal optima)
-    output.N.list[t, 1:2, iter] <- output.N.list[t, 1:2, iter]*surv[t-1]
+    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] *  TempSurvival[t-1]
+    output.N.list[t, 2, iter] <- output.N.list[t, 2, iter] *  TempSurvival[t-1]
     #Calculate immediate mortality due to flows
     # mortality due to flooding follows N0 = Nz*e^-hQ
     #s1
     output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t, 1, iter], k, h, Q[t-1], Qmin)
-    #s2Q
+    #s2Qt
     output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
     
     output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
@@ -284,8 +285,9 @@ for (iter in c(1:iterations)) {
     
     #------------------------------------------------------
     # check extinction threshold and if below set to 0
-    Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
-    if (Total.N[t, iter] < extinction){
+    print(output.N.list[t,,iter])
+    Total.N[t,iter] <- sum(output.N.list[t,,iter])
+    if (Total.N[t,iter] < extinction){
       output.N.list[t,,iter] <- 0
       Total.N[t, iter] <- 0}
     
@@ -303,18 +305,19 @@ return(output.N.list[ , 1:3, ])
 #-------------------
 # summarizing iterations
 
-out <- BAETmodel(flow.data = discharge, temp.data = temp, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
+out <- BAETmodel(flow.data = discharge, temp.data = temp, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 3, peaklist = 0, peakeach = length(temp$Temperature))
 # 
-adults <-as.data.frame(cbind(temps$dts, out[1:length(temps$dts),3,1]))
+adults <-as.data.frame(cbind((temp$dts), out[1:length(temp$dts),3,1]))
 colnames(adults) <- c("Time","Adult Baetidae")
+adults$Time <- as.Date(as.POSIXct(adults$Time, origin = "1970-01-01"))
 # 
 ## turning replist into a df
-means.list.BAET <- mean.data.frame(out, burnin = 0, iteration = 1)
-means.list.BAET <- cbind(means.list.BAET[1:length(means.list.BAET$mean.abund),], temps$dts[1:length(means.list.BAET$mean.abund)])
+means.list.BAET <- mean.data.frame(out, burnin = 90, iteration = 3)
+means.list.BAET <- cbind(means.list.BAET[1:length(means.list.BAET$mean.abund),], temps$dts[90:132])
 means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
 
 # note how boom and bust this model is - K is set to be 10,000 not 100,000
-abund.trends.BAET <- ggplot(data = adults[300:500,], aes(x = Time,
+abund.trends.BAET <- ggplot(data = adults[1:131,], aes(x = Time,
                                        y = `Adult Baetidae`/10000, group = 1)) +
   geom_point()+
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
@@ -323,27 +326,32 @@ abund.trends.BAET <- ggplot(data = adults[300:500,], aes(x = Time,
   #            alpha = .5,
   #             show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,2)) +
   ylab('Adult Baetis Abundance/ Baseline Reproductive Limit') +
-  xlab('Timestep')
+  xlab('Timestep')+
+  scale_x_date(date_labels="%B", date_breaks  ="4 months")+
+theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+      axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 # 
 plot(out[80:105, 2], type = "b", xlab = "Timesteps Jan 1 to Dec 31", ylab = "BAET adult abundace (max on Aug 23 after prolonged warm period)" )
 
 
-plot(adults$`Adult Baetidae`[300:500], adults$`Adult Baetidae`[301:501], type = "b", xlab = "Adult Baetids t", ylab = "Adult Baetids t+1")
+plot(adults$`Adult Baetidae`[90:130], adults$`Adult Baetidae`[91:131], type = "b", xlab = "Adult Baetids t", ylab = "Adult Baetids t+1")
 # 
-# ggplot(data = means.list.BAET[300:500,], aes(x = `temps$dts`,
-#                           y = mean.abund/10000, group = 1)) +
-#   geom_point()+
-#   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-#   #                 ymax = mean.abund + 1.96 * se.abund),
-#   #             colour = 'transparent',
-#   #            alpha = .5,
-#   #             show.legend = FALSE) +
-#   geom_line(show.legend = FALSE) +
-#   coord_cartesian(ylim = c(0,30)) +
-#   ylab('Baetis spp. Abundance/Reproductive Limit') +
-#   xlab('Timestep')  
+ggplot(data = means.list.BAET, aes(x = `temps$dts`,
+                          y = mean.abund/10000, group = 1)) +
+  geom_point()+
+  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+  #                 ymax = mean.abund + 1.96 * se.abund),
+  #             colour = 'transparent',
+  #            alpha = .5,
+  #             show.legend = FALSE) +
+  geom_line(show.legend = FALSE) +
+  ylab('Baetis spp. Abundance/Reproductive Limit') +
+  xlab('Timestep')+
+  scale_x_date(date_labels="%B", date_breaks  ="4 months")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
 # 
 # plot(means.list.BAET$mean.abund[300:500], means.list.BAET$mean.abund[301:501], type = "b", xlab = "Nt", ylab = "Nt+1")
 # 
@@ -351,3 +359,4 @@ plot(adults$`Adult Baetidae`[300:500], adults$`Adult Baetidae`[301:501], type = 
 #   geom_line(show.legend = FALSE) +
 #   ylab('Baetis spp. Abundance/Reproductive Limit') +
 #   xlab(" ")
+plot(temp$dts[90:131], temp$Temperature[90:131], col = "red", type = "l", xlab = "Time", ylab = "Temperature C")
