@@ -155,7 +155,7 @@ Qf.Function <- function(Q, Qmin, a){
 # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
 post.dist.K <- function(K0, Kb, g, t, Q, Qmin){
   #calculate tau (times since last distubance)
-  tau = (t-1) - (last(which(Q[1:t-1] > Qmin)))
+  tau = (t-1) - (length(which(Q[1:t-1] > Qmin)))
   if (is.na(tau)==T | tau == 0) { tau <-  0
   K <- K0} 
   if (tau > 0) {
