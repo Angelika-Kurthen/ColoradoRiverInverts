@@ -24,9 +24,9 @@ temps <- rep.avg.year(temps, 15, change.in.temp = 0, years.at.temp = 15)
 temps <- temps[20:359,2:3]
 temps$dts <- flow.magnitude$dts
 
-out <- BAETmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.15, extinct = 50, iteration = 999, peaklist = 0.13, peakeach = length(temps$Temperature))
+out <- BAETmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.25, extinct = 12, iteration = 9, peaklist = 0.13, peakeach = length(temps$Temperature))
 
-# upload data from Flaming Gorge Dam 
+# upload larval baet data from Flaming Gorge Dam 
 bugdata <- read_delim("C:/Users/kurthena/Downloads/APPL_11_13/bugdata.txt", delim = "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
 bugdata <- as.data.frame(bugdata[-c(1:6, 3732:3740),])
 names(bugdata) <- c("Sample", "Location", "Date", "Citation", "Method", "Area", "Density", "Phylum", "Class", "Order", "Family", "Subfamily", "Genus", "Species")
@@ -83,7 +83,7 @@ abund.trends.NZMS <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,
   geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = V2, color = "Empirical"), show.legend = T)+
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,2000000)) +
+  #coord_cartesian(ylim = c(0,6000)) +
   ylab('Baetidae S1 and S2 Density inds/(m2)') +
   xlab("")+
   labs(colour=" ")+
