@@ -37,6 +37,7 @@ polyfit <- nlsLM(DevelopmentTime ~ a*Temperature^4 + b* Temperature ^3 + c*Tempe
 
 devtime <- function(x){
   a <- 2.525e-03*x^4 -2.508e-01*x^3+  9.379e+00*x^2 -1.580e+02*x +  1.040e+03 
+  return(a)
 }
 
 MaturationRate <- function(x){
@@ -75,7 +76,7 @@ TempSurv <- function(n){
 #   xlab('`Max Event Discharge/Bankfull Discharge`')
 # 
 # 
-# tem <- seq(0, 40, by = 1)
+#tem <- seq(0, 40, by = 1)
 # plot(BAETSurvRate$Temperature, BAETSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
 # lines(tem, TempSurv(tem))
 # plot(temp, s, xlab = "Temperature C", ylab = "Survival", col = "red", pch = 16, cex = 1.5, xlim = c(0,40), ylim = c(0,1))
