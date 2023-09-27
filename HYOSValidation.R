@@ -83,8 +83,7 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
 
 rho <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
-
-abund.trends.NZMS <- ggplot(data = means.list.HYOS, aes(x = Date,
+ggplot(data = means.list.HYOS, aes(x = Date,
                                                         y = mean.abund*10, group = 1, color = "Model")) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
