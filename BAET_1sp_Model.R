@@ -135,9 +135,7 @@ for (iter in c(1:iterations)) {
   emergetime <- vector()
   
   sizelist <- vector()
-  delta <- vector()
-  development <- vector()
-  
+
   TempSurvival <- vector()
   for(c in temps$Temperature){
     b <- TempSurv(c)
@@ -153,7 +151,6 @@ for (iter in c(1:iterations)) {
     # Calculate how many timesteps emerging adults have matured
     t <- t
     emergetime <- append(emergetime, back.count.degreedays(t, 250, degreedays)) # value from Sweeney et al 2017
-    delta <- append(delta, round(devtime(temps$Temperature[t-1])/14))
   #   if (t < 7){
   #     development <- append(development, delta[t-1]*(MaturationRate(devtime(temps$Temperature[t-1])/14)))
   #   } else {
@@ -217,41 +214,67 @@ for (iter in c(1:iterations)) {
     # # Probabilities of remaining in stages (when temps low, high prob of remaining)
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
     # 
-    if (5 > temps$Temperature[t-1]) {
-      G1 <- 0.32/((delta[t-1])/2)
-      G2 <- G1
-      P1 <- 0.32*(1-1/(delta[t-1]/2))
-      P2 <- P1
-      }
-
-    if (temps$Temperature[t-1] > 21){
-      G1 <- 0.32/((delta[t-1]/2))
-      G2 <- G1
-      P1 <- 0.32*(1-1/((delta[t-1]/2)))
-      P2 <- P1
-      }
-
-    #
-    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == F)){
-    #   G1 <- 0.29/((emergetime[t]-1)/2)
+    # if (5 > temps$Temperature[t-1]) {
+    #   G1 <- 0.32/((emergetime[t-1])/2)
     #   G2 <- G1
-    #   P1 <- 1-(1/((emergetime[t]-1)/2))
+    #   P1 <- 0.32*(1-1/(emergetime[t-1]/2))
+    #   P2 <- P1
+    #   }
+    # 
+    # if (temps$Temperature[t-1] > 21){
+    #   G1 <- 0.32/((emergetime[t-1]/2))
+    #   G2 <- G1
+    #   P1 <- 0.32*(1-1/((emergetime[t-1]/2)))
+    #   P2 <- P1
+    #   }
+    # 
+    # 
+    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == F)){
+    #   G1 <- 0.32/((emergetime[t-1])/2)
+    #   G2 <- G1
+    #   P1 <-0.32(1-(1/((emergetime[t-1])/2)))
     #   P2 <- P1
     # }
+    if (7 > temps$Temperature[t-1]) {
+      P1 <- (1-(1/9)) 
+      P2 <- P1
+      G1 <- 0.3/9 
+      G2 <- G1
+    }
+    if (temps$Temperature[t-1] > 30){
+      P1 <- (1-(1/1.5)) 
+      P2 <- P1
+      G1 <- 0.3/1.5 
+      G2 <- G1
+    }
+    
+    if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
+      G1 <- 0.3/((emergetime[t-1])/2) 
+      G2 <- G1
+      P1 <- (1-(1/((emergetime[t-1])/2))) 
+      P2 <- P1
+    }
+    if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == T)) {
+      G1 <- 0.3*((-0.786 * temps$Temperature[t-1]) + 18) 
+      P1 <- (1-(1/((-0.786 * temps$Temperature[t-1]) + 18))) 
+      G2 <- G1
+      P2 <- P1
+    }
+   
       
-      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21){
-        G1 <- 0.32/((delta[t-1]/2))
-        G2 <- G1
-        P1 <- 0.32*(1-1/(delta[t-1]/2))
-        P2 <- P1
-      }
+      # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21){
+      #   G1 <- 0.32/((delta[t-1]/2))
+      #   G2 <- G1
+      #   P1 <- 0.32*(1-1/(delta[t-1]/2))
+      #   P2 <- P1
+      # }
 
       
-    # if temp dependent surival curve is know, we can also use that, applying either a) constant mortality to all stages or b) giving specific weights of survival to different stages 
+    # #if temp dependent surival curve is know, we can also use that, applying either a) constant mortality to all stages or b) giving specific weights of survival to different stages
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
-    # 
-    # # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
+
+    # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
     # P1 <- 0.55 - G1
     # P2 <- 0.55 - G2
     #-----------------------------------------------
@@ -294,10 +317,11 @@ for (iter in c(1:iterations)) {
   } #-------------------------
     # End Inner Loop  
     #------------------------- 
+  print(emergetime)
 } #----------------------
   # End Outer Loop
   #----------------------
-return(output.N.list[ , 1:3, ])
+return(output.N.list[ , 1:2, ])
 }
 #------------------
 # Analyzing Results
@@ -305,11 +329,11 @@ return(output.N.list[ , 1:3, ])
 # summarizing iterations
 # 
 # out <- BAETmodel(flow.data = discharge, temp.data = temp, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 3, peaklist = 0, peakeach = length(temp$Temperature))
-# # 
+# #
 # adults <-as.data.frame(cbind((temp$dts), out[1:length(temp$dts),3,1]))
 # colnames(adults) <- c("Time","Adult Baetidae")
 # adults$Time <- as.Date(as.POSIXct(adults$Time, origin = "1970-01-01"))
-# # 
+# #
 # ## turning replist into a df
 # means.list.BAET <- mean.data.frame(out, burnin = 90, iteration = 3)
 # means.list.BAET <- cbind(means.list.BAET[1:length(means.list.BAET$mean.abund),], temp$dts[90:132])
@@ -328,14 +352,14 @@ return(output.N.list[ , 1:3, ])
 #   ylab('Adult Baetis Abundance/ Baseline Reproductive Limit') +
 #   xlab('Timestep')+
 #   scale_x_date(date_labels="%B", date_breaks  ="4 months")+
-# theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+# theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5),
 #       axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-# # 
+# #
 # plot(out[80:105, 2], type = "b", xlab = "Timesteps Jan 1 to Dec 31", ylab = "BAET adult abundace (max on Aug 23 after prolonged warm period)" )
 # 
 # 
 # plot(adults$`Adult Baetidae`[90:130], adults$`Adult Baetidae`[91:131], type = "b", xlab = "Adult Baetids t", ylab = "Adult Baetids t+1")
-# # 
+# #
 # ggplot(data = means.list.BAET, aes(x = `temp$dts`,
 #                           y = mean.abund/10000, group = 1)) +
 #   geom_point()+
@@ -349,14 +373,15 @@ return(output.N.list[ , 1:3, ])
 #   ylab('Baetis spp. Abundance/Reproductive Limit') +
 #   xlab('Timestep')+
 #   scale_x_date(date_labels="%B", date_breaks  ="4 months")+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5),
 #         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 # 
-# # 
+# #
 # # plot(means.list.BAET$mean.abund[300:500], means.list.BAET$mean.abund[301:501], type = "b", xlab = "Nt", ylab = "Nt+1")
-# # 
+# #
 # # ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
 # #   geom_line(show.legend = FALSE) +
 # #   ylab('Baetis spp. Abundance/Reproductive Limit') +
 # #   xlab(" ")
 # plot(temp$dts[90:131], temp$Temperature[90:131], col = "red", type = "l", xlab = "Time", ylab = "Temperature C")
+# 
