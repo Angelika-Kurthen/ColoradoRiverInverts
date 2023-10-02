@@ -48,9 +48,16 @@ MaturationRate <- function(x){
 # Calculate Temperature Dependent Survival
 BAETSurvRate <- read_excel("VitalRates.xlsx", sheet = "Baetid Survival Rates")
 BAETSurvRate <- as.data.frame(BAETSurvRate)
-#fit <- nlsLM(logit(Survival) ~ a*Temperature^2 + b*Temperature + c, data = BAETSurvRate, start = c(a = 1, b = 1, c = 1))
-#inv.logit(predict(fit))
-#-0.02837*x^2 + 1.21299*x  -10.92723 
+# fit <- nlsLM(logit(Survival) ~ a*Temperature^2 + b*Temperature + c, data = BAETSurvRate, start = c(a = 1, b = 1, c = 1))
+# #inv.logit(predict(fit))
+# #-0.02837*x^2 + 1.21299*x  -10.92723 
+# TempSurv <- function(n){
+#   a <-  -0.05795*n^2 + 2.40764*n -21.94990
+#   return(inv.logit(a))
+# }
+
+
+
 min.RSS <- function(par){
   mod <- dnbinom(as.integer(-BAETSurvRate$Temperature + 34), size = par[2], prob = par[1])
   a <- sum(BAETSurvRate$Survival - (mod*(max(BAETSurvRate$Survival)/max(mod))))^2
@@ -76,9 +83,9 @@ TempSurv <- function(n){
 #   xlab('`Max Event Discharge/Bankfull Discharge`')
 # 
 # 
-#tem <- seq(0, 40, by = 1)
-# plot(BAETSurvRate$Temperature, BAETSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
-# lines(tem, TempSurv(tem))
+tem <- seq(0, 40, by = 1)
+plot(BAETSurvRate$Temperature, BAETSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+lines(tem,  dnbinom(as.integer(-tem + 34), size = params$par[2] , prob = params$par[1])*(max(BAETSurvRate$Survival)/max(dnbinom(as.integer(-BAETSurvRate$Temperature + 34), size =params$par[2], prob = params$par[1]))))
 # plot(temp, s, xlab = "Temperature C", ylab = "Survival", col = "red", pch = 16, cex = 1.5, xlim = c(0,40), ylim = c(0,1))
 # points(temp, predict(fit.betalogit), col = "blue", pch = 1)
 # points(temp, inv.logit(predict(fit4)), col = "hotpink", pch = 2)
