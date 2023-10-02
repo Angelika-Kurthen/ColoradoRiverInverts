@@ -24,7 +24,7 @@ temps <- rep.avg.year(temps, 15, change.in.temp = 0, years.at.temp = 15)
 temps <- temps[20:359,2:3]
 temps$dts <- flow.magnitude$dts
 
-out <- BAETmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.25, extinct = 12, iteration = 9, peaklist = 0.13, peakeach = length(temps$Temperature))
+out <- BAETmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.15, extinct = 50, iteration = 9, peaklist = 0.13, peakeach = length(temps$Temperature))
 
 # upload larval baet data from Flaming Gorge Dam 
 bugdata <- read_delim("C:/Users/kurthena/Downloads/APPL_11_13/bugdata.txt", delim = "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
@@ -49,8 +49,8 @@ for (i in 1:length(temps$dts)){
 }
 means[length(temps$dts)] <- BAET.samp$x[length(BAET.samp$x)]
 
-means.list.BAET <- mean.data.frame(out, burnin = 188, iteration= 999)
-means.list.BAET <- cbind(means.list.BAET, temps$dts[188:last(means.list.BAET$timesteps)])
+means.list.BAET <- mean.data.frame(out, burnin = 188, iteration= 9)
+means.list.BAET <- cbind(means.list.BAET, temps$dts[188:341])
 means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
 
 BAET.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.BAET$`temps$dts`), means[188:340])))
