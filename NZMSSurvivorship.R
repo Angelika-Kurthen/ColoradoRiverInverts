@@ -74,10 +74,10 @@ TempSurv <- function(x){
   return((a))
 }
 
-TempSurv <- function(x){
-  a <-  dnbinom(-x + 32, size = 3, prob = 0.2)
-  return((a))
-}
+# TempSurv <- function(x){
+#   a <-  dnbinom(-x + 32, size = 3, prob = 0.2)
+#   return((a))
+# }
 
 tem <- seq(0, 40, by = 1)
 plot(NZMSSurvRates$Temperature, NZMSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
