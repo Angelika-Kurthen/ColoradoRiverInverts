@@ -48,16 +48,19 @@ MaturationRate <- function(x){
 # Calculate Temperature Dependent Survival
 BAETSurvRate <- read_excel("VitalRates.xlsx", sheet = "Baetid Survival Rates")
 BAETSurvRate <- as.data.frame(BAETSurvRate)
-# fit <- nlsLM(logit(Survival) ~ a*Temperature^2 + b*Temperature + c, data = BAETSurvRate, start = c(a = 1, b = 1, c = 1))
-# #inv.logit(predict(fit))
-# #-0.02837*x^2 + 1.21299*x  -10.92723 
+#fit <- nlsLM(logit(Survival) ~ a*Temperature^4 + b*Temperature^3 + c*Temperature^2 + d*Temperature + e, data = BAETSurvRate, start = c(a = 1, b = 1, c = 1, d = 1, e = 1))
+#inv.logit(predict(fit))
+#-0.02837*x^2 + 1.21299*x  -10.92723
 # TempSurv <- function(n){
 #   a <-  -0.05795*n^2 + 2.40764*n -21.94990
 #   return(inv.logit(a))
 # }
-
-
-
+# 
+# TempSurv <- function(n){
+#   a <- -8.939e-05*n^4+  5.500e-03*n^3 -1.199e-01*n^2+  1.249e+00*n -5.109e+00
+#   return(inv.logit(a))
+# }
+# # 
 min.RSS <- function(par){
   mod <- dnbinom(as.integer(-BAETSurvRate$Temperature + 34), size = par[2], prob = par[1])
   a <- sum(BAETSurvRate$Survival - (mod*(max(BAETSurvRate$Survival)/max(mod))))^2
@@ -85,7 +88,8 @@ TempSurv <- function(n){
 # 
 tem <- seq(0, 40, by = 1)
 plot(BAETSurvRate$Temperature, BAETSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
-lines(tem,  dnbinom(as.integer(-tem + 34), size = params$par[2] , prob = params$par[1])*(max(BAETSurvRate$Survival)/max(dnbinom(as.integer(-BAETSurvRate$Temperature + 34), size =params$par[2], prob = params$par[1]))))
+#plot(tem, TempSurv(tem))
+lines(tem,  dnbinom(as.integer(-tem + 33), size = params$par[2] , prob = params$par[1])*(max(BAETSurvRate$Survival)/max(dnbinom(as.integer(-BAETSurvRate$Temperature + 33), size =params$par[2], prob = params$par[1]))))
 # plot(temp, s, xlab = "Temperature C", ylab = "Survival", col = "red", pch = 16, cex = 1.5, xlim = c(0,40), ylim = c(0,1))
 # points(temp, predict(fit.betalogit), col = "blue", pch = 1)
 # points(temp, inv.logit(predict(fit4)), col = "hotpink", pch = 2)
