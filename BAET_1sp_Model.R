@@ -236,27 +236,27 @@ for (iter in c(1:iterations)) {
     #   P2 <- P1
     # }
     if (7 > temps$Temperature[t-1]) {
-      P1 <- (1-(1/9)) 
+      P1 <- (1-(1/9)) *TempSurvival[t-1]
       P2 <- P1
-      G1 <- 0.3/9 
+      G1 <- 0.3/9  * TempSurvival[t-1]
       G2 <- G1
     }
     if (temps$Temperature[t-1] > 30){
-      P1 <- (1-(1/1.5)) 
+      P1 <- (1-(1/1.5))  *TempSurvival[t-1]
       P2 <- P1
-      G1 <- 0.3/1.5 
+      G1 <- 0.3/1.5 *TempSurvival[t-1]
       G2 <- G1
     }
     
     if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
-      G1 <- 0.3/((emergetime[t-1])/2) 
+      G1 <- 0.3/((emergetime[t-1])/2) *TempSurvival[t-1]
       G2 <- G1
-      P1 <- (1-(1/((emergetime[t-1])/2))) 
+      P1 <- (1-(1/((emergetime[t-1])/2)))  *TempSurvival[t-1]
       P2 <- P1
     }
     if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == T)) {
-      G1 <- 0.3*((-0.786 * temps$Temperature[t-1]) + 18) 
-      P1 <- (1-(1/((-0.786 * temps$Temperature[t-1]) + 18))) 
+      G1 <- 0.3*((-0.786 * temps$Temperature[t-1]) + 18)  *TempSurvival[t-1]
+      P1 <- (1-(1/((-0.786 * temps$Temperature[t-1]) + 18))) *TempSurvival[t-1]
       G2 <- G1
       P2 <- P1
     }
@@ -293,8 +293,8 @@ for (iter in c(1:iterations)) {
     
     #------------------------------------------
     # Calculate immediate mortality due to temperature regime (outside of thermal optima)
-    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] * TempSurvival[t-1]
-    output.N.list[t, 2, iter] <- output.N.list[t, 2, iter] * TempSurvival[t-1]
+    # output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] * TempSurvival[t-1]
+    # output.N.list[t, 2, iter] <- output.N.list[t, 2, iter] * TempSurvival[t-1]
     #Calculate immediate mortality due to flows
     # mortality due to flooding follows N0 = Nz*e^-hQ
     #s1
