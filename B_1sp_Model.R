@@ -174,7 +174,7 @@ for (iter in c(1:iterations)) {
 
    
     emergetime <- append(emergetime, back.count.degreedays(t, dds, degreedays)) # value from Sweeney et al 2017
-    delta <- append(delta, round(devtime(temps$Temperature[t-1])/14))
+    #delta <- append(delta, round(devtime(temps$Temperature[t-1])/14))
     
     #---------------------------------------------------------
     # Calculate fecundity per adult
@@ -234,33 +234,55 @@ for (iter in c(1:iterations)) {
     
     # # Probabilities of remaining in stages (when temps low, high prob of remaining)
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    if (5 > temps$Temperature[t-1]) {
-      P1 <- 0.2*(1-(1/((delta[t-1])/2)))
-      P2 <- 0.5*(1-(1/((delta[t-1])/2)))
-      G1 <- 0.2/((delta[t-1])/2)
-      G2 <- 0.5/((delta[t-1])/2)
-      }
-
-    if (temps$Temperature[t-1] > 21){
-      P1 <- 0.2*(1-(1/((delta[t-1])/2)))
-      P2 <- 0.5*(1-(1/((delta[t-1])/2)))
-      G1 <- 0.2/((delta[t-1])/2)
-      G2 <- 0.5/((delta[t-1])/2)
-      }
-
-    
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 ){
-      G1 <- 0.2/((delta[t-1])/2)
-      G2 <- 0.5/((delta[t-1])/2)
-      P1 <- 0.2*(1-(1/((delta[t-1])/2)))
-      P2 <- 0.5*(1-(1/((delta[t-1])/2)))
-    }
-    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
-    #   G1 <- 0.1/((-0.353 * temps$Temperature[t-1]) + 10.059)
-    #   P1 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))
-    #   G2 <- 0.3/((-0.353 * temps$Temperature[t-1]) + 10.059)
-    #   P2 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))
+    # if (5 > temps$Temperature[t-1]) {
+    #   P1 <- 0.2*(1-(1/((delta[t-1])/2)))
+    #   P2 <- 0.5*(1-(1/((delta[t-1])/2)))
+    #   G1 <- 0.2/((delta[t-1])/2)
+    #   G2 <- 0.5/((delta[t-1])/2)
     #   }
+    # 
+    # if (temps$Temperature[t-1] > 21){
+    #   P1 <- 0.2*(1-(1/((delta[t-1])/2)))
+    #   P2 <- 0.5*(1-(1/((delta[t-1])/2)))
+    #   G1 <- 0.2/((delta[t-1])/2)
+    #   G2 <- 0.5/((delta[t-1])/2)
+    #   }
+    # 
+    # 
+    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 ){
+    #   G1 <- 0.2/((delta[t-1])/2)
+    #   G2 <- 0.5/((delta[t-1])/2)
+    #   P1 <- 0.2*(1-(1/((delta[t-1])/2)))
+    #   P2 <- 0.5*(1-(1/((delta[t-1])/2)))
+    # }
+    
+    
+    if (5 > temps$Temperature[t-1]) {
+      P1 <- (1-(1/9)) *TempSurvival[t-1]
+      P2 <- P1
+      G1 <- 0.2/9  * TempSurvival[t-1]
+      G2 <- 0.5/9 * TempSurvival[t-1]
+    }
+    if (temps$Temperature[t-1] > 30){
+      P1 <- (1-(1/1.5))  *TempSurvival[t-1]
+      P2 <- P1
+      G1 <- 0.2/1.5 *TempSurvival[t-1]
+      G2 <- 0.5/1.5 *TempSurvival[t-1]
+    }
+    
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
+      G1 <- 0.2/((emergetime[t-1])/2) *TempSurvival[t-1]
+      G2 <- 0.5/((emergetime[t-1])/2) *TempSurvival[t-1]
+      P1 <- (1-(1/((emergetime[t-1])/2)))  *TempSurvival[t-1]
+      P2 <- P1
+    }
+
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
+      G1 <- 0.2/((-0.353 * temps$Temperature[t-1]) + 10.059) *TempSurvival[t-1]
+      P1 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059)) *TempSurvival[t-1]
+      G2 <- 0.5/((-0.353 * temps$Temperature[t-1]) + 10.059) *TempSurvival[t-1]
+      P2 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))*TempSurvival[t-1]
+      }
 
     
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
@@ -286,8 +308,8 @@ for (iter in c(1:iterations)) {
     #------------------------------------------
     
     # Calculate immediate mortality due to temperature regime (outside of thermal optima)
-    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter]*TempSurvival[t-1]
-    output.N.list[t, 2, iter] <- output.N.list[t, 2, iter]*TempSurvival[t-1]
+    #output.N.list[t, 1, iter] <- output.N.list[t, 1, iter]*TempSurvival[t-1]
+    #output.N.list[t, 2, iter] <- output.N.list[t, 2, iter]*TempSurvival[t-1]
     #Calculate immediate mortality due to flows
     # mortality due to flooding follows N0 = Nz*e^-hQ
     
