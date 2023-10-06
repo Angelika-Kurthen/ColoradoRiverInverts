@@ -75,7 +75,7 @@ TempSurv <- function(n){
 
 
 # 
-tem <- seq(0, 40, by = 1)
- plot(HYOSSurvRates$Temperature, HYOSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
- lines(tem, TempSurv(tem))
-
+# tem <- seq(0, 40, by = 1)
+#  plot(HYOSSurvRates$Temperature, HYOSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+#  lines(tem, TempSurv(tem))
+# 
