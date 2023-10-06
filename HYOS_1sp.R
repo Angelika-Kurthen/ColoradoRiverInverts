@@ -49,18 +49,18 @@ source("1spFunctions.R")
 # temps <- average.yearly.temp(temp, "Temperature", "Date")
 # 
 # temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
-Time <- c(1:1825)
-Date <- rep(c(1:365), times = 5)
-Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
-Day <- Day[-which(Day == "2024-02-29")]
-
-Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date))  + 10.956243
-
-temp <- as.data.frame(cbind(Time, Day, Temperature))
-temp$Day <- as.Date(temp$Day, origin= "1970-01-01")
-colnames(temp) <- c("Time", "Date", "Temperature")
-temp <- TimestepTemperature(temp)
-temp <- temp[c(1,3)]
+# Time <- c(1:1825)
+# Date <- rep(c(1:365), times = 5)
+# Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
+# Day <- Day[-which(Day == "2024-02-29")]
+# 
+# Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date))  + 10.956243
+# 
+# temp <- as.data.frame(cbind(Time, Day, Temperature))
+# temp$Day <- as.Date(temp$Day, origin= "1970-01-01")
+# colnames(temp) <- c("Time", "Date", "Temperature")
+# temp <- TimestepTemperature(temp)
+# temp <- temp[c(1,3)]
 # peaklist <- 0 
 # peakeach <- length(temp$Temperature)
 # iteration <- 10
@@ -69,8 +69,8 @@ temp <- temp[c(1,3)]
 # extinct = 50
 # flow.data <- discharge
 # temp.data <- temp
-discharge <- rep(0.1, times = length(temp$Temperature))
-#discharge[floor(runif(1, 90, 131))] <- runif(1, 0.25, 1)
+# discharge <- rep(0.1, times = length(temp$Temperature))
+# discharge[floor(runif(1, 90, 131))] <- runif(1, 0.25, 1)
 
 
 # discharge <- rep(0.1, times = length(temps$Temperature))
@@ -169,7 +169,9 @@ for (iter in c(1:iterations)) {
   delta <- vector()
   TempSurvival <- vector()
   for(c in temps$Temperature){
+    print(c)
     b <- TempSurv(c)
+    print(b)
     TempSurvival <- append(TempSurvival, b)
   }
   #-------------------------
@@ -182,7 +184,7 @@ for (iter in c(1:iterations)) {
     # Calculate how many timesteps emerging adults have matured
     t <- t
     emergetime <- append(emergetime, back.count.degreedays(t, 1680, degreedays)) #mean from hauer and stanford 1728.889
-    delta <- append(delta, round(devtime(temps$Temperature[t-1])/14))
+    #delta <- append(delta, round(devtime(temps$Temperature[t-1])/14))
     
     #---------------------------------------------------------
     # Calculate fecundity per adult
@@ -197,10 +199,10 @@ for (iter in c(1:iterations)) {
       sizelist <- append(sizelist, size)
       F3 <- ((7.219 * size) + 163.4) *hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     }
-    size <- delta[t-1]
-    sizelist <- append(sizelist, size)
-    F3 <- ((41.86*size)+200) *0.5* hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
-    
+    # size <- delta[t-1]
+    # sizelist <- append(sizelist, size)
+    # F3 <- ((41.86*size)+200) *0.5* hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
+    # 
     #---------------------------------------------------
     # Calculate the disturbance magnitude-K relationship 
     # Sets to 0 if below the Qmin
@@ -232,35 +234,35 @@ for (iter in c(1:iterations)) {
     # Timesteps = -0.95(TEMP) + 24.75 
     
     #development measures# at cold temps
-    # if (5 > temps$Temperature[t-1])  {
-    #   G1 <- 0.05/20
-    #   P1 <- 1-(1/20)
-    # }
+    if (5 > temps$Temperature[t-1])  {
+      G1 <- 0.05/20 *TempSurvival[t-1]
+      P1 <- 1-(1/20)*TempSurvival[t-1]
+    }
     # if (16 > temps$Temperature[t-1]){
-    #   G2 <- 0.0038 #no emergence
-    #   P2 <- 0.9615385 # all remain in larval form
+    #   G2 <- 0.0038 *TempSurvival[t-1] #no emergence *TempSurvival[t-1]
+    #   P2 <- 0.9615385 *TempSurvival[t-1] # all remain in larval form
     # } else {
-    #   G2 = 0.11/3  # move onto stage 3 
-    #   P2 = 1 - (1/3)
+    #   G2 = 0.11/3 *TempSurvival[t-1]  # move onto stage 3
+    #   P2 = 1 - (1/3) *TempSurvival[t-1]
     # }
-    # 
-    # if (temps$Temperature[t-1] > 25){
-    #   G1 <- 0.05
-    #   P1 <- 0
-    #   }
-    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <=25 & is.na(emergetime[t] == F)){
-    #   G1 <- 0.05/(emergetime[t] - 3)
-    #   P1 <- 1-(1/(emergetime[t] - 3))
-    # }
-    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25 & is.na(emergetime[t] == T)) {
-    #   G1 <- 0.05/((-0.95 * temps$Temperature[t-1]) + 24.75)
-    #   P1 <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))
-    # }
+
+    if (temps$Temperature[t-1] > 30){
+      G1 <- 0.05 *TempSurvival[t-1]
+      P1 <- 0
+      }
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <=25 & is.na(emergetime[t] == F)){
+      G1 <- 0.05/(emergetime[t] - 3) *TempSurvival[t-1]
+      P1 <- 1-(1/(emergetime[t] - 3)) *TempSurvival[t-1]
+    }
+    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25 & is.na(emergetime[t] == T)) {
+      G1 <- 0.05/((-0.95 * temps$Temperature[t-1]) + 24.75) *TempSurvival[t-1]
+      P1 <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))*TempSurvival[t-1]
+    }
     
-      G1 <- 0.05/((delta[t-1]/2))
-      G2 <- 0.11/((delta[t-1]/2))
-      P1 <- 0.05*(1-(1/((delta[t-1]/2))))
-      P2 <- 0.11*(1-(1/((delta[t-1]/2))))
+      # G1 <- 0.05/((delta[t-1]/2))
+      # G2 <- 0.11/((delta[t-1]/2))
+      # P1 <- 0.05*(1-(1/((delta[t-1]/2))))
+      # P2 <- 0.11*(1-(1/((delta[t-1]/2))))
 
     #-----------------------------------------------
     # Create Lefkovitch Matrix
@@ -285,8 +287,8 @@ for (iter in c(1:iterations)) {
     
     #------------------------------------------
     # Calculate immediate mortality due to temperature regime (outside of thermal optima)
-    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] * TempSurvival[t-1]
-    output.N.list[t, 2, iter] <- output.N.list[t, 2, iter] * TempSurvival[t-1]
+    # output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] * TempSurvival[t-1]
+    # output.N.list[t, 2, iter] <- output.N.list[t, 2, iter] * TempSurvival[t-1]
     
     #Calculate immediate mortality due to flows
     # mortality due to flooding follows N0 = Nz*e^-hQ
@@ -320,22 +322,22 @@ return(output.N.list)
 }
 
 
-out <- HYOSmodel(flow.data = discharge, temp.data = temp, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature))
-#------------------
-# Analyzing Results
-#-------------------
-# summarizing iterations
-means.list.HYOS <- mean.data.frame(out, burnin = 1, iteration = 1)
-means.list.HYOS <- cbind(means.list.HYOS[1:length(means.list.HYOS$mean.abund),], temps$dts[1:length(means.list.HYOS$mean.abund)])
-means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
-
-
-# means.list.HYOS <- as.data.frame(apply(out[, 3, ],MARGIN = 1, FUN = mean))
-# means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[2:339,], temps$dts))
-# means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$V2, origin = "1970-01-01")
-
-# nt v nt+1
-plot(means.list.HYOS$mean.abund[300:600], means.list.HYOS$mean.abund[301:601], type = "b", xlab = "Nt", ylab= "Nt+1")
+# out <- HYOSmodel(flow.data = discharge, temp.data = temp, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature))
+# #------------------
+# # Analyzing Results
+# #-------------------
+# # summarizing iterations
+# means.list.HYOS <- mean.data.frame(out, burnin = 1, iteration = 1)
+# means.list.HYOS <- cbind(means.list.HYOS[1:length(means.list.HYOS$mean.abund),], temps$dts[1:length(means.list.HYOS$mean.abund)])
+# means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
+# 
+# 
+# # means.list.HYOS <- as.data.frame(apply(out[, 3, ],MARGIN = 1, FUN = mean))
+# # means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[2:339,], temps$dts))
+# # means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$V2, origin = "1970-01-01")
+# 
+# # nt v nt+1
+# plot(means.list.HYOS$mean.abund[300:600], means.list.HYOS$mean.abund[301:601], type = "b", xlab = "Nt", ylab= "Nt+1")
 # # plot abundance over time
 # 
 # falls <- tibble(
