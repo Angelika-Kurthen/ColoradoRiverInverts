@@ -169,9 +169,9 @@ for (iter in c(1:iterations)) {
   delta <- vector()
   TempSurvival <- vector()
   for(c in temps$Temperature){
-    print(c)
+    
     b <- TempSurv(c)
-    print(b)
+    
     TempSurvival <- append(TempSurvival, b)
   }
   #-------------------------
@@ -238,23 +238,23 @@ for (iter in c(1:iterations)) {
       G1 <- 0.05/20 *TempSurvival[t-1]
       P1 <- 1-(1/20)*TempSurvival[t-1]
     }
-    # if (16 > temps$Temperature[t-1]){
-    #   G2 <- 0.0038 *TempSurvival[t-1] #no emergence *TempSurvival[t-1]
-    #   P2 <- 0.9615385 *TempSurvival[t-1] # all remain in larval form
-    # } else {
-    #   G2 = 0.11/3 *TempSurvival[t-1]  # move onto stage 3
-    #   P2 = 1 - (1/3) *TempSurvival[t-1]
-    # }
+    if (16 > temps$Temperature[t-1]){ # from Rhame + Stewart, 1967; threshold to emergence around 15 - 17 C. We choose 15 because lower. 
+      G2 <- 0.11/20 * TempSurvival[t-1]
+      P2 <- 1-(1/20) *TempSurvival[t-1] 
+    } else {
+      G2 = 0.11/3 *TempSurvival[t-1]  # move onto stage 3
+      P2 = 1 - (1/3) *TempSurvival[t-1]
+    }
 
     if (temps$Temperature[t-1] > 30){
       G1 <- 0.05 *TempSurvival[t-1]
       P1 <- 0
       }
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <=25 & is.na(emergetime[t] == F)){
-      G1 <- 0.05/(emergetime[t] - 3) *TempSurvival[t-1]
-      P1 <- 1-(1/(emergetime[t] - 3)) *TempSurvival[t-1]
+    if (0 <= temps$Temperature[t-1] & temps$Temperature[t-1] <=30 & is.na(emergetime[t] == F)){
+      G1 <- 0.05/(emergetime[t-1] - 3) *TempSurvival[t-1]
+      P1 <- 1-(1/(emergetime[t-1] - 3)) *TempSurvival[t-1]
     }
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25 & is.na(emergetime[t] == T)) {
+    if (0 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t] == T)) {
       G1 <- 0.05/((-0.95 * temps$Temperature[t-1]) + 24.75) *TempSurvival[t-1]
       P1 <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))*TempSurvival[t-1]
     }
@@ -303,7 +303,7 @@ for (iter in c(1:iterations)) {
     #s2
     output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
     #3
-    output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
+    #output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
     
     flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
     #replist[[1]][,,1] <- output.N.list[[1]]
