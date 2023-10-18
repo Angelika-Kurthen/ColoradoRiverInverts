@@ -12,7 +12,7 @@ library(ggplot2)
 library(dataRetrieval)
 #install.packages("devtools")
 library(devtools)
-install_github(repo = "jmuehlbauer-usgs/R-packages", subdir = "foodbase")
+#install_github(repo = "jmuehlbauer-usgs/R-packages", subdir = "foodbase")
 library(foodbase)
 
 source("1spFunctions.R")
