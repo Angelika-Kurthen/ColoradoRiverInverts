@@ -57,7 +57,7 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   
   # set up model
   source("NegExpSurv.R")
-  
+  source("NZMSSurvivorship.R")
   Q <- as.numeric(flow.data)
   temps <- temp.data
   
@@ -138,6 +138,15 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
     emergetime <- vector()
     
     sizelist <- vector()
+    
+    TempSurvival <- vector()
+    for(c in temps$Temperature){
+      
+      b <- TempSurv(c)
+      
+      TempSurvival <- append(TempSurvival, b)
+    }
+    
     #-------------------------
     # Inner Loop of Timesteps
     #-------------------------
@@ -198,32 +207,32 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       # in this function, we assume that if below the min temp threshold (9) no maturation occurs (slow maturation, large growth)
       # if above the max temp threshold (15), no one remains more than 1 timestep in each stage (fast maturation, small growth)
       if (5 > temps$Temperature[t-1]) {
-        P1 <- 1-(1/8)
-        P2 <- 1-(1/8)
-        G1 <- 0.6/8
-        G2 <- 0.6/8
+        P1 <- 1-(1/8)*TempSurvival[t-1]
+        P2 <- 1-(1/8)*TempSurvival[t-1]
+        G1 <- 0.6/8*TempSurvival[t-1]
+        G2 <- 0.6/8*TempSurvival[t-1]
       }
       
       if (temps$Temperature[t-1] > 20){
-        P1 <- 1-(1/3)
-        P2 <- 1-(1/3)
-        G1 <- 0.6/3
-        G2 <- 0.6/3
+        P1 <- 1-(1/3)*TempSurvival[t-1]
+        P2 <- 1-(1/3)*TempSurvival[t-1]
+        G1 <- 0.6/3*TempSurvival[t-1]
+        G2 <- 0.6/3*TempSurvival[t-1]
       }
       
       
       if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == F)){
-        G1 <- 0.6/((emergetime[t]-1)/2)
-        G2 <- 0.6/((emergetime[t]-1)/2)
-        P1 <- 1-(1/((emergetime[t]-1)/2))
-        P2 <- 1-(1/((emergetime[t]-1)/2))
+        G1 <- 0.6/((emergetime[t]-1)/2)*TempSurvival[t-1]
+        G2 <- 0.6/((emergetime[t]-1)/2)*TempSurvival[t-1]
+        P1 <- 1-(1/((emergetime[t]-1)/2))*TempSurvival[t-1]
+        P2 <- 1-(1/((emergetime[t]-1)/2))*TempSurvival[t-1]
       }
       
       if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == T)) {
-        G1 <- 0.6/((-0.588 * temps$Temperature[t-1]) + 18.764)
-        P1 <- 1-(1/((-0.588 * temps$Temperature[t-1]) + 18.764))
-        G2 <- 0.6/((-0.588 * temps$Temperature[t-1]) + 18.764)
-        P2 <- 1-(1/((-0.588 * temps$Temperature[t-1]) + 18.764))
+        G1 <- 0.6/((-0.588 * temps$Temperature[t-1]) + 18.764) *TempSurvival[t-1]
+        P1 <- 1-(1/((-0.588 * temps$Temperature[t-1]) + 18.764)) *TempSurvival[t-1]
+        G2 <- 0.6/((-0.588 * temps$Temperature[t-1]) + 18.764)*TempSurvival[t-1]
+        P2 <- 1-(1/((-0.588 * temps$Temperature[t-1]) + 18.764))*TempSurvival[t-1]
       }
       
       
