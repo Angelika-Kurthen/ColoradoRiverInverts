@@ -154,12 +154,14 @@ Qf.Function <- function(Q, Qmin, a){
 
 # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
 post.dist.K <- function(K0, Kb, g, t, Q, Qmin){
-  #calculate tau (times since last distubance)
-  tau = (t-1) - (length(which(Q[1:t-1] > Qmin)))
-  if (is.na(tau)==T | tau == 0) { tau <-  0
+  #calculate tau (times since most recent distubance)
+  taut = (t-1) - max(which(Q[1:(t-1)] > Qmin))
+  if (is_empty(taut)) { taut <-  0
   K <- K0} 
-  if (tau > 0) {
-    K <- Kb + ((K0 - Kb)*exp(-g*tau))} # function from McMullen et al 2017, g is shape function
+  if (is.na(taut)==T | taut == 0) { taut <-  0
+  K <- K0} 
+  if (taut > 0) {
+    K <- Kb + ((K0 - Kb)*exp(-g*taut))} # function from McMullen et al 2017, g is shape function
   return(K)
 }
 
