@@ -39,19 +39,19 @@ source("1spFunctions.R")
 # calculate mean temperature data for each timestep (2 week interval)
 # temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
 
-Time <- c(1:1825)
-Date <- rep(c(1:365), times = 5)
-Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
-Day <- Day[-which(Day == "2024-02-29")]
-
-Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
-
-temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
-peaklist <- 0 
-peakeach <- length(temp$Temperature)
-iteration <- 1
-baselineK <- 10000
-disturbanceK <- 40000
+# Time <- c(1:1825)
+# Date <- rep(c(1:365), times = 5)
+# Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
+# Day <- Day[-which(Day == "2024-02-29")]
+# 
+# Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
+# 
+# temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
+# peaklist <- 0 
+# peakeach <- length(temp$Temperature)
+# iteration <- 1
+# baselineK <- 10000
+# disturbanceK <- 40000
 
 Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   
