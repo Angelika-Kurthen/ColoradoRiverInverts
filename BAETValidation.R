@@ -69,7 +69,7 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
   stat_smooth(method = "lm",
               formula = y ~ x,
               geom = "smooth")+
-  geom_text(x = 1000, y = 3250, label = "y = 0.00021x, R^2 = 0.37")+
+  geom_text(x = 1000, y = 3250, label = "y = 0.5786x + 636.57, R^2 = 0.398")+
   labs(y = "Baetidae Model Output", x = "Baetidae Emprical Data")
 
 abund.trends.NZMS <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,
