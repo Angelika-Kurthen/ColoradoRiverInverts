@@ -47,15 +47,15 @@ source("1spFunctions.R")
 # Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
 # 
 # temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
-peaklist <- 0 
-peakeach <- length(temp$Temperature)
-iteration <- 1
- baselineK <- 10000
-disturbanceK <- 40000
-temp.data = temp
-Qmin = 0.25
-flow.data = discharge
-extinct = 50
+# peaklist <- 0 
+# peakeach <- length(temp$Temperature)
+# iteration <- 1
+#  baselineK <- 10000
+# disturbanceK <- 40000
+# temp.data = temp
+# Qmin = 0.25
+# flow.data = discharge
+# extinct = 50
 
 Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   
