@@ -37,19 +37,19 @@ source("1spFunctions.R")
 # calculate mean temperature data for each timestep (2 week interval)
 # temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
 
-Time <- c(1:1825)
-Date <- rep(c(1:365), times = 5)
-Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
-Day <- Day[-which(Day == "2024-02-29")]
-
-Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date))  + 10.956243
-
-temp <- as.data.frame(cbind(Time, Day, Temperature))
-temp$Day <- as.Date(temp$Day, origin= "1970-01-01")
-colnames(temp) <- c("Time", "Date", "Temperature")
-temp <- TimestepTemperature(temp)
-temp <- temp[c(1,3)]
-# peaklist <- 0 
+# Time <- c(1:1825)
+# Date <- rep(c(1:365), times = 5)
+# Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
+# Day <- Day[-which(Day == "2024-02-29")]
+# 
+# Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date))  + 10.956243
+# 
+# temp <- as.data.frame(cbind(Time, Day, Temperature))
+# temp$Day <- as.Date(temp$Day, origin= "1970-01-01")
+# colnames(temp) <- c("Time", "Date", "Temperature")
+# temp <- TimestepTemperature(temp)
+# temp <- temp[c(1,3)]
+# peaklist <- 0
 # peakeach <- length(temp$Temperature)
 # iteration <- 10
 # baselineK <- 10000
@@ -57,8 +57,8 @@ temp <- temp[c(1,3)]
 # extinct = 50
 # flow.data <- discharge
 # temp.data <- temp
-discharge <- rep(0.1, times = length(temp$Temperature))
-discharge[floor(runif(1, 90, 131))] <- runif(1, 0.25, 1)
+# discharge <- rep(0.1, times = length(temp$Temperature))
+# discharge[floor(runif(1, 90, 131))] <- runif(1, 0.25, 1)
 
 Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 900, dds = 500){
   
@@ -340,59 +340,59 @@ for (iter in c(1:iterations)) {
 return(output.N.list[ ,1:3, ])
 }
 #------------------
-# Analyzing Results
-#-------------------
-# summarizing iterations
-
- out <- Bmodel(flow.data = discharge, temp.data = temp, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 3, peaklist = 0, peakeach = length(temp$Temperature))
+# # Analyzing Results
+# #-------------------
+# # summarizing iterations
 # 
-adults <-as.data.frame(cbind(temp$dts, out[1:length(temp$dts),3,1]))
-colnames(adults) <- c("Time","Adult Baetidae")
-adults$Time <- as.Date(as.POSIXct(adults$Time, origin = "1970-01-01"))
-
+#  out <- Bmodel(flow.data = discharge, temp.data = temp, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 3, peaklist = 0, peakeach = length(temp$Temperature))
+# # 
+# adults <-as.data.frame(cbind(temp$dts, out[1:length(temp$dts),3,1]))
+# colnames(adults) <- c("Time","Adult Baetidae")
+# adults$Time <- as.Date(as.POSIXct(adults$Time, origin = "1970-01-01"))
 # 
-# ## turning replist into a df
- means.list.BAET <- mean.data.frame(out, burnin = 90, iteration = 3)
- means.list.BAET <- cbind(means.list.BAET[1:length(means.list.BAET$mean.abund),], temp$dts[90:132])
- means.list.BAET$`temp$dts` <- as.Date(means.list.BAET$`temp$dts`)
-# 
-# # note how boom and bust this model is - K is set to be 10,000 not 100,000
-abund.trends.BAET <- ggplot(data = adults[90:131,], aes(x = Time,
-                                       y = `Adult Baetidae`/10000, group = 1)) +
-  geom_point()+
-  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                 ymax = mean.abund + 1.96 * se.abund),
-  #             colour = 'transparent',
-  #            alpha = .5,
-  #             show.legend = FALSE) +
-  geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,0.4)) +
-  ylab('Adult Mayfly Sp Abundance/ Baseline Reproductive Limit') +
-  xlab('Timestep')
-# 
-# plot(adults$`Adult Baetidae`[300:500], adults$`Adult Baetidae`[301:501], type = "b", xlab = "Adult Baetids t", ylab = "Adult Baetids t+1")
-# 
-ggplot(data = means.list.BAET, aes(x = `temp$dts`,
-                          y = mean.abund/10000, group = 1)) +
-  geom_point()+
-  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                 ymax = mean.abund + 1.96 * se.abund),
-  #             colour = 'transparent',
-  #            alpha = .5,
-  #             show.legend = FALSE) +
-  geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,20)) +
-  ylab('Mayfly spp. Abundance/Reproductive Limit') +
-  xlab('Timestep')+
-  geom_line(aes(y = discharge[89:131]*12), color = "blue")+
-  scale_x_date(date_labels="%B", date_breaks  ="4 months")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-
-# plot(means.list.BAET$mean.abund[300:500], means.list.BAET$mean.abund[301:501], type = "b", xlab = "Nt", ylab = "Nt+1")
-# 
-# ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
+# # 
+# # ## turning replist into a df
+#  means.list.BAET <- mean.data.frame(out, burnin = 90, iteration = 3)
+#  means.list.BAET <- cbind(means.list.BAET[1:length(means.list.BAET$mean.abund),], temp$dts[90:132])
+#  means.list.BAET$`temp$dts` <- as.Date(means.list.BAET$`temp$dts`)
+# # 
+# # # note how boom and bust this model is - K is set to be 10,000 not 100,000
+# abund.trends.BAET <- ggplot(data = adults[90:131,], aes(x = Time,
+#                                        y = `Adult Baetidae`/10000, group = 1)) +
+#   geom_point()+
+#   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+#   #                 ymax = mean.abund + 1.96 * se.abund),
+#   #             colour = 'transparent',
+#   #            alpha = .5,
+#   #             show.legend = FALSE) +
 #   geom_line(show.legend = FALSE) +
-#   ylab('Baetis spp. Abundance/Reproductive Limit') +
-#   xlab(" ")
+#   coord_cartesian(ylim = c(0,0.4)) +
+#   ylab('Adult Mayfly Sp Abundance/ Baseline Reproductive Limit') +
+#   xlab('Timestep')
+# # 
+# # plot(adults$`Adult Baetidae`[300:500], adults$`Adult Baetidae`[301:501], type = "b", xlab = "Adult Baetids t", ylab = "Adult Baetids t+1")
+# # 
+# ggplot(data = means.list.BAET, aes(x = `temp$dts`,
+#                           y = mean.abund/10000, group = 1)) +
+#   geom_point()+
+#   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+#   #                 ymax = mean.abund + 1.96 * se.abund),
+#   #             colour = 'transparent',
+#   #            alpha = .5,
+#   #             show.legend = FALSE) +
+#   geom_line(show.legend = FALSE) +
+#   coord_cartesian(ylim = c(0,20)) +
+#   ylab('Mayfly spp. Abundance/Reproductive Limit') +
+#   xlab('Timestep')+
+#   geom_line(aes(y = discharge[89:131]*12), color = "blue")+
+#   scale_x_date(date_labels="%B", date_breaks  ="4 months")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
+# 
+# # plot(means.list.BAET$mean.abund[300:500], means.list.BAET$mean.abund[301:501], type = "b", xlab = "Nt", ylab = "Nt+1")
+# # 
+# # ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
+# #   geom_line(show.legend = FALSE) +
+# #   ylab('Baetis spp. Abundance/Reproductive Limit') +
+# #   xlab(" ")
