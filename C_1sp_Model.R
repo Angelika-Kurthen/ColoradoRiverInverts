@@ -58,6 +58,17 @@ source("1spFunctions.R")
 # iteration <- 1
 # baselineK <- 10000
 # disturbanceK <- 40000
+peaklist <- 0
+peakeach <- length(temp$Temperature)
+iteration <- 10
+baselineK <- 10000
+disturbanceK <- 40000
+extinct = 50
+flow.data <- discharge
+temp.data <- temp
+Qmin <- 0.25
+fecundity <- 200
+dds <- 900
 
 Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 200, dds = 900){
   
@@ -231,29 +242,15 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       # development measures
       # in this function, we assume that if below the min temp threshold (9) no maturation occurs (slow maturation, large growth)
       # if above the max temp threshold (15), no one remains more than 1 timestep in each stage (fast maturation, small growth)
-      if (9 > temps$Temperature[t-1]) {
+      if (is.na(emergetime[t-1] == F)) {
       P1 <- 1-(1/((emergetime[t-1])/2)) *TempSurvival[t-1]
       P2 <- 1-(1/((emergetime[t-1])/2))*TempSurvival[t-1]
       G1 <- 0.5/((emergetime[t-1])/2)*TempSurvival[t-1]
       G2 <- 0.3/((emergetime[t-1])/2)*TempSurvival[t-1]
     }
-    
-    if (temps$Temperature[t-1] > 20){
-      P1 <- 1-(1/((emergetime[t-1])/2))*TempSurvival[t-1]
-      P2 <- 1-(1/((emergetime[t-1])/2))*TempSurvival[t-1]
-      G1 <- 0.5/((emergetime[t-1])/2)*TempSurvival[t-1]
-      G2 <- 0.3/((emergetime[t-1])/2)*TempSurvival[t-1]
-    }
-    
-    
-    if (9<= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20){
-      G1 <- 0.5/((emergetime[t-1])/2)*TempSurvival[t-1]
-      G2 <- 0.3/((emergetime[t-1])/2)*TempSurvival[t-1]
-      P1 <- 1-(1/((emergetime[t-1])/2))*TempSurvival[t-1]
-      P2 <- 1-(1/((emergetime[t-1])/2))*TempSurvival[t-1]
-    }
+
       
-      if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == T)) {
+      if (is.na(emergetime[t-1] == T)) {
         G1 <- 0.5/((-0.72 * temps$Temperature[t-1]) + 19.54)*TempSurvival[t-1]
         P1 <- 1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54))*TempSurvival[t-1]
         G2 <- 0.3/((-0.72 * temps$Temperature[t-1]) + 19.54)*TempSurvival[t-1]
@@ -291,18 +288,18 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       
       #------------------------------------------------------
       # check extinction threshold and if below set to 0
-      Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
+      Total.N[t,iter] <- sum(output.N.list[t,,iter])
       if (Total.N[t, iter] < extinction){
         output.N.list[t,,iter] <- 0
         Total.N[t, iter] <- 0}
       
-      
     } #-------------------------
     # End Inner Loop  
     #------------------------- 
-    close(pb) # close progress bar
+    #close(pb) # close progress bar
   } #----------------------
   # End Outer Loop
   #----------------------
   return(output.N.list[ , 1:3, ])
 }
+
