@@ -292,8 +292,20 @@ rep.avg.year <- function(data, n, change.in.temp = 0, years.at.temp = 0){
 }
 
 hydrofunction <- function(x){exp(-x*2)}
+
 hydropeaking.mortality <- function(lower, upper, h){
-  int <- integrate(hydrofunction, lower = lower, upper = upper)
+  int <- integrate(hydrofunction, lower = lower, upper = upper) 
   H <- (1-int$value)*(1-h)
   return(H)
 }
+df <- as.data.frame(cbind(c(0.00001,0.99999), c(0.11, 0.17)))
+fi <- nlsLM(formula = (V2 ~ 2/(1 + exp(-b * V1))), data = df, start = c(b = 01))
+
+hydropeaking.mortality.BAET <- function(lower, upper, h){
+  int <- integrate(hydrofunction, lower = lower, upper = upper)
+  H <- (1-int$value) * (-20.00 *h + 3.40)
+  if (H > 1) H = 1
+  if (H < 0) H = 0
+  return(H)
+}
+
