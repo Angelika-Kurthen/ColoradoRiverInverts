@@ -51,28 +51,30 @@ source("1spFunctions.R")
 # temp <- temp[c(1,3)]
 # peaklist <- 0
 # peakeach <- length(temp$Temperature)
-# iteration <- 10
+# iteration <- 2
 # baselineK <- 10000
 # disturbanceK <- 40000
 # extinct = 50
+# Qmin = 0.25
+# fecundity <- 1200
+# dds <- 500
 # flow.data <- discharge
 # temp.data <- temp
 # discharge <- rep(0.1, times = length(temp$Temperature))
 # discharge[floor(runif(1, 90, 131))] <- runif(1, 0.25, 1)
 
-Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 900, dds = 500){
+Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 1200, dds = 500){
   
 # set up model
 source("NegExpSurv.R")
-source("BAETSurvivorship.R")
-  
+
 Q <- as.numeric(flow.data)
 temps <- temp.data
   
 degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
 colnames(degreedays) <- c("dts", "DegreeDay")
 degreedays$DegreeDay[degreedays$DegreeDay<0] <- 0
-degreedays$dts <- as.Date(as.POSIXct(degreedays$dts, origin = "1970-01-01"))
+degreedays$dts <- as.Date(degreedays$dts, origin = "1970-01-01")
   
 # need to make ramped increasing hydropeaking index 
 hp <- c(rep(peaklist, peakeach))
@@ -140,8 +142,8 @@ for (iter in c(1:iterations)) {
    K = Kb # need to reset K for each iteration
   
   # pull random values from a uniform distribution 
-  output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
-  #output.N.list[1,1:3, iter]<- c(5000, 3000, 100)
+  #output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
+  output.N.list[1,1:3, iter]<- c(5000, 3000, 100)
   # we often want to look at different parameter values after we run code, so we create some lists
   
   # list to input Ks
@@ -156,12 +158,13 @@ for (iter in c(1:iterations)) {
   emergetime <- vector()
   
   sizelist <- vector()
-  delta <- vector()
 
   TempSurvival <- vector()
 
   for(c in temps$Temperature){
+    
     b <- TempSurv(c)
+    
     TempSurvival <- append(TempSurvival, b)
   }
   #-------------------------
@@ -257,33 +260,39 @@ for (iter in c(1:iterations)) {
     # }
     
     
-    if (5 > temps$Temperature[t-1]) {
-      P1 <- (1-(1/9)) *TempSurvival[t-1]
-      P2 <- P1
-      G1 <- 0.2/9  * TempSurvival[t-1]
-      G2 <- 0.5/9 * TempSurvival[t-1]
-    }
-    if (temps$Temperature[t-1] > 30){
-      P1 <- (1-(1/1.5))  *TempSurvival[t-1]
-      P2 <- P1
-      G1 <- 0.2/1.5 *TempSurvival[t-1]
-      G2 <- 0.5/1.5 *TempSurvival[t-1]
-    }
+    # if (5 > temps$Temperature[t-1]) {
+    #   P1 <- (1-(1/9)) *TempSurvival[t-1]
+    #   P2 <- P1
+    #   G1 <- (0.2/9)  * TempSurvival[t-1]
+    #   G2 <- (0.5/9) * TempSurvival[t-1]
+    # }
+    # if (temps$Temperature[t-1] > 30){
+    #   P1 <- (1-(1/1.5))  *TempSurvival[t-1]
+    #   P2 <- P1
+    #   G1 <- (0.2/1.5) *TempSurvival[t-1]
+    #   G2 <- (0.5/1.5) *TempSurvival[t-1]
+    # }
     
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
-      G1 <- 0.2/((emergetime[t-1])/2) *TempSurvival[t-1]
-      G2 <- 0.5/((emergetime[t-1])/2) *TempSurvival[t-1]
+    if ( is.na(emergetime[t-1])== F){
+      G1 <- (0.2/((emergetime[t-1])/2)) *TempSurvival[t-1]
+      G2 <- (0.5/((emergetime[t-1])/2)) *TempSurvival[t-1]
       P1 <- (1-(1/((emergetime[t-1])/2)))  *TempSurvival[t-1]
-      P2 <- P1
+      P2 <- (1-(1/((emergetime[t-1])/2))) *TempSurvival[t-1]
     }
 
-    if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == T)) {
-      G1 <- 0.2/((-0.353 * temps$Temperature[t-1]) + 10.059) *TempSurvival[t-1]
-      P1 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059)) *TempSurvival[t-1]
-      G2 <- 0.5/((-0.353 * temps$Temperature[t-1]) + 10.059) *TempSurvival[t-1]
-      P2 <- 1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))*TempSurvival[t-1]
+    if  (is.na(emergetime[t]) == T) {
+      G1 <- (0.2/((-0.353 * temps$Temperature[t-1]) + 10.059)) *TempSurvival[t-1]
+      P1 <- (1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059))) *TempSurvival[t-1]
+      G2 <- (0.5/((-0.353 * temps$Temperature[t-1]) + 10.059)) *TempSurvival[t-1]
+      P2 <- (1-(1/((-0.353 * temps$Temperature[t-1]) + 10.059)))*TempSurvival[t-1]
       }
 
+    if (G1 > 1) G1 <- 1
+    if (G1 < 0) G1 <- 0
+    if (G2 > 1) G2 <- 1
+    if (G2 < 0) G2 <- 0
+    if (P1 > 1) P1 <- 1
+    if (P2 < 0) P2 <- 0
     
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
     # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
@@ -322,6 +331,10 @@ for (iter in c(1:iterations)) {
     
     flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
     
+    print(A)
+    print(output.N.list)
+    print(temp$Temperature)
+    print(TempSurvival[t-1])
     #------------------------------------------------------
     # check extinction threshold and if below set to 0
     Total.N[t,iter] <- sum(output.N.list[t,,iter])
@@ -339,6 +352,7 @@ for (iter in c(1:iterations)) {
   #----------------------
 return(output.N.list[ ,1:3, ])
 }
+
 #------------------
 # # Analyzing Results
 # #-------------------
