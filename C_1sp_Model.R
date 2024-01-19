@@ -53,28 +53,28 @@ source("1spFunctions.R")
 # Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
 # 
 # temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
-# peaklist <- 0 
+# peaklist <- 0
 # peakeach <- length(temp$Temperature)
 # iteration <- 1
 # baselineK <- 10000
 # disturbanceK <- 40000
-peaklist <- 0
-peakeach <- length(temp$Temperature)
-iteration <- 10
-baselineK <- 10000
-disturbanceK <- 40000
-extinct = 50
-flow.data <- discharge
-temp.data <- temp
-Qmin <- 0.25
-fecundity <- 200
-dds <- 900
+# peaklist <- 0
+# peakeach <- length(temp$Temperature)
+# iteration <- 10
+# baselineK <- 10000
+# disturbanceK <- 40000
+# extinct = 50
+# discharge <- rep(0.1, time = length(temp$dts))
+# flow.data <- discharge
+# temp.data <- temp
+# Qmin <- 0.25
+# fecundity <- 200
+# dds <- 900
 
-Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 200, dds = 900){
+Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 500, dds = 900){
   
   # set up model
   source("NegExpSurv.R")
-  source("HYOSSurvivorship.R")
   Q <- as.numeric(flow.data)
   temps <- temp.data
   
@@ -191,7 +191,7 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       
       # we start by pulling fecundities from normal distribution
       # assuming 50 50 sex ration, 0.22 of egg masses 'dissapearred', and 0.2 desiccation because of rock drying
-      F3 = fecundity * 0.5 * hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
+      F3 = fecundity  * hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
       #F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
       
       
@@ -206,7 +206,7 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       if (t > 19) { # will be erased in burn
         size <- emergetime[t-1]
         sizelist <- append(sizelist, size)
-        F3 <- ((size*mod$coefficients[2])+mod$coefficients[1])* 0.5 * hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
+        F3 <- ((size*mod$coefficients[2])+mod$coefficients[1]) * hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
         #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
       }
       # size <- delta[t-1]
@@ -242,23 +242,28 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       # development measures
       # in this function, we assume that if below the min temp threshold (9) no maturation occurs (slow maturation, large growth)
       # if above the max temp threshold (15), no one remains more than 1 timestep in each stage (fast maturation, small growth)
-      if (is.na(emergetime[t-1] == F)) {
-      P1 <- 1-(1/((emergetime[t-1])/2)) *TempSurvival[t-1]
-      P2 <- 1-(1/((emergetime[t-1])/2))*TempSurvival[t-1]
-      G1 <- 0.5/((emergetime[t-1])/2)*TempSurvival[t-1]
-      G2 <- 0.3/((emergetime[t-1])/2)*TempSurvival[t-1]
+      if (is.na(emergetime[t-1]) == F) {
+      P1 <- (1-(1/((emergetime[t-1])/2))) *TempSurvival[t-1]
+      P2 <- (1-(1/((emergetime[t-1])/2)))*TempSurvival[t-1]
+      G1 <- (0.9/((emergetime[t-1])/2))*TempSurvival[t-1]
+      G2 <- (0.7/((emergetime[t-1])/2))*TempSurvival[t-1]
     }
 
       
-      if (is.na(emergetime[t-1] == T)) {
-        G1 <- 0.5/((-0.72 * temps$Temperature[t-1]) + 19.54)*TempSurvival[t-1]
-        P1 <- 1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54))*TempSurvival[t-1]
-        G2 <- 0.3/((-0.72 * temps$Temperature[t-1]) + 19.54)*TempSurvival[t-1]
-        P2 <- 1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54))*TempSurvival[t-1]
+      if (is.na(emergetime[t-1]) == T) {
+        G1 <- (0.9/((-0.72 * temps$Temperature[t-1]) + 19.54))*TempSurvival[t-1]
+        P1 <- (1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54)))*TempSurvival[t-1]
+        G2 <- (0.7/((-0.72 * temps$Temperature[t-1]) + 19.54))*TempSurvival[t-1]
+        P2 <- (1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54)))*TempSurvival[t-1]
       }
-
       
-      # P2 <- 0.55 - G2
+      if (G1 > 1) G1 <- 1
+      if (G1 < 0) G1 <- 0
+      if (G2 > 1) G2 <- 1
+      if (G2 < 0) G2 <- 0
+      if (P1 > 1) P1 <- 1
+      if (P2 < 0) P2 <- 0
+      
       #-----------------------------------------------
       # Create Lefkovitch Matrix
       
