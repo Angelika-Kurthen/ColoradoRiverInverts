@@ -276,8 +276,8 @@ means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 arrows <- tibble(
   x1 = c("2030-01-07", "2035-01-07", "2040-01-07", "2045-01-07"),
   x2 = c("2030-01-07", "2035-01-07", "2040-01-07", "2045-01-07"),
-  y1 = c(0.75, 0.75, 0.75, 0.75), 
-  y2 = c(0.25, 0.25, 0.25, 0.25)
+  y1 = c(0.23, 0.23, 0.23, 0.23), 
+  y2 = c(0.1, 0.1, 0.1, 0.1)
 )
 
 
@@ -293,7 +293,7 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
               alpha = .5,
               show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
-  coord_cartesian(ylim = c(0,1)) +
+  coord_cartesian(ylim = c(0,0.25)) +
   ylab('Hydrospyche spp. Relative Abundance') +
   xlab(" ")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
@@ -301,10 +301,10 @@ abund.trends.HYOS <- ggplot(data = means.list.HYOS, aes(x =  `temps$dts`,
   scale_x_date(date_labels="%Y", date_breaks  ="1 year")+
   annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
            arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
-  annotate("text", x = arrows$x1[1], y = 0.8, label = "+1°C", size = 5)+
-  annotate("text", x = arrows$x1[2], y = 0.8, label = "+2.5°C", size = 5)+
-  annotate("text", x = arrows$x1[3], y = 0.8, label = "+5°C", size = 5)+
-  annotate("text", x = arrows$x1[4], y = 0.8, label = "+7.5°C", size = 5 )
+  annotate("text", x = arrows$x1[1], y = 0.25, label = "+1°C", size = 5)+
+  annotate("text", x = arrows$x1[2], y = 0.25, label = "+2.5°C", size = 5)+
+  annotate("text", x = arrows$x1[3], y = 0.25, label = "+5°C", size = 5)+
+  annotate("text", x = arrows$x1[4], y = 0.25, label = "+7.5°C", size = 5 )
 
 a<- mean(means.list.HYOS$mean.abund[which(means.list.HYOS$`temps$dts` < "2030-01-07")])
 b <- mean(means.list.HYOS$mean.abund[which(means.list.HYOS$`temps$dts` >= "2030-01-07" & means.list.HYOS$`temps$dts` < "2035-01-07")])
