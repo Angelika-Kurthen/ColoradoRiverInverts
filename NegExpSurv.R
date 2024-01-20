@@ -7,6 +7,7 @@
 
 #library(minpack.lm, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 library(minpack.lm)
+library(readxl)
 
 flow.surv.fit <- function(magnitude, mortality, Qmin){
   x <- magnitude # rename x and y
@@ -57,3 +58,28 @@ ggplot(df, aes(x = Q, y = Survival, col = Response))+
   ylab('Immediate Post-Disturbance Survival') +
   theme_bw()+
   xlab('`Max Event Discharge/Bankfull Discharge`')
+
+
+#we know crit max and min of Temperate 
+# https://besjournals.onlinelibrary.wiley.com/doi/10.1111/1365-2435.12906
+# adjusted that to fit a known survival curve (neg binom dist)
+
+HYOSSurvRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Survival Rates ")
+HYOSSurvRates <- as.data.frame(HYOSSurvRates)
+
+TempSurv <- function(n){
+  if (n <= 0.5){
+    a <- 0
+  }else{
+    a <-  dnbinom(as.integer(-n + 29), size = 2.8835371 , prob = 0.1932115)*(max(HYOSSurvRates$Survival)/max(dnbinom(as.integer(-HYOSSurvRates$Temperature + 32), size =2.8835371, prob = 0.1932115 )))
+  }
+  return((a))
+}
+
+tem <- seq(0, 40, by = 1)
+temSurv <- unlist(lapply(tem, TempSurv))
+tempsurvdf <- as.data.frame(cbind(tem, temSurv))
+#  plot(HYOSSurvRates$Temperature, HYOSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+#  lines(tem,  unlist(lapply(tem, TempSurv)))
+
+
