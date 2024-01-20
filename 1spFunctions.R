@@ -1,6 +1,7 @@
 #############################
 ## 1 species Model Functions
 #############################
+library(minpack.lm)
 
 ## checkpos makes sure that the K-occupied term is positive, assigns 0 if not
 checkpos <- function(x) {
@@ -160,6 +161,8 @@ post.dist.K <- function(K0, Kb, g, t, Q, Qmin){
   K <- K0} 
   if (is.na(taut)==T | taut == 0) { taut <-  0
   K <- K0} 
+  if (is.infinite(taut)==T){ taut <- 0
+  K <- K0}
   if (taut > 0) {
     K <- Kb + ((K0 - Kb)*exp(-g*taut))} # function from McMullen et al 2017, g is shape function
   return(K)
@@ -219,7 +222,7 @@ flood.mortality <- function(N, k, h, Q, Qmin){
 
 #function to summarize code into mean population abundance over iterations
 mean.data.frame <- function(data, burnin, iteration){
-  repdf <- plyr::adply(data, c(1,2,3))
+  repdf <- plyr::adply(data, c(1,2))
   names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
   repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
   
