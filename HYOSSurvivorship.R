@@ -1,6 +1,24 @@
 #####################################
 ## Code to fit curve to Hydropsyche spp mortality rates to data
 ####################################
+#Code for HPC
+# library(readxl, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(minpack.lm, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(readxl, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(car, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(boot, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(data.table, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(forcats, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# 
+
+
+
 library(readxl)
 library(minpack.lm)
 library(tidyverse)
@@ -68,7 +86,7 @@ TempSurv <- function(n){
   if (n <= 0){
     a <- 0
   }else{
-  a <-  dnbinom(as.integer(-n + 32), size = 2.8835371 , prob = 0.1932115)*(max(HYOSSurvRates$Survival)/max(dnbinom(as.integer(-HYOSSurvRates$Temperature + 34), size =2.8835371, prob = 0.1932115 )))
+  a <-  dnbinom(as.integer(-n + 32), size = 2.8835371 , prob = 0.1932115)*(max(HYOSSurvRates$Survival)/max(dnbinom(as.integer(-HYOSSurvRates$Temperature + 32), size =2.8835371, prob = 0.1932115 )))
   }
   return((a))
 }
@@ -79,4 +97,4 @@ TempSurv <- function(n){
 # temSurv <- unlist(lapply(tem, TempSurv))
 #  plot(HYOSSurvRates$Temperature, HYOSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
 #  lines(tem,  unlist(lapply(tem, TempSurv)))
-
+# 
