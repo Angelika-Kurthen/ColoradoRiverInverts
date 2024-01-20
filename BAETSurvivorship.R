@@ -1,7 +1,20 @@
 #############################################################
 ## Code to fit curve to Baetidae spp mortality rates to data
 #############################################################
-
+# library(readxl, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(minpack.lm, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(readxl, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(car, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(boot, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(data.table, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(forcats, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+#
 library(readxl)
 library(minpack.lm)
 library(tidyverse)
