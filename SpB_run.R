@@ -17,7 +17,7 @@ find_leap = function(x){
 Day <- Day[which(find_leap(Day) == F)]
 
 
-Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
+Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 13.956243
 
 temp <- as.data.frame(cbind(Time, Day, Temperature))
 temp$Day <- as.Date(temp$Day, origin= "1970-01-01")
@@ -208,23 +208,20 @@ scale_x_date(date_labels="%Y", date_breaks  ="5 years")
 all.dates <- unique(format(temp$dts, "%m-%d"))[order(unique(format(temp$dts, "%m-%d")))]
 # loop to select a date from a Week-Month combo from each unique year
 means <- list()
-system.time(
 for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
     sample_dates <- temp$dts[which(format(temp$dts, "%m-%d")== all.dates[d])]
     samp <- which(temp$dts == sample(sample_dates[which(sample_dates > temp$dts[300] & sample_dates < temp$dts[2508])], size = 1))
     dates <- temp[(samp-300):(samp+100),]
     discharge <- rep(0.1, time = length(dates$dts)) # create a list of non-disturbance discharges
     discharge[match(temp$dts[samp], dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
-
-    source("C:/Users/jelly/Downloads/B_1sp_ModelJune16.R")
     # run model
-    out <- Bmodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 100, peaklist = 0, peakeach = length(temp$Temperature))
+    out <- Bmodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
     # create summary dataframe 
-    m <- mean.data.frame(out, burnin = 250, iteration = 100)
+    m <- mean.data.frame(out, burnin = 250, iteration = 2)
     means[d] <- list(m)
-})
+}
 
-jday_max <- unlist(lapply(means, function(x)
+jday_max <- unlist(lapply(means, function(x) # short term?
         return(max(x$mean.abund)))) # would mean +/- se or just maximum (and maybe minimum values) be valuable
 jday.df <- as.data.frame(cbind(jday_max, all.dates))
 jday.df$jday_max <- as.numeric(jday.df$jday_max)
@@ -232,13 +229,32 @@ jday.df$all.dates <- yday(as.POSIXct(jday.df$all.dates, format = "%m-%d"))
 x11()
 ggplot(data = jday.df, aes(x = all.dates, y = jday_max/10000, group = 1))+
   geom_line(size = 1)+
-  coord_cartesian(ylim = c(0,12)) +
+  coord_cartesian(ylim = c(0,40)) +
   theme_bw()+
   ylab('Max Values of Mayfly Abundance Relative to Baseline K') +
   xlab("Julian Date")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
   scale_x_continuous(n.breaks = 11)
+
+
+jday_mean <- unlist(lapply(means, function(x)    # long term mean
+    return(mean(x$mean.abund))))
+jday.df <- as.data.frame(cbind(jday_mean, all.dates))
+jday.df$jday_mean <- as.numeric(jday.df$jday_mean)
+jday.df$all.dates <- yday(as.POSIXct(jday.df$all.dates, format = "%m-%d"))
+x11()
+ggplot(data = jday.df, aes(x = all.dates, y = jday_mean/10000, group = 1))+
+  geom_line(size = 1)+
+  coord_cartesian(ylim = c(0,40)) +
+  theme_bw()+
+  ylab('Max Values of Mayfly Abundance Relative to Baseline K') +
+  xlab("Julian Date")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  scale_x_continuous(n.breaks = 11)
+
+
 
 ##Figure 4: Importance of Disturbance Timing
 # Importance of Disturbance Timing is just comparing delta(max) to delta(max)
