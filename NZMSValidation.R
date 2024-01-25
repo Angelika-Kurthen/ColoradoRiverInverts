@@ -22,14 +22,14 @@ flow.magnitude <- TimestepDischarge(discharge, 85000)
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 temps <- TimestepTemperature(temp)
 
-out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 999, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 
 # adults<-as.data.frame(cbind(as.Date(temps$dts), out[1:length(temps$dts),2:3,1]))
 # colnames(adults) <- c("Time","Adult")
 # adults$Time <- as.Date(adults$Time, origin = "1970-01-01")
 
-means.list.NZMS <- mean.data.frame(out,burnin = 50, iteration= 1)
+means.list.NZMS <- mean.data.frame(out,burnin = 50, iteration= 9)
 means.list.NZMS <- cbind(means.list.NZMS, temps$dts[1:length(means.list.NZMS$timesteps)])
 means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
 # plot abundance over time
@@ -122,28 +122,27 @@ abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%B", date_breaks  ="6 months")
 
-ggplot(data = adults, aes(x = Time,
-                                   y = Adult, group = 1)) +
-  # #geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                 ymax = mean.abund + 1.96 * se.abund),
-  #             colour = 'transparent',
-  #             alpha = .5,
-  #             show.legend = FALSE) +
-  geom_line(show.legend = FALSE, linewidth = 0.7) +
-  geom_point()+
-  geom_line(data = NZMS.samp, aes(x = V1, y = exp(x)), color = "red")+
-  geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  coord_cartesian(ylim = c(0,70000)) +
-  ylab('New Zealand Mudsnail Abundance') +
-  xlab("")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13))+
-  scale_x_date(date_labels="%B", date_breaks  ="6 months")
+# ggplot(data = adults, aes(x = Time,
+#                                    y = Adult, group = 1)) +
+#   # #geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+#   #                 ymax = mean.abund + 1.96 * se.abund),
+#   #             colour = 'transparent',
+#   #             alpha = .5,
+#   #             show.legend = FALSE) +
+#   geom_line(show.legend = FALSE, linewidth = 0.7) +
+#   geom_point()+
+#   geom_line(data = NZMS.samp, aes(x = V1, y = exp(x)), color = "red")+
+#   geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
+#   geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
+#   coord_cartesian(ylim = c(0,70000)) +
+#   ylab('New Zealand Mudsnail Abundance') +
+#   xlab("")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13))+
+#   scale_x_date(date_labels="%B", date_breaks  ="6 months")
 
 
 
 #NZMS.samp.sum <- NZMS.samp.sum[which(NZMS.samp.sum$V1 %in% sample(NZMS.samp.sum$V1, size = 30)),]
-
 #forecast::auto.arima(NZMS.samp.sum$V2, ic = "bic")
 #NZMS.samp.sum$V2[2:125] <- diff(NZMS.samp.sum$V2, differences=1)

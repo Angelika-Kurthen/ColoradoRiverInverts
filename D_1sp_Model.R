@@ -1,5 +1,5 @@
 ##########################
-# A sp model
+# D sp model
 ###########################
 
 
@@ -39,25 +39,25 @@ source("1spFunctions.R")
 # calculate mean temperature data for each timestep (2 week interval)
 # temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
 
-Time <- c(1:1825)
-Date <- rep(c(1:365), times = 5)
-Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
-Day <- Day[-which(Day == "2024-02-29")]
+# Time <- c(1:1825)
+# Date <- rep(c(1:365), times = 5)
+# Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
+# Day <- Day[-which(Day == "2024-02-29")]
+# 
+# Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
+# 
+# temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
+# peaklist <- 0 
+# peakeach <- length(temp$Temperature)
+# iteration <- 1
+# baselineK <- 10000
+# disturbanceK <- 40000
 
-Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
-
-temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
-peaklist <- 0 
-peakeach <- length(temp$Temperature)
-iteration <- 1
-baselineK <- 10000
-disturbanceK <- 40000
-
-Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
+Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 300, dds = 1500){
   
   # set up model
   source("NegExpSurv.R")
-  
+
   Q <- as.numeric(flow.data)
   temps <- temp.data
   
@@ -112,7 +112,7 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   k <- med$m$getPars()[1] 
   
   extinction <- extinct
-  
+
   #-------------------------
   # Outer Loop of Iterations
   #--------------------------
@@ -138,6 +138,15 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
     emergetime <- vector()
     
     sizelist <- vector()
+    
+    TempSurvival <- vector()
+    for(c in temps$Temperature){
+      
+      b <- TempSurv(c)
+      
+      TempSurvival <- append(TempSurvival, b)
+    }
+    
     #-------------------------
     # Inner Loop of Timesteps
     #-------------------------
@@ -147,13 +156,13 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       # Calculate how many timesteps emerging adults have matured
       
       
-      emergetime <- append(emergetime, back.count.degreedays(t, 1500, degreedays)) # value from Sweeney et al 2017
+      emergetime <- append(emergetime, back.count.degreedays(t, dds, degreedays)) # value from Sweeney et al 2017
       #---------------------------------------------------------
       # Calculate fecundity per adult
       
       # we start by pulling fecundities from normal distribution
       # assuming 50 50 sex ration, 0.22 of egg masses 'dissapearred', and 0.2 desiccation because of rock drying
-      F3 = 20 * 0.5 * hydropeaking.mortality(0.9, 1, h = hp[t-1]) 
+      F3 = fecundity * hydropeaking.mortality(0.9, 1, h = hp[t-1]) 
       #F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
       
       # we can also relate fecundities to body mass.
@@ -162,10 +171,16 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       # we can "convert" emergetime to mg by multiplying to get dry weights between 0.9 - 2 mg, and then convert to fecunity
       # Issue: this data is for Ephemerella spp, not Baetidae spp
       # 
-      if (t > 19) {
+      
+      x <- c(5,13)
+      y <- c(fecundity*0.9, fecundity*1.1)
+      mod <- lm(y~x)
+      
+      
+      if (is.na(emergetime[t-1]) == F) { # will be erased in burn
         size <- emergetime[t-1]
         sizelist <- append(sizelist, size)
-        F3 <- (0.4*size)+15.2 * 0.5 * hydropeaking.mortality(0.9, 1, h = hp[t-1])
+        F3 <- ((size*mod$coefficients[2])+mod$coefficients[1]) * hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
         #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
       }
       #--------------------------------------------------
@@ -197,38 +212,46 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       # development measures
       # in this function, we assume that if below the min temp threshold (9) no maturation occurs (slow maturation, large growth)
       # if above the max temp threshold (15), no one remains more than 1 timestep in each stage (fast maturation, small growth)
-      if (5 > temps$Temperature[t-1]) {
-        P1 <- 1-(1/8)
-        P2 <- 1-(1/8)
-        G1 <- 0.6/8
-        G2 <- 0.6/8
+      # if (5 > temps$Temperature[t-1]) {
+      #   P1 <- (1-(1/8))*TempSurvival[t-1]
+      #   P2 <- (1-(1/8))*TempSurvival[t-1]
+      #   G1 <- (0.6/8)*TempSurvival[t-1]
+      #   G2 <- (0.6/8)*TempSurvival[t-1]
+      # }
+      # 
+      # if (temps$Temperature[t-1] > 20){
+      #   P1 <- 1-(1/3)*TempSurvival[t-1]
+      #   P2 <- 1-(1/3)*TempSurvival[t-1]
+      #   G1 <- 0.6/3*TempSurvival[t-1]
+      #   G2 <- 0.6/3*TempSurvival[t-1]
+      # }
+      # 
+      
+      if (is.na(emergetime[t-1]) == F){
+        G1 <- (0.6/((emergetime[t-1]-1)/2))*TempSurvival[t-1]
+        G2 <- (0.6/((emergetime[t-1]-1)/2))*TempSurvival[t-1]
+        P1 <- (1-(1/((emergetime[t-1]-1)/2)))*TempSurvival[t-1]
+        P2 <- (1-(1/((emergetime[t-1])/2)))*TempSurvival[t-1]
+        P3 <- P3* TempSurvival[t-1]
       }
       
-      if (temps$Temperature[t-1] > 20){
-        P1 <- 1-(1/3)
-        P2 <- 1-(1/3)
-        G1 <- 0.6/3
-        G2 <- 0.6/3
+      if (is.na(emergetime[t-1]) == T) {
+        G1 <- (0.6/((-0.588 * temps$Temperature[t-1]) + 18.764)) *TempSurvival[t-1]
+        P1 <- (1-(1/((-0.588 * temps$Temperature[t-1]) + 18.764))) *TempSurvival[t-1]
+        G2 <- (0.6/((-0.588 * temps$Temperature[t-1]) + 18.764))*TempSurvival[t-1]
+        P2 <- (1-(1/((-0.588 * temps$Temperature[t-1]) + 18.764)))*TempSurvival[t-1]
+        P3 <- P3*TempSurvival[t-1]
       }
       
+      if (G1 > 1) G1 <- 1
+      if (G1 < 0) G1 <- 0
+      if (G2 > 1) G2 <- 1
+      if (G2 < 0) G2 <- 0
+      if (P1 > 1) P1 <- 1
+      if (P2 < 0) P2 <- 0
+
       
-      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == F)){
-        G1 <- 0.6/((emergetime[t]-1)/2)
-        G2 <- 0.6/((emergetime[t]-1)/2)
-        P1 <- 1-(1/((emergetime[t]-1)/2))
-        P2 <- 1-(1/((emergetime[t]-1)/2))
-      }
-      
-      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == T)) {
-        G1 <- 0.6/((-0.588 * temps$Temperature[t-1]) + 18.764)
-        P1 <- 1-(1/((-0.588 * temps$Temperature[t-1]) + 18.764))
-        G2 <- 0.6/((-0.588 * temps$Temperature[t-1]) + 18.764)
-        P2 <- 1-(1/((-0.588 * temps$Temperature[t-1]) + 18.764))
-      }
-      
-      
-      # P2 <- 0.55 - G2
-      #-----------------------------------------------
+    #-----------------------------------------------
       # Create Lefkovitch Matrix
       
       T1 <- c(P1, 0, F3)
@@ -269,5 +292,5 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   } #----------------------
   # End Outer Loop
   #----------------------
-  return(output.N.list[ , 1:2, ])
+  return(output.N.list[ , 1:3, ])
 }

@@ -29,7 +29,7 @@ temps <- temps[-c(1:82),]
 discharge <- readNWISdv("09404200", "00060", "2000-12-26", "2023-05-01")
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 
-out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 20000, baselineK = 5000, Qmin = 0.20, extinct = 50, iteration = 999, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = TRUE)
 
@@ -46,7 +46,7 @@ HYOS.samp <- aggregate(HYOS.samp$Density, list(HYOS.samp$Date), FUN = mean)
 means <- vector()
 for (i in 1:length(temps$dts)){
   d <- HYOS.samp[which(HYOS.samp$Group.1 >= temps$dts[i] & HYOS.samp$Group.1 < temps$dts[i+1]),]
-  if (is.nan(mean(d$x)) == T || is.na(d$x) == T) {
+  if (any(is.nan(mean(d$x))) == T || any(is.na((d$x) == T))) {
     s = NA
   } else {
     s<- mean(d$x)}
@@ -81,7 +81,7 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
   geom_text(x = 3, y = 300, label = "y = 7.77e-11x, R^2 = 0.22")+
   labs(y = "Hydropsychidae Model Output", x = "Hydropsychidae Empirical Data")
 
-rho <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 ggplot(data = means.list.HYOS, aes(x = Date,
                                                         y = mean.abund*10, group = 1, color = "Model")) +
@@ -95,14 +95,15 @@ ggplot(data = means.list.HYOS, aes(x = Date,
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
   #coord_cartesian(ylim = c(0,2000000)) +
-  ylab('Baetidae S1 and S2 Density inds/(m2)') +
+  ylab('Hydropsyichidae S3 Density inds/(m2)') +
   xlab("")+
   labs(colour=" ")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%B", date_breaks  ="6 months")
 
-plot(means.list.HYOS$Date, means.list.HYOS$mean.abund, type = "l")
-lines(as.Date(temps$dts), temps$Temperature * 5, col = "red")
-lines(as.Date(flow.magnitude$dts), flow.magnitude$Discharge * 1000, col = "blue")
-lines(as.Date(HYOS.samp.sum$V1), HYOS.samp.sum$V2*2, col = "darkgreen")
+# plot(means.list.HYOS$Date, means.list.HYOS$mean.abund, type = "l")
+# lines(as.Date(temps$dts), temps$Temperature * 5, col = "red")
+# lines(as.Date(flow.magnitude$dts), flow.magnitude$Discharge * 1000, col = "blue")
+# lines(as.Date(HYOS.samp.sum$V1), HYOS.samp.sum$V2*2, col = "darkgreen")
+

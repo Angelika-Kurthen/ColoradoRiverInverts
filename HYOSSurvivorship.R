@@ -1,6 +1,24 @@
 #####################################
 ## Code to fit curve to Hydropsyche spp mortality rates to data
 ####################################
+#Code for HPC
+# library(readxl, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(minpack.lm, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(readxl, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(car, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(boot, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(data.table, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(forcats, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+# 
+
+
+
 library(readxl)
 library(minpack.lm)
 library(tidyverse)
@@ -52,30 +70,31 @@ devtime <- function(x){
 HYOSSurvRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Survival Rates ")
 HYOSSurvRates <- as.data.frame(HYOSSurvRates)
 
-fit <- nlsLM(logit(Survival)~ a*Temperature^2 + b*Temperature + c, data = HYOSSurvRates, start = c(a= 1, b=1, c = 1))
-
+# fit <- nlsLM(logit(Survival)~ a*Temperature^2 + b*Temperature + c, data = HYOSSurvRates, start = c(a= 1, b=1, c = 1))
+# 
 # TempSurv <- function(x){
-#   a <- -0.09934 *x^2 +3.44127*x -15.47038 
+#   a <- -0.09934 *x^2 +3.44127*x -15.47038
 #   return(inv.logit(a))
 # }
-# min.RSS <- function(par){
-#   mod <- dnbinom(as.integer(-HYOSSurvRates$Temperature + 33), size = par[2], prob = par[1])
-#   a <- sum(HYOSSurvRates$Survival - (mod*(max(HYOSSurvRates$Survival)/max(mod))))^2
-# }
-# params <- optim(par = c(0.23, 4.5), fn = min.RSS)
+min.RSS <- function(par){
+  mod <- dnbinom(as.integer(-HYOSSurvRates$Temperature + 32), size = par[2], prob = par[1])
+  a <- sum(HYOSSurvRates$Survival - (mod*(max(HYOSSurvRates$Survival)/max(mod))))^2
+}
+params <- optim(par = c(0.23, 4.5), fn = min.RSS)
 
 TempSurv <- function(n){
   if (n <= 0){
     a <- 0
   }else{
-  a <-  dnbinom(as.integer(-n + 33), size = 2.8835371 , prob = 0.1932115)*(max(HYOSSurvRates$Survival)/max(dnbinom(as.integer(-HYOSSurvRates$Temperature + 34), size =2.8835371, prob = 0.1932115 )))
+  a <-  dnbinom(as.integer(-n + 32), size = 2.8835371 , prob = 0.1932115)*(max(HYOSSurvRates$Survival)/max(dnbinom(as.integer(-HYOSSurvRates$Temperature + 32), size =2.8835371, prob = 0.1932115 )))
   }
   return((a))
 }
 
 
 # 
-tem <- seq(0, 40, by = 1)
- plot(HYOSSurvRates$Temperature, HYOSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
- lines(tem, TempSurv(tem))
-
+# tem <- seq(0, 40, by = 1)
+# temSurv <- unlist(lapply(tem, TempSurv))
+#  plot(HYOSSurvRates$Temperature, HYOSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+#  lines(tem,  unlist(lapply(tem, TempSurv)))
+# 

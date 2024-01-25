@@ -45,10 +45,10 @@ ggplot(surv.df.NZMS, aes(x = Q, y = surv))+
 # max recruitment between 16 and 19 C (Dybahl and Kane)
 # recruitment stops below 9C (Bennett )
 # above 27 C everything stops working well (Dybahl and Kane)
-x <- c(9, 16, 17.5, 19, 27)
-y <- c(0.001, 1, 1, 1, 0.001)
-data <- as.data.frame(cbind(x,y))
-nlsLM(y~ -b*(x - 17.5)^4 + 1,start = list(b = 0),data=data)
+# x <- c(9, 16, 17.5, 19, 27)
+# y <- c(0.001, 1, 1, 1, 0.001)
+# data <- as.data.frame(cbind(x,y))
+# fit <- nlsLM(y~ -b*(x - 17.5)^4 + 1,start = list(b = 0),data=data)
 
 # eq = y = -0.0001427(x - 17.5)^4 + 1 * F 
 
@@ -57,30 +57,30 @@ NZMSSurvRates <- read_excel("VitalRates.xlsx", sheet = "NZMS Survival Rates")
 NZMSSurvRates <- as.data.frame(NZMSSurvRates)
 fit <- nlsLM(logit(Survival) ~ a*Temperature^2+ b*Temperature + c, data = NZMSSurvRates, start = c(a = 1, b = 1, c = 1))
 TempSurv <- function(x){
-  y = -0.08814*x^2 + 3.09981*x -9.18655
+  y = -0.0892*x^2 + 3.0492*x -6.6794
   return(inv.logit(y))
 }
 
 # based on the two fits we have neg binom and inv logit 2nd deg I think the neg inv. binom fits the best, based on 
-
-min.RSS <- function(par){
-  mod <- dnbinom(as.integer(-NZMSSurvRates$Temperature + 34), size = par[2], prob = par[1])
-  a <- sum(NZMSSurvRates$Survival - (mod*(max(NZMSSurvRates$Survival)/max(mod))))^2
-}
-params <- optim(par = c(0.2, 2), fn = min.RSS, method = "BFGS")
-
-TempSurv <- function(x){
-  a <-  dnbinom(-x + 34, size = params$par[2] , prob = params$par[1])*(max(NZMSSurvRates$Survival)/max(dnbinom(as.integer(-NZMSSurvRates$Temperature + 34), size =params$par[2], prob = params$par[1])))
-  return((a))
-}
-
+# 
+# min.RSS <- function(par){
+#   mod <- dnbinom(as.integer(-NZMSSurvRates$Temperature + 34), size = par[2], prob = par[1])
+#   a <- sum(NZMSSurvRates$Survival - (mod*(max(NZMSSurvRates$Survival)/max(mod))))^2
+# }
+# params <- optim(par = c(0.2, 2), fn = min.RSS, method = "BFGS")
+# 
 # TempSurv <- function(x){
-#   a <-  dnbinom(-x + 32, size = 3, prob = 0.2)
+#   a <-  dnbinom(-x + 34, size = params$par[2] , prob = params$par[1])*(max(NZMSSurvRates$Survival)/max(dnbinom(as.integer(-NZMSSurvRates$Temperature + 34), size =params$par[2], prob = params$par[1])))
 #   return((a))
 # }
-
-tem <- seq(0, 40, by = 1)
-plot(NZMSSurvRates$Temperature, NZMSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
-lines(tem, TempSurv(tem))
-
-
+# 
+# # TempSurv <- function(x){
+# #   a <-  dnbinom(-x + 32, size = 3, prob = 0.2)
+# #   return((a))
+# # }
+# 
+# tem <- seq(0, 40, by = 1)
+# plot(NZMSSurvRates$Temperature, NZMSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+# lines(tem, TempSurv(tem))
+# 
+# 
