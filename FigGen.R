@@ -35,6 +35,19 @@ summary(bdd_lm)
 summary(cdd_lm)
 summary(ddd_lm)
 
+
+source("SpA_JulianPulse.R")
+source("SpB_JulianPulse.R")
+source("SpC_JulianPulse.R")
+source("SpD_JulianPulse.R")
+
+(ashort + bshort)/(cshort + dshort)+ plot_annotation(tag_levels = "A")
+(aresil + bresil)/(cresil + dresil)+ plot_annotation(tag_levels = "A")
+(along + blong)/(clong + dlong)+ plot_annotation(tag_levels = "A")
+
+
+
+
 temp$dts <- as.Date(temp$dts, origin = "1970-01-01")
 ggplot(data = temp[1:27,], aes(dts, Temperature))+
   geom_line(size = 1)+
