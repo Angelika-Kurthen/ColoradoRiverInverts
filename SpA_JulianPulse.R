@@ -76,23 +76,33 @@ long_df$all.dates <- as.Date(long_df$all.dates, format = "%m-%d")
 ashort <- ggplot(data = short_df, aes(all.dates, short_mean/10000, group = 1))+
   geom_line(size = 1, col = "#66CCEE")+
   theme_bw()+
-  ylab("Sp A post pulse relative to K")+
+  ylab("Sp A post-pulse abundance relative to K")+
   xlab("Date of one-time Pulse")+
+  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
 
 aresil <- ggplot(data = resil_df, aes(all.dates, resil_mean/10000, group =1))+
   geom_line(size = 1,  col = "#66CCEE")+
   theme_bw()+
-  ylab("Sp A 2 mo post-pulse abundance relative to K")+
-  xlab("Date of one-time Pulse")
+  ylab("Sp A post-pulse abundance relative to K")+
+  xlab("Date of one-time Pulse")+
+  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
 
 
 along <- ggplot(data = long_df, aes(all.dates, long_mean/10000, group = 1))+
   geom_line(size = 1, col = "#66CCEE")+
   theme_bw()+
-  ylab("Sp A one year post pulse mean abundance relative to K")+
-  xlab("Date of one-time Pulse")
+  ylab("Sp A post-pulse abundance relative to K")+
+  xlab("Date of one-time Pulse")+
+  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
 
 # can also do rolling mean
 #l <- rollmean(long_df$long_mean, 30)

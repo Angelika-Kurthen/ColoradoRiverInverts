@@ -1,6 +1,7 @@
 #############################
 ## 1 species Model Functions
 #############################
+library(minpack.lm)
 
 ## checkpos makes sure that the K-occupied term is positive, assigns 0 if not
 checkpos <- function(x) {
@@ -154,12 +155,16 @@ Qf.Function <- function(Q, Qmin, a){
 
 # Function to calc. K as a function of time post-disturbance at a particular disturbance intensity
 post.dist.K <- function(K0, Kb, g, t, Q, Qmin){
-  #calculate tau (times since last distubance)
-  tau = (t-1) - (length(which(Q[1:t-1] > Qmin)))
-  if (is.na(tau)==T | tau == 0) { tau <-  0
+  #calculate tau (times since most recent distubance)
+  taut = (t-1) - max(which(Q[1:(t-1)] > Qmin))
+  if (is_empty(taut)) { taut <-  0
   K <- K0} 
-  if (tau > 0) {
-    K <- Kb + ((K0 - Kb)*exp(-g*tau))} # function from McMullen et al 2017, g is shape function
+  if (is.na(taut)==T | taut == 0) { taut <-  0
+  K <- K0} 
+  if (is.infinite(taut)==T){ taut <- 0
+  K <- K0}
+  if (taut > 0) {
+    K <- Kb + ((K0 - Kb)*exp(-g*taut))} # function from McMullen et al 2017, g is shape function
   return(K)
 }
 
@@ -215,9 +220,10 @@ flood.mortality <- function(N, k, h, Q, Qmin){
   return(newN)
 }
 
-#function to summarize code into mean population abundance over iterations
+#function to  code into mean population abundance over iterations
 mean.data.frame <- function(data, burnin, iteration){
   repdf <- plyr::adply(data, c(1,2,3))
+  #repdf <- plyr::adply(data, c(1,2))
   names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
   repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
   
@@ -231,7 +237,8 @@ mean.data.frame <- function(data, burnin, iteration){
   ## calculating relative abundance
   # repdf <- mutate(repdf, rel.abund = abund/tot.abund)
   repdf$timesteps <- as.factor(repdf$timesteps)
-  ## Taking mean results to cf w/ observed data
+  ## Taking mean results to cf w/ observed data'
+  
   means.list<- repdf %>%
     # select(-tot.abund) %>%
     dplyr::group_by(timesteps, rep) %>% # combining stages
@@ -290,8 +297,20 @@ rep.avg.year <- function(data, n, change.in.temp = 0, years.at.temp = 0){
 }
 
 hydrofunction <- function(x){exp(-x*2)}
+
 hydropeaking.mortality <- function(lower, upper, h){
-  int <- integrate(hydrofunction, lower = lower, upper = upper)
+  int <- integrate(hydrofunction, lower = lower, upper = upper) 
   H <- (1-int$value)*(1-h)
   return(H)
 }
+df <- as.data.frame(cbind(c(0.00001,0.99999), c(0.11, 0.17)))
+fi <- nlsLM(formula = (V2 ~ 2/(1 + exp(-b * V1))), data = df, start = c(b = 01))
+
+hydropeaking.mortality.BAET <- function(lower, upper, h){
+  int <- integrate(hydrofunction, lower = lower, upper = upper)
+  H <- (1-int$value) * (-20.00 *h + 3.40)
+  if (H > 1) H = 1
+  if (H < 0) H = 0
+  return(H)
+}
+
