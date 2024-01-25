@@ -41,8 +41,8 @@ fec_means <- vector()
 for (fec in 1:length(fec_seq)){
   print(fec)
   out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature), fecundity = fec_seq[fec])
-  means.list.C <- mean.data.frame(out, burnin = 250, iteration = 2) 
-  fec_means[fec] <- mean(means.list.C$mean.abund)
+  means.list.A <- mean.data.frame(out, burnin = 250, iteration = 2) 
+  fec_means[fec] <- mean(means.list.A$mean.abund)
 }
 
 fec_df <- as.data.frame(cbind(fec_seq, fec_means))
