@@ -69,6 +69,10 @@ short_df$short_mean <- as.numeric(short_df$short_mean)
 resil_df$resil_mean <- as.numeric(resil_df$resil_mean)
 long_df$long_mean <- as.numeric(long_df$long_mean)
 
+short_df$all.dates <- as.Date(short_df$all.dates, format = "%m-%d")
+resil_df$all.dates <- as.Date(resil_df$all.dates, format = "%m-%d")
+long_df$all.dates <- as.Date(long_df$all.dates, format = "%m-%d")
+
 ashort <- ggplot(data = short_df, aes(all.dates, short_mean/10000, group = 1))+
   geom_line(size = 1, col = "#66CCEE")+
   theme_bw()+
@@ -80,7 +84,7 @@ ashort <- ggplot(data = short_df, aes(all.dates, short_mean/10000, group = 1))+
 aresil <- ggplot(data = resil_df, aes(all.dates, resil_mean/10000, group =1))+
   geom_line(size = 1,  col = "#66CCEE")+
   theme_bw()+
-  ylab("Sp A two month post pulse mean abundance relative to K")+
+  ylab("Sp A 2 mo post-pulse abundance relative to K")+
   xlab("Date of one-time Pulse")
 
 
