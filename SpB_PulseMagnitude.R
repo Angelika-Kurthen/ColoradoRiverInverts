@@ -40,12 +40,20 @@ for (i in 1:length(magnitudes)){
     out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 10, peaklist = 0, peakeach = length(temp$Temperature))
     m <- rowMeans(out)
     immediate_response[i] <- m[which(temp$dts == selected_date)+1]
-    short_response[i] <- mean(m[(which(temp$dts == selected_date) + 2):(which(temp$dts == selected_date) + 6)])
+    #short_response[i] <- mean(m[(which(temp$dts == selected_date) + 2):(which(temp$dts == selected_date) + 6)])
   }
-
 # calculate immediate response to the different magnitudes
 
-immediate_response <- vector()
+immediate_df <- as.data.frame(cbind(magnitudes, immediate_response))
+#short_df <- as.data.frame(cbind(magnitudes, short_response))
 
-for (mag in 1)
+bmag <- ggplot(data = immediate_df, aes(x = magnitudes, y = immediate_response/10000))+
+  geom_line(size = 1, col = "#228833")+
+  xlab("Discharge Magnitude (Proportion Bankfull)")+
+  ylab("Sp B Immediate Post Pulse Response")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+
 
