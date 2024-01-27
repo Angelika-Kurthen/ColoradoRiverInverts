@@ -4,13 +4,19 @@
 
 
 library(purrr)
-library(tidyverse)
+#library(tidyverse)
 library(lubridate)
 library(plyr)
 library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
+#library(doMC)
+#library(foreach)
+#registerDoMC(4)
+#packages for every foreach 
+#pkgs <- c("purrr", "tidyverse", "lubridate", "plyr", "dplyr")
+
 
 # Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 # We have to manually load all tidyverse packages
@@ -47,21 +53,28 @@ source("1spFunctions.R")
 # Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
 # 
 # temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
-peaklist <- 0 
-peakeach <- length(temp$Temperature)
-iteration <- 1
- baselineK <- 10000
-disturbanceK <- 40000
-temp.data = temp
-Qmin = 0.25
-flow.data = discharge
-extinct = 50
+# peaklist <- 0
+# peakeach <- length(temp$Temperature)
+# iteration <- 1
+# baselineK <- 10000
+# disturbanceK <- 40000
+# peaklist <- 0
+# peakeach <- length(temp$Temperature)
+# iteration <- 10
+# baselineK <- 10000
+# disturbanceK <- 40000
+# extinct = 50
+# discharge <- rep(0.1, time = length(temp$dts))
+# flow.data <- discharge
+# temp.data <- temp
+# Qmin <- 0.25
+# fecundity <- 200
+# dds <- 900
 
-Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
+Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 500, dds = 1200){
   
   # set up model
   source("NegExpSurv.R")
-  
   Q <- as.numeric(flow.data)
   temps <- temp.data
   
@@ -114,18 +127,30 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   h <- med$m$getPars()[2]  
   k <- med$m$getPars()[1] 
   
+  iterlist <- c(1:iterations)
   extinction <- extinct
   
   #-------------------------
   # Outer Loop of Iterations
   #--------------------------
-  
+  # Initializes the progress bar
+  # pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+  #                     max = iterations, # Maximum value of the progress bar
+  #                     style = 3,    # Progress bar style (also available style = 1 and style = 2)
+  #                     width = 50,   # Progress bar width. Defaults to getOption("width")
+  #                     char = "=")   # Character used to create the bar
   
   for (iter in c(1:iterations)) {
-    K = Kb # need to reset K for each iteration
+  #foreach (iter = c(1:iterations), .combine=cbind, .packages = pkgs) %dopar% {
+    #source("1spFunctions.R")
+    # Sets the progress bar to the current state
+    # setTxtProgressBar(pb, iter)
+  
+        K = Kb # need to reset K for each iteration
     
     # pull random values from a uniform distribution 
-    output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
+    #output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
+    output.N.list[1,1:3, iter]<- c(5000, 3000, 100)
     
     # we often want to look at different parameter values after we run code, so we create some lists
     
@@ -141,6 +166,15 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
     emergetime <- vector()
     
     sizelist <- vector()
+    # delta <- vector()
+    # development <- vector()
+    TempSurvival <- vector()
+    for(c in temps$Temperature){
+      
+      b <- TempSurv(c)
+      
+      TempSurvival <- append(TempSurvival, b)
+    }
     #-------------------------
     # Inner Loop of Timesteps
     #-------------------------
@@ -150,27 +184,35 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       # Calculate how many timesteps emerging adults have matured
       
       
-      emergetime <- append(emergetime, back.count.degreedays(t, 1200, degreedays)) # value from Sweeney et al 2017
+      emergetime <- append(emergetime, back.count.degreedays(t, dds, degreedays)) # value from Sweeney et al 2017
+      # delta <- append(delta, round(devtime(temps$Temperature[t-1])/14))
       #---------------------------------------------------------
       # Calculate fecundity per adult
       
       # we start by pulling fecundities from normal distribution
       # assuming 50 50 sex ration, 0.22 of egg masses 'dissapearred', and 0.2 desiccation because of rock drying
-      F3 = 200 * 0.5 * hydropeaking.mortality(0.9, 1, h = hp[t-1])
+      F3 = fecundity  * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
       #F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
       
+      
       # we can also relate fecundities to body mass.
-      # Sweeney and Vannote 1980 have recorded dry body weight between 0.9 and 2.0 mg. 
-      # That weight is related to fecundity Y = 614X - 300
-      # we can "convert" emergetime to mg by multiplying to get dry weights between 0.9 - 2 mg, and then convert to fecunity
-      # Issue: this data is for Ephemerella spp, not Baetidae spp
-      # 
-      if (t > 19) {
+      # in order to iterate through different fecundities
+      # emergetimes for our temp regime are between 3 and 9 
+      # create a lm for that data, with +10% and -10% of fecundity
+      x <- c(5,13)
+      y <- c(fecundity*0.9, fecundity*1.1)
+      mod <- lm(y~x)
+      
+      if (t > 19) { # will be erased in burn
         size <- emergetime[t-1]
         sizelist <- append(sizelist, size)
-        F3 <- (4.444*size)+ 153.336 * 0.5 * hydropeaking.mortality(0.9, 1, h = hp[t-1])
+        F3 <- ((size*mod$coefficients[2])+mod$coefficients[1]) * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
         #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
       }
+      # size <- delta[t-1]
+      # sizelist <- append(sizelist, size)
+      # F3 <- F3 <- (41.86*size)+200 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
+      # 
       #--------------------------------------------------
       # Calculate the disturbance magnitude-K relationship
       # Sets to 0 if below the Qmin
@@ -200,37 +242,28 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       # development measures
       # in this function, we assume that if below the min temp threshold (9) no maturation occurs (slow maturation, large growth)
       # if above the max temp threshold (15), no one remains more than 1 timestep in each stage (fast maturation, small growth)
-      if (5 > temps$Temperature[t-1]) {
-        P1 <- 1-(1/7)
-        P2 <- 1-(1/7)
-        G1 <- 0.5/7
-        G2 <- 0.3/7
+      if (is.na(emergetime[t-1]) == F) {
+      P1 <- (1-(1/((emergetime[t-1])/2))) *TempSurvival[t-1]
+      P2 <- (1-(1/((emergetime[t-1])/2)))*TempSurvival[t-1]
+      G1 <- (0.6/((emergetime[t-1])/2))*TempSurvival[t-1]
+      G2 <- (0.3/((emergetime[t-1])/2))*TempSurvival[t-1]
+    }
+
+      
+      if (is.na(emergetime[t-1]) == T) {
+        G1 <- (0.6/((-0.72 * temps$Temperature[t-1]) + 19.54))*TempSurvival[t-1]
+        P1 <- (1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54)))*TempSurvival[t-1]
+        G2 <- (0.3/((-0.72 * temps$Temperature[t-1]) + 19.54))*TempSurvival[t-1]
+        P2 <- (1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54)))*TempSurvival[t-1]
       }
       
-      if (temps$Temperature[t-1] > 20){
-        P1 <- 1-(1/2.5)
-        P2 <- 1-(1/2.5)
-        G1 <- 0.5/2.5
-        G2 <- 0.3/2.5
-      }
+      if (G1 > 1) G1 <- 1
+      if (G1 < 0) G1 <- 0
+      if (G2 > 1) G2 <- 1
+      if (G2 < 0) G2 <- 0
+      if (P1 > 1) P1 <- 1
+      if (P2 < 0) P2 <- 0
       
-      
-      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == F)){
-        G1 <- 0.5/((emergetime[t]-1)/2)
-        G2 <- 0.3/((emergetime[t]-1)/2)
-        P1 <- 1-(1/((emergetime[t]-1)/2))
-        P2 <- 1-(1/((emergetime[t]-1)/2))
-      }
-      
-      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 20 & is.na(emergetime[t] == T)) {
-        G1 <- 0.5/(( -0.529 * temps$Temperature[t-1]) + 16.587)
-        P1 <- 1-(1/(( -0.529 * temps$Temperature[t-1]) + 16.587))
-        G2 <- 0.3/(( -0.529 * temps$Temperature[t-1]) + 16.587)
-        P2 <- 1-(1/((-0.529 * temps$Temperature[t-1]) + 16.587))
-      }
-      
-       
-      # P2 <- 0.55 - G2
       #-----------------------------------------------
       # Create Lefkovitch Matrix
       
@@ -260,15 +293,15 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       
       #------------------------------------------------------
       # check extinction threshold and if below set to 0
-      Total.N[,iter] <- apply(output.N.list[,,iter],1,sum)
+      Total.N[t,iter] <- sum(output.N.list[t,,iter])
       if (Total.N[t, iter] < extinction){
         output.N.list[t,,iter] <- 0
         Total.N[t, iter] <- 0}
       
-      
     } #-------------------------
     # End Inner Loop  
     #------------------------- 
+    #close(pb) # close progress bar
   } #----------------------
   # End Outer Loop
   #----------------------
