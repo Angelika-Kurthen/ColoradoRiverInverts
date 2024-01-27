@@ -44,7 +44,6 @@ for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
   discharge <- rep(0.1, time = length(dates$dts)) # create a list of non-disturbance discharges
   discharge[match(temp$dts[samp], dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
   
-  source("C_1sp_Model.R")
   # run model
   out <- Dmodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
   # create summary dataframe 
@@ -78,7 +77,7 @@ long_df$all.dates <- as.Date(long_df$all.dates, format = "%m-%d")
 dshort <- ggplot(data = short_df, aes(all.dates, short_mean/10000, group = 1))+
   geom_line(size = 1, col = "#AA3377")+
   theme_bw()+
-  ylab("Sp D post-pulse abundance relative to K")+
+  ylab("Sp D abundance relative to K")+
   xlab("Date of one-time Pulse")+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
@@ -88,7 +87,7 @@ dshort <- ggplot(data = short_df, aes(all.dates, short_mean/10000, group = 1))+
 dresil <- ggplot(data = resil_df, aes(all.dates, resil_mean/10000, group =1))+
   geom_line(size = 1,  col = "#AA3377")+
   theme_bw()+
-  ylab("Sp D post-pulse abundance relative to K")+
+  ylab("Sp D abundance relative to K")+
   xlab("Date of one-time Pulse")+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
@@ -99,7 +98,7 @@ dresil <- ggplot(data = resil_df, aes(all.dates, resil_mean/10000, group =1))+
 dlong <- ggplot(data = long_df, aes(all.dates, long_mean/10000, group = 1))+
   geom_line(size = 1, col = "#AA3377")+
   theme_bw()+
-  ylab("Sp D post-pulse abundance relative to K")+
+  ylab("Sp D abundance relative to K")+
   xlab("Date of one-time Pulse")+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 

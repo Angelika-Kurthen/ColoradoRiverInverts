@@ -78,7 +78,7 @@ long_df$all.dates <- as.Date(long_df$all.dates, format = "%m-%d")
 cshort <- ggplot(data = short_df, aes(all.dates, short_mean/10000, group = 1))+
   geom_line(size = 1, col = "#EE6677")+
   theme_bw()+
-  ylab("Sp C post-pulse abundance relative to K")+
+  ylab("Sp abundance relative to K")+
   xlab("Date of one-time Pulse")+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
@@ -88,7 +88,7 @@ cshort <- ggplot(data = short_df, aes(all.dates, short_mean/10000, group = 1))+
 cresil <- ggplot(data = resil_df, aes(all.dates, resil_mean/10000, group =1))+
   geom_line(size = 1,  col = "#EE6677")+
   theme_bw()+
-  ylab("Sp C post-pulse abundance relative to K")+
+  ylab("Sp C abundance relative to K")+
   xlab("Date of one-time Pulse")+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
@@ -99,7 +99,7 @@ cresil <- ggplot(data = resil_df, aes(all.dates, resil_mean/10000, group =1))+
 clong <- ggplot(data = long_df, aes(all.dates, long_mean/10000, group = 1))+
   geom_line(size = 1, col = "#EE6677")+
   theme_bw()+
-  ylab("Sp C post-pulse abundance relative to K")+
+  ylab("Sp C abundance relative to K")+
   xlab("Date of one-time Pulse")+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
