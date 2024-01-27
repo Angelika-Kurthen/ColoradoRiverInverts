@@ -26,8 +26,7 @@ Year <- year(temp$dts)
 uYear <- unique(Year)
 Month <- month(temp$dts)
 
-selected_date <- temp$dts[temp$dts >= as.Date("2032-04-01") & temp$dts <= as.Date("2032-04-30")]
-selected_date <- sample(selected_date, 1)
+selected_date <- temp$dts[temp$dts >= as.Date("2032-04-15") & temp$dts <= as.Date("2032-04-30")]
 
 discharge <- rep(0.1, length(temp$dts))
 
@@ -50,7 +49,7 @@ immediate_df <- as.data.frame(cbind(magnitudes, immediate_response))
 dmag <- ggplot(data = immediate_df, aes(x = magnitudes, y = immediate_response/10000))+
   geom_line(size = 1, col = "#AA3377")+
   xlab("Discharge Magnitude (Proportion Bankfull)")+
-  ylab("Sp D Immediate Post Pulse Response")+
+  ylab("Sp D post pulse abundance relative to K")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
