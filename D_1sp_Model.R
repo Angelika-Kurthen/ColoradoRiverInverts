@@ -108,8 +108,8 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   Qmin <- Qmin
   a <- 0.001
   g <- 1
-  h <- med$m$getPars()[2]  
-  k <- med$m$getPars()[1] 
+  h <- low$m$getPars()[2]  
+  k <- low$m$getPars()[1] 
   
   extinction <- extinct
 
