@@ -191,7 +191,7 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       
       # we start by pulling fecundities from normal distribution
       # assuming 50 50 sex ration, 0.22 of egg masses 'dissapearred', and 0.2 desiccation because of rock drying
-      F3 = fecundity  * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
+      F3 = fecundity  * hydropeaking.mortality(0.8, 1, h = hp[t-1])
       #F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
       
       
