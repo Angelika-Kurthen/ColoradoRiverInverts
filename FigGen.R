@@ -42,17 +42,9 @@ source("SpC_JulianPulse.R")
 source("SpD_JulianPulse.R")
 
 (ashort + bshort)/(cshort + dshort)+ plot_annotation(tag_levels = "A")
-short <- (aresil + bresil)/(cresil + dresil)+ plot_annotation(tag_levels = "A")
+(aresil + bresil)/(cresil + dresil)+ plot_annotation(tag_levels = "A")
+(along + blong)/(clong + dlong)+ plot_annotation(tag_levels = "A")
 
-png("Short_term_response.png")
-plot(short)
-dev.off()
-
-long <- (along + blong)/(clong + dlong)+ plot_annotation(tag_levels = "A")
-
-png("Long-term_response.png")
-plot(long)
-dev.off()
 
 source("SpA_PulseMagnitude.R")
 source("SpB_PulseMagnitude.R")
