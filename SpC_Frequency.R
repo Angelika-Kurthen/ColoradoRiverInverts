@@ -1,8 +1,8 @@
 #############################
-## Sp A Pulse Frequency 
+## Sp C Pulse Frequency 
 ############################
 library(lubridate)
-source("A_1sp_Model.R")
+source("C_1sp_Model.R")
 source("1spFunctions.R")
 Time <- c(1:36500)
 Date <- rep(1:365, times = 100)
@@ -41,7 +41,7 @@ for (i in 1:26){# Randomly select dates without replacement
   # from that list of dates from above, assign a disturbance discharge date
   discharge[match(random_dates, temp$dts)] <- 0.3
   # run model
-  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature))
   # create summary dataframe 
   sums <- rowSums(out)
   m <- cbind(sums[250:402], discharge[250:402])
@@ -62,77 +62,29 @@ short_df <- as.data.frame(cbind(short, seq(1:26)))
 long <- rowMeans(long_array)
 long_df <- as.data.frame(cbind(long, seq(1:26)))
 
-a_imm <- ggplot(data = immediate_df, aes(x = V2, y = immediate/10000))+
-  geom_line(size=1 ,col = "#66CCEE")+
+c_imm <- ggplot(data = immediate_df, aes(x = V2, y = immediate/10000))+
+  geom_line(size=1 ,col = "#EE6677")+
   xlab("Frequency of pulse disturbance per year")+
-  ylab("Sp A abundance relative to K")+
+  ylab("Sp C abundance relative to K")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 
-a_short <- ggplot(data = short_df, aes(x = V2, y = short/10000))+
-  geom_line(size = 1, col = "#66CCEE")+
+c_short <- ggplot(data = short_df, aes(x = V2, y = short/10000))+
+  geom_line(size = 1, col = "#EE6677")+
   xlab("Frequency of pulse disturbance per year")+
-  ylab("Sp A abundance relative to K")+
+  ylab("Sp C abundance relative to K")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 
-a_long <- ggplot(data = long_df, aes(x = V2, y = long/10000))+
-  geom_line(size = 1, col = "#66CCEE")+
+c_long <- ggplot(data = long_df, aes(x = V2, y = long/10000))+
+  geom_line(size = 1, col = "#EE6677")+
   xlab("Frequency of pulse disturbance per year")+
-  ylab("Sp A abundance relative to K")+
+  ylab("Sp C abundance relative to K")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-
-
-means[i] <- list(m)
-    short_abund <- means[[i]][which(discharge[250:402] == "0.3"), 2]
-    resil_abund <- means[[i]][(which(discharge[250:402] == "0.3") + 1):(which(discharge[250:402] == "0.3") + 6), 2]
-    long_abund <- means[[i]][(which(discharge[250:402] == "0.3") + 26):(which(discharge[250:402] == "0.3") + 36), 2]
-    #post <- seq(0, 10, by = 1)
-    #dat <- rep(d, times = length(post))
-    #jday_data <- as.data.frame(rbind(jday_data, cbind(dat, post, abund)))
-    short_mean[i] <- short_abund
-    resil_mean[i] <- mean(resil_abund)
-    long_mean[i] <- mean(long_abund)
-
-
-which(discharge == 0.3)
-
-
-means <- list()
-#jday_data <- data.frame(date = NULL, post_dist = NULL, abund = NULL)
-jday_max <- vector()
-
-short_mean <- vector()
-resil_mean <- vector()
-long_mean <- vector()
-
-for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
-  sample_dates <- temp$dts[which(format(temp$dts, "%m-%d")== all.dates[d])]
-  samp <- which(temp$dts == sample(sample_dates[which(sample_dates > temp$dts[300] & sample_dates < temp$dts[2508])], size = 1))
-  dates <- temp[(samp-300):(samp+100),]
-  discharge <- rep(0.1, time = length(dates$dts)) # create a list of non-disturbance discharges
-  discharge[match(temp$dts[samp], dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
-  
-  # run model
-  out <- Amodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
-  # create summary dataframe 
-  m <- mean.data.frame(out, burnin = 250, iteration = 2)
-  m <- cbind(m, discharge[250:402])
-  means[d] <- list(m)
-  short_abund <- means[[d]][which(discharge[250:402] == "0.3"), 2]
-  resil_abund <- means[[d]][(which(discharge[250:402] == "0.3") + 1):(which(discharge[250:402] == "0.3") + 6), 2]
-  long_abund <- means[[d]][(which(discharge[250:402] == "0.3") + 26):(which(discharge[250:402] == "0.3") + 36), 2]
-  #post <- seq(0, 10, by = 1)
-  #dat <- rep(d, times = length(post))
-  #jday_data <- as.data.frame(rbind(jday_data, cbind(dat, post, abund)))
-  short_mean[d] <- short_abund
-  resil_mean[d] <- mean(resil_abund)
-  long_mean[d] <- mean(long_abund)
-}
