@@ -37,6 +37,7 @@ for (i in 1:length(magnitudes)){
     discharge[which(temp$dts == selected_date)] <- magnitudes[i]
     # calculate the response to the different magnitudes
     out <- Dmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 10, peaklist = 0, peakeach = length(temp$Temperature))
+    
     m <- rowMeans(out)
     immediate_response[i] <- m[which(temp$dts == selected_date)+1]
     #short_response[i] <- mean(m[(which(temp$dts == selected_date) + 2):(which(temp$dts == selected_date) + 6)])
