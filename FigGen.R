@@ -59,7 +59,7 @@ source("SpC_Frequency.R")
 source("SpD_Frequency.R")
 (a_imm + b_imm)/(c_imm + d_imm) + plot_annotation(tag_levels = "A")
 (a_short + b_short)/(c_short + d_short) + plot_annotation(tag_levels = "A")
-(a_long + b+long)/(c_long + d_long) + plot_annotation(tag_levels = "A")
+(a_long + b_long)/(c_long + d_long) + plot_annotation(tag_levels = "A")
 
 temp$dts <- as.Date(temp$dts, origin = "1970-01-01")
 ggplot(data = temp[1:27,], aes(dts, Temperature))+
