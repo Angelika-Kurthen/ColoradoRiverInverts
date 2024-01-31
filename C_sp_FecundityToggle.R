@@ -43,12 +43,15 @@ means.list.C <- mean.data.frame(out, burnin = 250, iteration = 99)
 fec_means[fec] <- mean(means.list.C$mean.abund)
 }
 
-fec_df <- as.data.frame(cbind(fec_seq, fec_means))
-cfec_lm <- lm((fec_means/10000) ~ fec_seq, data = fec_df)
+c_fec_df <- as.data.frame(cbind(fec_seq, fec_means, rep("C", times = length(fec_means))))
+c_fec_df$fec_seq <- as.numeric(c_fec_df$fec_seq)
+c_fec_df$fec_means <- as.numeric(c_fec_df$fec_means)
+
+cfec_lm <- lm((fec_means/10000) ~ fec_seq, data = c_fec_df)
 summary(cfec_lm)
-cfec <- ggplot(data = fec_df, mapping = aes(x = fec_seq, y = fec_means/10000))+
-  geom_point(size= 1, col = "#EE6677")+
-  xlab("Egg Mass Size")+
-  ylab("C sp Abundance Relative to K")+
-  theme_bw()
-  
+# cfec <- ggplot(data = fec_df, mapping = aes(x = fec_seq, y = fec_means/10000))+
+#   geom_point(size= 1, col = "#EE6677")+
+#   xlab("Egg Mass Size")+
+#   ylab("C sp Abundance Relative to K")+
+#   theme_bw()
+#   
