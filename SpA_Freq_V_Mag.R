@@ -2,6 +2,8 @@
 ## Sp  A Flood Pulse Magnitude
 ##################################
 library(lubridate)
+# library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+
 source("A_1sp_Model.R")
 source("1spFunctions.R")
 Time <- c(1:36500)
@@ -79,7 +81,15 @@ a_imm <- ggplot(data = immediate_df, aes(x = frequency, y = magnitude))+
   scale_fill_viridis_c() +
   xlab("Pulse Frequency")+
   ylab("Pulse Magnitude")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+  axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
   guides(fill=guide_legend(title="Sp A Relativized Abundance"))
+
+png("SpA_freq_v_mag_immediate.png")
+plot(a_imm)
+dev.off()
+
+
   
 short_df <- as.data.frame(cbind(short, seq(1:26)))
 colnames(short_df) <- c(magnitudes, "frequency")
@@ -89,7 +99,14 @@ a_short <- ggplot(data = short_df, aes(x = frequency, y = magnitude))+
   scale_fill_viridis_c() +
   xlab("Pulse Frequency")+
   ylab("Pulse Magnitude")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+  axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
   guides(fill=guide_legend(title="Sp A Relativized Abundance"))
+
+png("SpA_freq_v_mag_short.png")
+plot(a_short)
+dev.off()
+
 
 long_df <- as.data.frame(cbind(long, seq(1:26)))
 colnames(long_df) <- c(magnitudes, "frequency")
@@ -99,4 +116,10 @@ a_long <- ggplot(data = long_df, aes(x = frequency, y = magnitude))+
   scale_fill_viridis_c() +
   xlab("Pulse Frequency")+
   ylab("Pulse Magnitude")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+  axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
   guides(fill=guide_legend(title="Sp A Relativized Abundance"))
+
+png("SpA_freq_v_mag_long.png")
+plot(a_long)
+dev.off()
