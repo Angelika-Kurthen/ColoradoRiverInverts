@@ -12,17 +12,31 @@ source("D_sp_TempToggle.R")
 (atemp + btemp)/(ctemp + dtemp) + plot_annotation(tag_levels = 'A')
 
 
-source("A_sp_FecundityToggle.R")
+source("A_sp_Fecundity_Toggle.R")
 source("B_sp_fecundity_Toggle.R")
 source("C_sp_FecundityToggle.R")
 source("D_sp_Fecundity_Toggle.R")
 
-(afec + bfec)/(cfec + dfec) + plot_annotation(tag_levels = "A")
-summary(afec_lm)
-summary(bfec_lm)
-summary(cfec_lm)
-summary(dfec_lm)
-
+fec_df <- rbind(a_fec_df, b_fec_df, c_fec_df, d_fec_df)
+ggplot(data = fec_df, aes(fec_seq, y= fec_means/10000, color = V3))+
+  geom_point(size = 1, alpha = 0.5)+
+  stat_smooth(method = "lm",
+              position = "identity", 
+              formula = y ~ x, se = F) +
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  geom_vline(aes(xintercept = mean(a_fec_df$fec_seq), color = "A"), linetype = "dotdash", 
+           size=1)+
+  geom_vline(aes(xintercept = mean(b_fec_df$fec_seq),color = "B" ), linetype="dotted", 
+             size=1)+
+  geom_vline(aes(xintercept = mean(c_fec_df$fec_seq),color = "C" ), linetype = "dotted", 
+             size=1)+
+  geom_vline(aes(xintercept = mean(d_fec_df$fec_seq), color = "D"), linetype="dotted", 
+             size=1)+
+  theme_bw()+
+  xlab("Fecundity (# of eggs)")+
+  ylab("Relativized Abundance")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 source("A_sp_DD_Toggle.R")
 source("B_sp_DD_toggle.R")
