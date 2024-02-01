@@ -44,16 +44,16 @@ for (i in 1:length(magnitudes)){
   }
 # calculate immediate response to the different magnitudes
 
-immediate_df <- as.data.frame(cbind(magnitudes, immediate_response))
+a_magnitude_df <- as.data.frame(cbind(magnitudes, immediate_response, rep("A", times = length(immediate_response))))
 #short_df <- as.data.frame(cbind(magnitudes, short_response))
 
-amag <- ggplot(data = immediate_df, aes(x = magnitudes, y = immediate_response/10000))+
-  geom_line(size = 1, col = "#66CCEE")+
-  xlab("Discharge Magnitude (Proportion Bankfull)")+
-  ylab("Sp A abundance relative to K")+
-  theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
+# amag <- ggplot(data = immediate_df, aes(x = magnitudes, y = immediate_response/10000))+
+#   geom_line(size = 1, col = "#66CCEE")+
+#   xlab("Discharge Magnitude (Proportion Bankfull)")+
+#   ylab("Sp A abundance relative to K")+
+#   theme_bw()+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
 
 
