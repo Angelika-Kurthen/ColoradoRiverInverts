@@ -80,6 +80,7 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   
   degreedays <- as.data.frame(cbind(temps$dts, temps$Temperature * 14))
   colnames(degreedays) <- c("dts", "DegreeDay")
+  degreedays$DegreeDay[degreedays$DegreeDay<0] <- 0
   degreedays$dts <- as.Date(degreedays$dts, origin = "1970-01-01")
   
   # need to make ramped increasing hydropeaking index 
