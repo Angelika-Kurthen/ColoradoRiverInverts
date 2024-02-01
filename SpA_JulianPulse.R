@@ -61,48 +61,48 @@ for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
   long_mean[d] <- mean(long_abund)
 }
 
-short_df <- as.data.frame(cbind(short_mean, all.dates))
-resil_df <- as.data.frame(cbind(resil_mean, all.dates))
-long_df <- as.data.frame(cbind(long_mean, all.dates))
+ashort_df <- as.data.frame(cbind(short_mean, all.dates, rep("A", length(all.dates))))
+aresil_df <- as.data.frame(cbind(resil_mean, all.dates, rep("A", length(all.dates))))
+along_df <- as.data.frame(cbind(long_mean, all.dates, rep("A", length(all.dates))))
 
-short_df$short_mean <- as.numeric(short_df$short_mean)
-resil_df$resil_mean <- as.numeric(resil_df$resil_mean)
-long_df$long_mean <- as.numeric(long_df$long_mean)
+ashort_df$short_mean <- as.numeric(ashort_df$short_mean)
+aresil_df$resil_mean <- as.numeric(aresil_df$resil_mean)
+along_df$long_mean <- as.numeric(along_df$long_mean)
 
-short_df$all.dates <- as.Date(short_df$all.dates, format = "%m-%d")
-resil_df$all.dates <- as.Date(resil_df$all.dates, format = "%m-%d")
-long_df$all.dates <- as.Date(long_df$all.dates, format = "%m-%d")
+ashort_df$all.dates <- as.Date(ashort_df$all.dates, format = "%m-%d")
+aresil_df$all.dates <- as.Date(aresil_df$all.dates, format = "%m-%d")
+along_df$all.dates <- as.Date(along_df$all.dates, format = "%m-%d")
 
-ashort <- ggplot(data = short_df, aes(all.dates, short_mean/10000, group = 1))+
-  geom_line(size = 1, col = "#66CCEE")+
-  theme_bw()+
-  ylab("Sp A abundance relative to K")+
-  xlab("Date of one-time Pulse")+
-  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-
-aresil <- ggplot(data = resil_df, aes(all.dates, resil_mean/10000, group =1))+
-  geom_line(size = 1,  col = "#66CCEE")+
-  theme_bw()+
-  ylab("Sp A abundance relative to K")+
-  xlab("Date of one-time Pulse")+
-  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-
-
-along <- ggplot(data = long_df, aes(all.dates, long_mean/10000, group = 1))+
-  geom_line(size = 1, col = "#66CCEE")+
-  theme_bw()+
-  ylab("Sp A abundance relative to K")+
-  xlab("Date of one-time Pulse")+
-  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
+# ashort <- ggplot(data = short_df, aes(all.dates, short_mean/10000, group = 1))+
+#   geom_line(size = 1, col = "#66CCEE")+
+#   theme_bw()+
+#   ylab("Sp A abundance relative to K")+
+#   xlab("Date of one-time Pulse")+
+#   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
+# 
+# aresil <- ggplot(data = resil_df, aes(all.dates, resil_mean/10000, group =1))+
+#   geom_line(size = 1,  col = "#66CCEE")+
+#   theme_bw()+
+#   ylab("Sp A abundance relative to K")+
+#   xlab("Date of one-time Pulse")+
+#   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
+# 
+# 
+# along <- ggplot(data = long_df, aes(all.dates, long_mean/10000, group = 1))+
+#   geom_line(size = 1, col = "#66CCEE")+
+#   theme_bw()+
+#   ylab("Sp A abundance relative to K")+
+#   xlab("Date of one-time Pulse")+
+#   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
 
 # can also do rolling mean
 #l <- rollmean(long_df$long_mean, 30)
