@@ -16,7 +16,7 @@ library(foodbase)
 
 
 #("NZMS_1sp_Model.R")
-source("NZMS_1sp_JUN12.R")
+source("NZMS_1sp_Model.R")
 
 discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
 flow.magnitude <- TimestepDischarge(discharge, 85000)
