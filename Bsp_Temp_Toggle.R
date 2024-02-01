@@ -35,22 +35,27 @@ uYear <- unique(Year)
 Month <- month(temp$dts)
 discharge <- rep(0.1, time = length(temp$dts))
 
+
+temp_regime <- vector()
 temp_means <- vector()
 temp_seq <- seq(-10, 10, by = 1)
 for (te in 1:length(temp_seq)){
-  print(te)
   temp$Temperature <- temp$Temperature + temp_seq[te]
+  temp_regime[te] <- mean(temp$Temperature)
   out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
   temp$Temperature <- temp$Temperature - temp_seq[te]
   means.list.B <- mean.data.frame(out, burnin = 250, iteration = 2) 
   temp_means[te] <- mean(means.list.B$mean.abund)
-  
 }
 
-temp_adjust_df <- as.data.frame(cbind(temp_seq, temp_means))
-btemp <- ggplot(data = temp_adjust_df, mapping = aes(x = temp_seq, y = temp_means/10000))+
-  geom_line(size = 1, col = "#228833")+
-  xlab("Degree C Change")+
-  ylab("B sp Abundance Relative to K")+
-  theme_bw()
-
+b_temp_adjust_df <- as.data.frame(cbind(temp_regime, temp_means, rep("B", times = length(temp_means))))
+b_temp_adjust_df$temp_regime <- as.numeric(b_temp_adjust_df$temp_regime)
+b_temp_adjust_df$temp_means <- as.numeric(b_temp_adjust_df$temp_means)
+# #
+# 
+# btemp <- ggplot(data = temp_adjust_df, mapping = aes(x = temp_seq, y = temp_means/10000))+
+#   geom_line(size = 1, col = "#228833")+
+#   xlab("Degree C Change")+
+#   ylab("B sp Abundance Relative to K")+
+#   theme_bw()
+# 
