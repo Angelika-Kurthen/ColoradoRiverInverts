@@ -56,35 +56,35 @@ for (i in 1:26){# Randomly select dates without replacement
 }
 
 immediate <- rowMeans(m_array)
-immediate_df <- as.data.frame(cbind(immediate, seq(1:26)))
+c_immediate_df <- as.data.frame(cbind(immediate, seq(1:26), rep("C", length(immediate))))
 short <- rowMeans(short_array)
-short_df <- as.data.frame(cbind(short, seq(1:26)))
+c_short_df <- as.data.frame(cbind(short, seq(1:26), rep("C", length(short))))
 long <- rowMeans(long_array)
-long_df <- as.data.frame(cbind(long, seq(1:26)))
+c_long_df <- as.data.frame(cbind(long, seq(1:26), rep("C", length(long))))
 
-c_imm <- ggplot(data = immediate_df, aes(x = V2, y = immediate/10000))+
-  geom_line(size=1 ,col = "#EE6677")+
-  xlab("Frequency of pulse disturbance per year")+
-  ylab("Sp C abundance relative to K")+
-  theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-
-c_short <- ggplot(data = short_df, aes(x = V2, y = short/10000))+
-  geom_line(size = 1, col = "#EE6677")+
-  xlab("Frequency of pulse disturbance per year")+
-  ylab("Sp C abundance relative to K")+
-  theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-
-c_long <- ggplot(data = long_df, aes(x = V2, y = long/10000))+
-  geom_line(size = 1, col = "#EE6677")+
-  xlab("Frequency of pulse disturbance per year")+
-  ylab("Sp C abundance relative to K")+
-  theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
+# c_imm <- ggplot(data = immediate_df, aes(x = V2, y = immediate/10000))+
+#   geom_line(size=1 ,col = "#EE6677")+
+#   xlab("Frequency of pulse disturbance per year")+
+#   ylab("Sp C abundance relative to K")+
+#   theme_bw()+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
+# 
+# c_short <- ggplot(data = short_df, aes(x = V2, y = short/10000))+
+#   geom_line(size = 1, col = "#EE6677")+
+#   xlab("Frequency of pulse disturbance per year")+
+#   ylab("Sp C abundance relative to K")+
+#   theme_bw()+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
+# 
+# c_long <- ggplot(data = long_df, aes(x = V2, y = long/10000))+
+#   geom_line(size = 1, col = "#EE6677")+
+#   xlab("Frequency of pulse disturbance per year")+
+#   ylab("Sp C abundance relative to K")+
+#   theme_bw()+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
