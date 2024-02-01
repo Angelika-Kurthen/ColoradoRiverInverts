@@ -68,7 +68,7 @@ for (mts in 1:length(magnitudes)){ # iterate over each magnitude
       long_array[i,j] <- long_term
     }
   }
-  immediate[,mts] <- rowMeans(m_array)
+  immediate[,mts] <- rowMeans(imm_array)
   short[,mts] <- rowMeans(short_array)
   long[,mts] <- rowMeans(long_array)
 }
