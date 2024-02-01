@@ -46,10 +46,12 @@ for (dd in 1:length(dd_seq)){
   dd_means[dd] <- mean(means.list.C$mean.abund)
 }
 
-dd_df <- as.data.frame(cbind(dd_seq, dd_means))
-cdd_lm <- lm((dd_means/10000) ~ dd_seq, data = dd_df)
-cdd <- ggplot(data = dd_df, mapping = aes(x = dd_seq, y = dd_means/10000))+
-  geom_point(size = 1, col = "#EE6677")+
-  xlab("Degree Day Requirement")+
-  ylab("C sp Abundance Relative to K")+
-  theme_bw()
+cdd_df <- as.data.frame(cbind(dd_seq, dd_means, rep("C", length(dd_means))))
+cdd_df$dd_seq <- as.numeric(cdd_df$dd_seq)
+cdd_df$dd_means <- as.numeric(cdd_df$dd_means)
+cdd_lm <- lm((dd_means/10000) ~ dd_seq, data = cdd_df)
+# cdd <- ggplot(data = dd_df, mapping = aes(x = dd_seq, y = dd_means/10000))+
+#   geom_point(size = 1, col = "#EE6677")+
+#   xlab("Degree Day Requirement")+
+#   ylab("C sp Abundance Relative to K")+
+#   theme_bw()
