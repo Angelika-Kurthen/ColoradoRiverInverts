@@ -202,11 +202,11 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # stage 2 P2 (prob remaining in stage 2)
       # stage 3 P3 (prob remaining in stage 3) 
       
-      G1 = 0.89/14 *TempSurvival[t-1]
-      G2 = 0.89/7*TempSurvival[t-1]
-      P1 = 13/14 *TempSurvival[t-1]
-      P2 = 6/7 *TempSurvival[t-1]
-      P3 = 6/7  *TempSurvival[t-1]
+      G1 = (0.89/14) *TempSurvival[t-1]
+      G2 = (0.89/7)*TempSurvival[t-1]
+      P1 = (13/14) *TempSurvival[t-1]
+      P2 = (6/7) *TempSurvival[t-1]
+      P3 = (6/7)  *TempSurvival[t-1]
       
       
       
