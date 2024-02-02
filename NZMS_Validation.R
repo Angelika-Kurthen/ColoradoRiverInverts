@@ -22,7 +22,6 @@ discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 temps <- TimestepTemperature(temp)
-
 out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 
