@@ -1,17 +1,28 @@
+###########################
+##Code to produce figures for Manuscript 1
+##########################
 
-install.packages("patchwork")
-library(patchwork)
 
-## check to make sure temp regime is the same
-source("AspTempToggle.R")
+
+# code for temperature regime shift 
+source("A_sp_Temp_Toggle.R")
 source("Bsp_Temp_Toggle.R")
 source("CspTempToggle.R")
 source("D_sp_TempToggle.R")
+temp_df <- rbind(a_temp_adjust_df, b_temp_adjust_df ,c_temp_adjust_df ,d_temp_adjust_df)
 
+ggplot(data = temp_df, aes(temp_regime, temp_means/10000, color = V3))+
+  geom_line(size = 1)+
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  theme_bw()+
+  geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
+             size=1)+
+  xlab("Mean Annual Water Temperature in C")+
+  ylab("Relativized Abundance")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-(atemp + btemp)/(ctemp + dtemp) + plot_annotation(tag_levels = 'A')
-
-
+# code for fecundity sensitivity analysis
 source("A_sp_Fecundity_Toggle.R")
 source("B_sp_fecundity_Toggle.R")
 source("C_sp_FecundityToggle.R")
@@ -38,6 +49,7 @@ ggplot(data = fec_df, aes(fec_seq, y= fec_means/10000, color = V3))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
+# code for degree day sensitivity analysis
 source("A_sp_DD_toggle.R")
 source("B_sp_DD_toggle.R")
 source("CspDDToggle.R")
@@ -48,7 +60,7 @@ ggplot(data = dd_df, aes(dd_seq, dd_means/10000, color = V3)) +
   geom_point(size = 1, alpha = 0.5)+
   stat_smooth(method = "lm", 
               position = "identity",
-              fprmula = y~x, se = F)+
+              formula = y~x, se = F)+
   scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
   geom_vline(aes(xintercept = mean(add_df$dd_seq), color = "A"), linetype = "dotdash", 
              size=1)+
@@ -64,39 +76,122 @@ ggplot(data = dd_df, aes(dd_seq, dd_means/10000, color = V3)) +
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-
-(add + bdd)/(cdd + ddd) + plot_annotation(tag_levels = "A")
-summary(add_lm)
-summary(bdd_lm)
-summary(cdd_lm)
-summary(ddd_lm)
-
-
+# code for julian date based timing
 source("SpA_JulianPulse.R")
 source("SpB_JulianPulse.R")
 source("SpC_JulianPulse.R")
 source("SpD_JulianPulse.R")
 
-(ashort + bshort)/(cshort + dshort)+ plot_annotation(tag_levels = "A")
-(aresil + bresil)/(cresil + dresil)+ plot_annotation(tag_levels = "A")
-(along + blong)/(clong + dlong)+ plot_annotation(tag_levels = "A")
+julianshort <-rbind(ashort_df, bshort_df, cshort_df, dshort_df) 
+julianresil <- rbind(aresil_df, bresil_df, cresil_df, dresil_df)
+julianlong <- rbind(along_df, blong_df, clong_df, dlong_df)
 
+julianshort$ma <- rollmean(julianshort)
 
+# ggplot(data = julianshort, aes(x = all.dates, y = log(short_mean), color = V3))+
+#   geom_point(size = 1, alpha = 0.5)+
+#   stat_smooth(geom = "smooth", formula =y ~x)+
+#   scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+#   theme_bw()+
+#   #stat_poly_eq(parse=T, aes(label = ..eq.label..), formula=y ~ poly(x,3))+
+#   xlab("Julian Date")+
+#   ylab("Log Abundance")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+ggplot(data = julianresil, aes(x = all.dates, y = resil_mean/10000, color = V3))+
+  geom_point(size = 1, alpha = 0.5)+
+  stat_smooth(geom = "smooth", 
+              position = "identity", se = F)+
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  theme_bw()+
+  xlab("Julian Date")+
+  ylab("Relativized Abundance")+
+  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+ggplot(data = julianlong, aes(x = all.dates, y = long_mean/10000, color = V3))+
+  geom_point(size = 1, alpha = 0.5)+
+  stat_smooth(geom = "smooth",
+              position = "identity",
+              formula = y~x, se = F)+
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  theme_bw()+
+  xlab("Julian Date")+
+  ylab("Relativized Abundance")+
+  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle = 45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+# code for pulse magnitude figure
 source("SpA_PulseMagnitude.R")
 source("SpB_PulseMagnitude.R")
 source("SpC_PulseMagnitude.R")
 source("SpD_PulseMagnitude.R")
-(amag + bmag)/(cmag + dmag)+plot_annotation(tag_levels = "A")
 
+magnitude_df <- rbind(a_magnitude_df, b_magnitude_df, c_magnitude_df, d_magnitude_df)
+magnitude_df$magnitudes <- as.numeric(magnitude_df$magnitudes)
+magnitude_df$immediate_response <- as.numeric(magnitude_df$immediate_response)
 
+ggplot(data = magnitude_df, aes(x = magnitudes, y = log(immediate_response), color = V3))+
+  geom_line(size = 1)+
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  xlab("Pulse Disturbance Magnitude (proportion bankfull discharge)")+
+  ylab("Log Post-Pulse Relatived Abundance")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+# code for pulse frequency figure
 source("SpA_Frequency.R")
 source("SpB_Frequency.R")
 source("SpC_Frequency.R")
 source("SpD_Frequency.R")
-(a_imm + b_imm)/(c_imm + d_imm) + plot_annotation(tag_levels = "A")
-(a_short + b_short)/(c_short + d_short) + plot_annotation(tag_levels = "A")
-(a_long + b_long)/(c_long + d_long) + plot_annotation(tag_levels = "A")
 
+
+immediate_df <- rbind(a_immediate_df, b_immediate_df, c_immediate_df, d_immediate_df)
+immediate_df$immediate <- as.numeric(immediate_df$immediate)
+immediate_df$V2 <- as.numeric(immediate_df$V2)
+short_df <- rbind(a_short_df, b_short_df, c_short_df, d_short_df)
+short_df$short <- as.numeric(short_df$short)
+short_df$V2 <- as.numeric(short_df$V2)
+long_df <- rbind(a_long_df, b_long_df, c_long_df, d_long_df)
+long_df$long <- as.numeric(long_df$long)
+long_df$V2 <- as.numeric(long_df$V2)
+
+ggplot(data = immediate_df, aes(x = V2, y = immediate/10000, color = V3))+
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  geom_point(size = 1, alpha = 0.5)+
+  stat_smooth(se= F)+
+  xlab("Annual Frequency of Pulse Disturbance")+
+  ylab("Relativized Abundance")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+ggplot(data = short_df, aes(x = V2, y = short/10000, color = V3))+
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  geom_point(size = 1, alpha = 0.5)+
+  stat_smooth(se= F)+
+  xlab("Annual Frequency of Pulse Disturbance")+
+  ylab("Relativized Abundance")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+ggplot(data = long_df, aes(x = V2, y = long/10000, color = V3))+
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  geom_point(size = 1, alpha = 0.5)+
+  stat_smooth(se= F)+
+  xlab("Annual Frequency of Pulse Disturbance")+
+  ylab("Relativized Abundance")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+# code for temperature regime used in most runs where temp isn't adjusted
+source("SpA_Frequency.R")
 temp$dts <- as.Date(temp$dts, origin = "1970-01-01")
 ggplot(data = temp[1:27,], aes(dts, Temperature))+
   geom_line(size = 1)+
@@ -107,7 +202,8 @@ ggplot(data = temp[1:27,], aes(dts, Temperature))+
   theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
   axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-  
+# code for Temperature-Mortality relationship  
+source("NegExpSurv.R")
 ggplot(data = tempsurvdf, aes(x = tem, y = temSurv))+
   geom_line(size = 1)+
   xlab("Temperature C")+
@@ -115,4 +211,56 @@ ggplot(data = tempsurvdf, aes(x = tem, y = temSurv))+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-       
+
+# annual 
+source("Annual.R")
+ggplot(data = annual, aes(x = Date, y  =Abundance/10000, color = Taxa))+
+  geom_point(size = 1, alpha = 0.5)+
+  stat_smooth(size= 1, span = 0.4, se =F)+
+  xlab("Month")+
+  ylab("Relativized Abundance")+
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+# disturbance
+source("Annual.R")
+
+ggplot(data = pulse, aes(x = Date, y  =Abundance/10000, color = Taxa))+
+  geom_point(size = 1, alpha = 0.5)+
+  #geom_line(size = 1)+
+  stat_smooth(size= 1, span = 0.4, se =F)+
+  xlab("Month")+
+  ylab("Relativized Abundance")+
+  geom_vline(xintercept = as.numeric(as.Date("2035-04-24")), 
+             color = "black", 
+             lwd = 1,
+             linetype = "dotted") +
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+# press disturbance magnitude
+source("A_sp_press_mag.R")
+source("B_sp_press_mag.R")
+source("C_sp_press_mag.R")
+source("D_sp_press_mag.R")
+
+press_mag_df <- rbind(a_magnitude_df, b_magnitude_df, c_magnitude_df, d_magnitude_df)
+press_mag_df$magnitudes <- as.numeric(press_mag_df$magnitudes)
+press_mag_df$mag_response <- as.numeric(press_mag_df$mag_response)
+ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000, color = V3))+
+  geom_point(size = 1, alpha = 0.5)+
+  #geom_line()+
+  stat_smooth(size = 1, span = 0.4, se = F)+
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  xlab("Press Magnitude (Hydropeaking Index)")+
+  ylab("Relatived Abundance")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
