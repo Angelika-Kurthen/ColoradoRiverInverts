@@ -1,5 +1,5 @@
 ##################################
-## Sp  A Flood Pulse Magnitude
+## Sp A Flood Pulse Magnitude
 ##################################
 library(lubridate)
 # library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
@@ -30,9 +30,9 @@ Month <- month(temp$dts)
 
 discharge <- rep(0.1, length(temp$dts))
 
-magnitudes <- seq(0.11, 1, by = 0.01)
+magnitudes <- seq(0.11, 1, by = 0.04 )
 
-iterations <- 100
+iterations <- 99
 # Filter temp$dts to only include dates in the year 2035
 dates_2035 <- temp$dts[format(temp$dts, "%Y") == "2035"]
 
@@ -43,6 +43,16 @@ long_array <-array(data = NA, dim = c(26,iterations))
 immediate  <- array(data = NA, dim = c(26, length(magnitudes)))
 short <- array(data = NA, dim = c(26, length(magnitudes)))
 long <- array(data = NA, dim = c(26, length(magnitudes)))
+
+
+
+# Initializes the progress bar
+pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+                     max = length(magnitudes) * iterations * 26, # Maximum value of the progress bar
+                     style = 3,    # Progress bar style (also available style = 1 and style = 2)
+                     width = 50,   # Progress bar width. Defaults to getOption("width")
+                     char = "=")   # Character used to create the bar
+steps <- 0
 
 for (mts in 1:length(magnitudes)){ # iterate over each magnitude
   
@@ -66,6 +76,9 @@ for (mts in 1:length(magnitudes)){ # iterate over each magnitude
       imm_array[i,j] <- immediate_response
       short_array[i,j] <- short_term
       long_array[i,j] <- long_term
+      
+      steps<-steps+1
+      setTxtProgressBar(pb, steps)
     }
   }
   immediate[,mts] <- rowMeans(imm_array)
@@ -73,53 +86,46 @@ for (mts in 1:length(magnitudes)){ # iterate over each magnitude
   long[,mts] <- rowMeans(long_array)
 }
 
-immediate_df <- as.data.frame(cbind(immediate, seq(1:26)))
+immediate_df <- cbind.data.frame(immediate, seq(1:26))
 colnames(immediate_df) <- c(magnitudes, "frequency")
-immediate_df <- pivot_longer(immediate_df, cols = 1:9, names_to = "magnitude", values_to = "abundance")
-a_imm <- ggplot(data = immediate_df, aes(x = frequency, y = magnitude))+
-  geom_raster(aes(fill = abundance/10000), interpolate = TRUE)+
-  scale_fill_viridis_c() +
-  xlab("Pulse Frequency")+
-  ylab("Pulse Magnitude")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-  axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-  guides(fill=guide_legend(title="Sp A Relativized Abundance"))
+a_immediate_df <- pivot_longer(immediate_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
+a_immediate_df$magnitude <- as.numeric(a_immediate_df$magnitude)
 
-png("SpA_freq_v_mag_immediate.png")
-plot(a_imm)
-dev.off()
-
-
+# 
+# ggplot(data = immediate_df, aes(x = frequency, y = magnitude))+
+#   geom_raster(aes(fill = abundance/10000), interpolate = T)+
+#   scale_fill_viridis_c(option = "magma") +
+#   xlab("Pulse Frequency")+
+#   ylab("Pulse Magnitude")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#   axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+#   guides(fill=guide_legend(title="Sp A Relativized Abundance"))
+# 
+# 
   
-short_df <- as.data.frame(cbind(short, seq(1:26)))
+short_df <- cbind.data.frame(short, seq(1:26))
 colnames(short_df) <- c(magnitudes, "frequency")
-short_df <- pivot_longer(short_df, cols = 1:9, names_to = "magnitude", values_to = "abundance")
-a_short <- ggplot(data = short_df, aes(x = frequency, y = magnitude))+
-  geom_raster(aes(fill = abundance/10000), interpolate = TRUE)+
-  scale_fill_viridis_c() +
-  xlab("Pulse Frequency")+
-  ylab("Pulse Magnitude")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-  axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-  guides(fill=guide_legend(title="Sp A Relativized Abundance"))
+a_short_df <- pivot_longer(short_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
+a_short_df$magnitude <- as.numeric(a_short_df$magnitude)
 
-png("SpA_freq_v_mag_short.png")
-plot(a_short)
-dev.off()
+# png("SpA_freq_v_mag_short.png")
+# plot(a_short)
+# dev.off()
 
 
-long_df <- as.data.frame(cbind(long, seq(1:26)))
+long_df <- cbind.data.frame(long, seq(1:26))
 colnames(long_df) <- c(magnitudes, "frequency")
-short_df <- pivot_longer(long_df, cols = 1:9, names_to = "magnitude", values_to = "abundance")
-a_long <- ggplot(data = long_df, aes(x = frequency, y = magnitude))+
-  geom_raster(aes(fill = abundance/10000), interpolate = TRUE)+
-  scale_fill_viridis_c() +
-  xlab("Pulse Frequency")+
-  ylab("Pulse Magnitude")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-  axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-  guides(fill=guide_legend(title="Sp A Relativized Abundance"))
-
-png("SpA_freq_v_mag_long.png")
-plot(a_long)
-dev.off()
+a_long_df <- pivot_longer(long_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
+a_long_df$magnitude <- as.numeric(a_long_df$magnitude)
+# a_long <- ggplot(data = long_df, aes(x = frequency, y = magnitude))+
+#   geom_raster(aes(fill = abundance/10000), interpolate = F)+
+#   scale_fill_viridis_c() +
+#   xlab("Pulse Frequency")+
+#   ylab("Pulse Magnitude")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#   axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+#   guides(fill=guide_legend(title="Sp A Relativized Abundance"))
+# 
+# png("SpA_freq_v_mag_long.png")
+# plot(a_long)
+# dev.off()
