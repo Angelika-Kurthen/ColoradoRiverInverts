@@ -264,3 +264,52 @@ ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000, color = 
   theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
+
+# Press v Pulse Magnitude
+
+source("SpA_PressVPulse.R")
+source("SpB_PressVPulse.R")
+source("SpC_PressVPulse.R")
+source("SPD_PressVPulse.R")
+
+
+press_pulse <- rbind(a_immediate_df, b_immediate_df, c_immediate_df, d_immediate_df)
+
+ggplot(data = press_pulse, aes(x = Press_mag, y = Pulse_mag))+
+  geom_raster(aes(fill = log(abundance)), interpolate = F)+
+  scale_fill_viridis_c(option = "magma") +
+  geom_point(data = subset(press_pulse, abundance == 0), aes(x= Press_mag, y = Pulse_mag, shape = "Extirpated"))+
+  scale_color_grey()+
+  labs(shape = "") +
+  facet_wrap(~Taxa, ncol = 2)+
+  theme_bw()+
+  xlab("Press Magnitude")+
+  scale_y_discrete(breaks = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1))+
+  ylab("Pulse Magnitude")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+  axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  guides(fill=guide_legend(title="Log Abundance"))+
+  theme(strip.text.x = element_text(size = 14), 
+    strip.background = element_rect(
+      color="black", fill="white", linetype="solid"))+
+  theme(legend.margin = margin(-1,0,0,0, unit="cm"))
+
+press_pulse_short <- rbind(a_short_df, b_short_df, c_short_df, d_short_df)
+ggplot(data = press_pulse_short, aes(x = Press_mag, y = Pulse_mag))+
+  geom_raster(aes(fill = log(abundance)), interpolate = F)+
+  scale_fill_viridis_c(option = "magma") +
+  geom_point(data = subset(press_pulse, abundance == 0), aes(x= Press_mag, y = Pulse_mag, shape = "Extirpated"))+
+  scale_color_grey()+
+  labs(shape = "") +
+  facet_wrap(~Taxa, ncol = 2)+
+  theme_bw()+
+  xlab("Press Magnitude")+
+  scale_y_discrete(breaks = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1))+
+  ylab("Pulse Magnitude")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  guides(fill=guide_legend(title="Log Abundance"))+
+  theme(strip.text.x = element_text(size = 14), 
+        strip.background = element_rect(
+          color="black", fill="white", linetype="solid"))+
+  theme(legend.margin = margin(-1,0,0,0, unit="cm"))
