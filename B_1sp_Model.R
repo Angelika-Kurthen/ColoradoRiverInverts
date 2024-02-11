@@ -52,24 +52,24 @@ source("1spFunctions.R")
 # 
 # Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
 # 
-# temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
-# peaklist <- 0
-# peakeach <- length(temp$Temperature)
-# iteration <- 1
-# baselineK <- 10000
-# disturbanceK <- 40000
-# peaklist <- 0
-# peakeach <- length(temp$Temperature)
-# iteration <- 10
-# baselineK <- 10000
-# disturbanceK <- 40000
-# extinct = 50
-# discharge <- rep(0.1, time = length(temp$dts))
-# flow.data <- discharge
-# temp.data <- temp
-# Qmin <- 0.25
-# fecundity <- 200
-# dds <- 900
+#temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
+ #  peaklist <- 0
+ #  peakeach <- length(temp$Temperature)
+ # iteration <- 1
+ # baselineK <- 10000
+ # disturbanceK <- 40000
+ # peaklist <- 0
+ # peakeach <- length(temp$Temperature)
+ # iteration <- 1
+ # baselineK <- 10000
+ # disturbanceK <- 40000
+ # extinct = 50
+ # #discharge <- rep(0.1, time = length(temp$dts))
+ # flow.data <- discharge
+ # temp.data <- temp
+ #  Qmin <- 0.25
+ #  fecundity <- 1200
+ # dds <- 500
 
 Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 1200, dds = 500){
   
@@ -123,8 +123,8 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   output.N.list <- reparray
   
   Qmin <- Qmin
-  a <- 0.001
-  g <- 1
+  a <- 0.01
+  g <- 0.05
   h <- high$m$getPars()[2]  
   k <- high$m$getPars()[1] 
   
@@ -147,7 +147,7 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
     # Sets the progress bar to the current state
     # setTxtProgressBar(pb, iter)
   
-        K = Kb # need to reset K for each iteration
+        K <- Kb # need to reset K for each iteration
     
     # pull random values from a uniform distribution 
     #output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
@@ -247,14 +247,14 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       P1 <- (1-(1/((emergetime[t-1])/2))) *TempSurvival[t-1]
       P2 <- (1-(1/((emergetime[t-1])/2)))*TempSurvival[t-1]
       G1 <- (0.2/((emergetime[t-1])/2))*TempSurvival[t-1]
-      G2 <- (0.5/((emergetime[t-1])/2))*TempSurvival[t-1]
+      G2 <- (0.4/((emergetime[t-1])/2))*TempSurvival[t-1]
     }
 
       
       if (is.na(emergetime[t-1]) == T) {
         G1 <- (0.2/((-0.72 * temps$Temperature[t-1]) + 19.54))*TempSurvival[t-1]
         P1 <- (1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54)))*TempSurvival[t-1]
-        G2 <- (0.5/((-0.72 * temps$Temperature[t-1]) + 19.54))*TempSurvival[t-1]
+        G2 <- (0.4/((-0.72 * temps$Temperature[t-1]) + 19.54))*TempSurvival[t-1]
         P2 <- (1-(1/((-0.72 * temps$Temperature[t-1]) + 19.54)))*TempSurvival[t-1]
       }
       
@@ -306,6 +306,7 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   } #----------------------
   # End Outer Loop
   #----------------------
+  #return(Klist)
   return(output.N.list[ , 1:3, ])
 }
 
