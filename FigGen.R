@@ -269,7 +269,7 @@ ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000, color = 
 
 source("SpA_PressVPulse.R")
 source("SpB_PressVPulse.R")
-source("SpC_PressVPulse.R")
+ source("SpC_PressVPulse.R")
 source("SPD_PressVPulse.R")
 
 
@@ -313,3 +313,33 @@ ggplot(data = press_pulse_short, aes(x = Press_mag, y = Pulse_mag))+
         strip.background = element_rect(
           color="black", fill="white", linetype="solid"))+
   theme(legend.margin = margin(-1,0,0,0, unit="cm"))
+
+press_pulse_max <- rbind(a_max_df, b_max_df, c_max_df, d_max_df)
+ggplot(data = press_pulse_max, aes(x = Press_mag, y = Pulse_mag))+
+  geom_raster(aes(fill = log(abundance)), interpolate = F)+
+  scale_fill_viridis_c(option = "magma") +
+  geom_point(data = subset(press_pulse_max, abundance == 0), aes(x= Press_mag, y = Pulse_mag, shape = "Extirpated"))+
+  scale_color_grey()+
+  labs(shape = "") +
+  facet_wrap(~Taxa, ncol = 2)+
+  theme_bw()+
+  xlab("Press Magnitude")+
+  scale_y_discrete(breaks = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1))+
+  ylab("Pulse Magnitude")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  guides(fill=guide_legend(title="Log Abundance"))+
+  theme(strip.text.x = element_text(size = 14), 
+        strip.background = element_rect(
+          color="black", fill="white", linetype="solid"))+
+  theme(legend.margin = margin(-1,0,0,0, unit="cm"))
+
+# Pulse Disturbance Frequency vs Magnitude
+
+# either run these (take a long time)
+source("SpA_Freq_V_Mag.R")
+source("SpB_Freq_V_Mag.R")
+source("SpC_Freq_V_Mag.R")
+source("SpD_Freq_V_Mag.R")
+
+#or run them on the HPC and read in csv(still take a long time)
