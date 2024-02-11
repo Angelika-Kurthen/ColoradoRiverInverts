@@ -34,6 +34,7 @@ pulse_magnitudes <- seq(0.1, 1, by = 0.05 )
 
 immediate_response <- array(data= NA, dim = c(length(press_magnitudes), length(pulse_magnitudes)))
 short_response <-  array(data= NA, dim = c(length(press_magnitudes), length(pulse_magnitudes)))
+max_response <- array(data= NA, dim = c(length(press_magnitudes), length(pulse_magnitudes)))
 
 for (j in 1:length(pulse_magnitudes)){
 for (i in 1:length(press_magnitudes)){
@@ -42,6 +43,7 @@ for (i in 1:length(press_magnitudes)){
   m <- rowSums(out)
   immediate_response[i, j] <- m[which(temp$dts == selected_date)+1]
   short_response[i, j] <- mean(m[(which(temp$dts == selected_date) + 2):(which(temp$dts == selected_date) + 6)])
+  max_response[i,j] <- max(m[(which(temp$dts == selected_date)):(which(temp$dts == selected_date) + 6)])
 }
 }
 
@@ -65,6 +67,13 @@ colnames(short_df) <- c(pulse_magnitudes, "Press_mag")
 a_short_df <- pivot_longer(short_df, cols = 1:length(pulse_magnitudes), names_to = "Pulse_mag",  values_to = "abundance")
 a_short_df <- cbind.data.frame(a_short_df, rep("A", times = length(a_short_df$abundance)))
 colnames(a_short_df) <- c("Press_mag", "Pulse_mag", "abundance", "Taxa")
+
+
+max_df <- cbind.data.frame(max_response, press_magnitudes)
+colnames(max_df) <- c(pulse_magnitudes, "Press_mag")
+a_max_df <- pivot_longer(max_df, cols = 1:length(pulse_magnitudes), names_to = "Pulse_mag", values_to = "abundance")
+a_max_df <- cbind.data.frame(a_max_df, rep("A", times = length(a_max_df$abundance)))
+colnames(a_max_df) <- c("Press_mag", "Pulse_mag", "abundance", "Taxa")
 
 
 # ggplot(data = d_short_df, aes(x = Press_mag, y = Pulse_mag))+
