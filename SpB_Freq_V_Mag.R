@@ -1,10 +1,10 @@
 ##################################
-## Sp C Flood Pulse Magnitude
+## Sp B Flood Pulse Magnitude
 ##################################
 library(lubridate)
 # library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
-source("C_1sp_Model.R")
+source("B_1sp_Model.R")
 source("1spFunctions.R")
 Time <- c(1:36500)
 Date <- rep(1:365, times = 100)
@@ -25,7 +25,7 @@ temp <- TimestepTemperature(temp)
 temp <- temp[c(1,3)]
 
 Year <- year(temp$dts)
-uYear <- unique(Year)
+uYear <- unique(Year)a
 Month <- month(temp$dts)
 
 discharge <- rep(0.1, length(temp$dts))
@@ -65,7 +65,7 @@ for (mts in 1:length(magnitudes)){ # iterate over each magnitude
       # from that list of dates from above, assign a disturbance discharge date
       discharge[match(random_dates, temp$dts)] <- magnitudes[mts]
       # run model
-      out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature))
+      out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature))
       # create summary dataframe 
       sums <- rowSums(out)
       m <- cbind(sums[250:402], discharge[250:402])
@@ -88,10 +88,12 @@ for (mts in 1:length(magnitudes)){ # iterate over each magnitude
 
 immediate_df <- cbind.data.frame(immediate, seq(1:26))
 colnames(immediate_df) <- c(magnitudes, "frequency")
-c_immediate_df <- pivot_longer(immediate_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
-c_immediate_df$magnitude <- as.numeric(c_immediate_df$magnitude)
+b_immediate_df <- pivot_longer(immediate_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
+b_immediate_df$magnitude <- as.numeric(b_immediate_df$magnitude)
 
-# 
+write.csv(b_immediate_df, files = "SpB_FreqVMag_immediate.csv")
+
+
 # ggplot(data = immediate_df, aes(x = frequency, y = magnitude))+
 #   geom_raster(aes(fill = abundance/10000), interpolate = T)+
 #   scale_fill_viridis_c(option = "magma") +
@@ -105,8 +107,10 @@ c_immediate_df$magnitude <- as.numeric(c_immediate_df$magnitude)
   
 short_df <- cbind.data.frame(short, seq(1:26))
 colnames(short_df) <- c(magnitudes, "frequency")
-c_short_df <- pivot_longer(short_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
-c_short_df$magnitude <- as.numeric(c_short_df$magnitude)
+b_short_df <- pivot_longer(short_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
+b_short_df$magnitude <- as.numeric(b_short_df$magnitude)
+
+write.csv(b_short_df, file = "SpB_FreqVMag_short.csv")
 
 # png("SpA_freq_v_mag_short.png")
 # plot(a_short)
@@ -115,8 +119,10 @@ c_short_df$magnitude <- as.numeric(c_short_df$magnitude)
 
 long_df <- cbind.data.frame(long, seq(1:26))
 colnames(long_df) <- c(magnitudes, "frequency")
-c_long_df <- pivot_longer(long_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
-c_long_df$magnitude <- as.numeric(c_long_df$magnitude)
+b_long_df <- pivot_longer(long_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
+b_long_df$magnitude <- as.numeric(b_long_df$magnitude)
+
+write.csv(b_long_df, file = "SpB_FreqVMag_long.csv")
 # a_long <- ggplot(data = long_df, aes(x = frequency, y = magnitude))+
 #   geom_raster(aes(fill = abundance/10000), interpolate = F)+
 #   scale_fill_viridis_c() +

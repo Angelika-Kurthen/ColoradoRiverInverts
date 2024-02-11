@@ -90,7 +90,7 @@ immediate_df <- cbind.data.frame(immediate, seq(1:26))
 colnames(immediate_df) <- c(magnitudes, "frequency")
 a_immediate_df <- pivot_longer(immediate_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
 a_immediate_df$magnitude <- as.numeric(a_immediate_df$magnitude)
-
+write.csv(a_immediate_df, file = "SpA_FreqVMag_immediate.csv")
 # 
 # ggplot(data = immediate_df, aes(x = frequency, y = magnitude))+
 #   geom_raster(aes(fill = abundance/10000), interpolate = T)+
@@ -107,6 +107,7 @@ short_df <- cbind.data.frame(short, seq(1:26))
 colnames(short_df) <- c(magnitudes, "frequency")
 a_short_df <- pivot_longer(short_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
 a_short_df$magnitude <- as.numeric(a_short_df$magnitude)
+write.csv(a_short_df, file = "SpA_FreqVMag_short.csv")
 
 # png("SpA_freq_v_mag_short.png")
 # plot(a_short)
@@ -117,6 +118,8 @@ long_df <- cbind.data.frame(long, seq(1:26))
 colnames(long_df) <- c(magnitudes, "frequency")
 a_long_df <- pivot_longer(long_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
 a_long_df$magnitude <- as.numeric(a_long_df$magnitude)
+write.csv(a_long_df, file = "SpA_FreqVMag_long.csv")
+
 # a_long <- ggplot(data = long_df, aes(x = frequency, y = magnitude))+
 #   geom_raster(aes(fill = abundance/10000), interpolate = F)+
 #   scale_fill_viridis_c() +
