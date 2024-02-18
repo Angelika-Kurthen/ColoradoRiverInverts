@@ -43,15 +43,16 @@ for (i in 1:length(press_magnitudes)){
   m <- cbind.data.frame(temp$dts[250:last(m$timesteps)], m)
   colnames(m) <- c("time", 'timestep', "abund", "sd", "se")
   immediate_response[i, j] <- m$abund[which(m$time == selected_date)+1]
-  short_response[i, j] <- mean(m$abund[(which(m$time == selected_date) + 2):(which(temp$dts == selected_date) + 6)])
-  max_response[i,j] <- max(m$abund[(which(m$time == selected_date)):(which(temp$dts == selected_date) + 5)])
+  short_response[i, j] <- mean(m$abund[(which(m$time == selected_date) + 2):(which(m$time == selected_date) + 6)])
+  max_response[i,j] <- max(m$abund[(which(m$time == selected_date)):(which(m$time == selected_date) + 6)])
 }
 }
 
-plot(temp$dts[345:350], m$mean.abund[96:101]/10000, type = "l")
-lines(temp$dts[348:350], m[348:350]/10000, col = "red")
-lines(temp$dts[345:350], m[345:350]/10000, col ="green")
-lines(temp$dts[345:350], m[345:350]/10000, col = "blue")
+
+plot(temp$dts[344:350], m$mean.abund[95:101]/10000, type = "l")
+lines(temp$dts[344:350], m$mean.abund[95:101]/10000, col = "red")
+lines(temp$dts[344:350], m$mean.abund[95:101]/10000, col ="green")
+lines(temp$dts[344:350], m$mean.abund[95:101]/10000, col = "blue")
 #short_df <- as.data.frame(cbind(magnitudes, short_response))
 immediate_df <- as.data.frame(cbind(immediate_response, press_magnitudes))
 colnames(immediate_df) <- c(pulse_magnitudes, "Press_mag")

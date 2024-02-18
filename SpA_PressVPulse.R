@@ -26,7 +26,7 @@ temp <- TimestepTemperature(temp)
 temp <- temp[c(1,3)]
 
 discharge <- rep(0.1, length(temp$dts))
-selected_date <- temp$dts[temp$dts >= as.Date("2032-04-15") & temp$dts <= as.Date("2032-04-30")]
+selected_date <- temp$dts[temp$dts >= as.Date("2035-03-01") & temp$dts <= as.Date("2035-03-15")]
 
 
 press_magnitudes <- seq(0, 1, by = 0.1)
