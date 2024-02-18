@@ -1,8 +1,8 @@
 ##################################
 ## Sp B Flood Pulse Magnitude
 ##################################
-library(lubridate)
-# library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+#library(lubridate)
+library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
 source("B_1sp_Model.R")
 source("1spFunctions.R")
@@ -25,7 +25,7 @@ temp <- TimestepTemperature(temp)
 temp <- temp[c(1,3)]
 
 Year <- year(temp$dts)
-uYear <- unique(Year)a
+uYear <- unique(Year)
 Month <- month(temp$dts)
 
 discharge <- rep(0.1, length(temp$dts))
@@ -37,12 +37,12 @@ iterations <- 99
 dates_2035 <- temp$dts[format(temp$dts, "%Y") == "2035"]
 
 # create empty arrays to store results
-imm_array <- array(data = NA, dim = c(26, iterations))
-short_array <- array(data = NA, dim = c(26,iterations))
-long_array <-array(data = NA, dim = c(26,iterations))
-immediate  <- array(data = NA, dim = c(26, length(magnitudes)))
-short <- array(data = NA, dim = c(26, length(magnitudes)))
-long <- array(data = NA, dim = c(26, length(magnitudes)))
+imm_array <- array(data = NA, dim = c(27, iterations))
+short_array <- array(data = NA, dim = c(27,iterations))
+long_array <-array(data = NA, dim = c(27,iterations))
+immediate  <- array(data = NA, dim = c(27, length(magnitudes)))
+short <- array(data = NA, dim = c(27, length(magnitudes)))
+long <- array(data = NA, dim = c(27, length(magnitudes)))
 
 
 
@@ -58,24 +58,28 @@ for (mts in 1:length(magnitudes)){ # iterate over each magnitude
   
   for (j in 1:iterations){ # will want to repeat quite a few times
     # this is how often the disturbance occurs from once to every other week
-    for (i in 1:26){# Randomly select dates without replacement
+    for (i in 1:27){# Randomly select dates without replacement
       random_dates <- sample(dates_2035, i)
       # create a list of non-disturbance discharges
-      discharge <- rep(0.1, time = length(temp$dts))
-      # from that list of dates from above, assign a disturbance discharge date
-      discharge[match(random_dates, temp$dts)] <- magnitudes[mts]
+      if (i == 1) { # unless 0 disturbance regime
+        # Randomly select dates without replacement
+        discharge <- rep(0.1, time = length(temp$dts))
+        random_date <- sample(dates_2035, i)
+        discharge[match(random_date, temp$dts)] <- 0.1
+      }else{
+        # Randomly select dates without replacement
+        discharge <- rep(0.1, time = length(temp$dts))
+        random_date <- sample(dates_2035, i-1)
+        discharge[match(random_dates, temp$dts)] <- magnitudes[mts]
+      }
       # run model
-      out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature))
+      out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
       # create summary dataframe 
-      sums <- rowSums(out)
-      m <- cbind(sums[250:402], discharge[250:402])
-      last <- max(which(m[,2] == magnitudes[mts]))
-      immediate_response <- m[last+1,1]
-      short_term <- mean(m[(last + 2):(last + 6), 1])
-      long_term <- mean(m[(last + 26):(last + 36),1])
-      imm_array[i,j] <- immediate_response
-      short_array[i,j] <- short_term
-      long_array[i,j] <- long_term
+      m <- mean.data.frame(data = out, burnin = 250, iteration = 2)
+      m <- cbind.data.frame(temp$dts[250:last(m$timesteps)], m)  
+      colnames(m) <- c("time", 'timestep', "abund", "sd", "se")
+      imm_array[i,j] <- m$abund[which(m$time == last(random_date))+1]
+      short_array[i,j] <- max(m$abund[(which(m$time == last(random_date))):(which(m$time == last(random_date)) + 6)])
       
       steps<-steps+1
       setTxtProgressBar(pb, steps)
@@ -86,14 +90,12 @@ for (mts in 1:length(magnitudes)){ # iterate over each magnitude
   long[,mts] <- rowMeans(long_array)
 }
 
-immediate_df <- cbind.data.frame(immediate, seq(1:26))
+immediate_df <- cbind.data.frame(immediate, seq(0,26))
 colnames(immediate_df) <- c(magnitudes, "frequency")
 b_immediate_df <- pivot_longer(immediate_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
 b_immediate_df$magnitude <- as.numeric(b_immediate_df$magnitude)
-
-write.csv(b_immediate_df, files = "SpB_FreqVMag_immediate.csv")
-
-
+write.csv(a_immediate_df, file = "SpB_FreqVMag_immediate.csv")
+# 
 # ggplot(data = immediate_df, aes(x = frequency, y = magnitude))+
 #   geom_raster(aes(fill = abundance/10000), interpolate = T)+
 #   scale_fill_viridis_c(option = "magma") +
@@ -105,24 +107,23 @@ write.csv(b_immediate_df, files = "SpB_FreqVMag_immediate.csv")
 # 
 # 
   
-short_df <- cbind.data.frame(short, seq(1:26))
+short_df <- cbind.data.frame(short, seq(0,26))
 colnames(short_df) <- c(magnitudes, "frequency")
 b_short_df <- pivot_longer(short_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
 b_short_df$magnitude <- as.numeric(b_short_df$magnitude)
-
-write.csv(b_short_df, file = "SpB_FreqVMag_short.csv")
+write.csv(a_short_df, file = "SpB_FreqVMag_short.csv")
 
 # png("SpA_freq_v_mag_short.png")
 # plot(a_short)
 # dev.off()
 
-
-long_df <- cbind.data.frame(long, seq(1:26))
-colnames(long_df) <- c(magnitudes, "frequency")
-b_long_df <- pivot_longer(long_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
-b_long_df$magnitude <- as.numeric(b_long_df$magnitude)
-
-write.csv(b_long_df, file = "SpB_FreqVMag_long.csv")
+# 
+# long_df <- cbind.data.frame(long, seq(1:26))
+# colnames(long_df) <- c(magnitudes, "frequency")
+# a_long_df <- pivot_longer(long_df, cols = 1:length(magnitudes), names_to = "magnitude", values_to = "abundance")
+# a_long_df$magnitude <- as.numeric(a_long_df$magnitude)
+# write.csv(a_long_df, file = "SpA_FreqVMag_long.csv")
+# 
 # a_long <- ggplot(data = long_df, aes(x = frequency, y = magnitude))+
 #   geom_raster(aes(fill = abundance/10000), interpolate = F)+
 #   scale_fill_viridis_c() +
