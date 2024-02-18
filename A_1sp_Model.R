@@ -150,8 +150,8 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
         K = Kb # need to reset K for each iteration
     
     # pull random values from a uniform distribution 
-    #output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
-    output.N.list[1,1:3, iter]<- c(5000, 3000, 100)
+    output.N.list[1,1:3, iter]<- runif(3, min = 1, max = (0.3*K))
+    #utput.N.list[1,1:3, iter]<- c(5000, 3000, 100)
     
     # we often want to look at different parameter values after we run code, so we create some lists
     
