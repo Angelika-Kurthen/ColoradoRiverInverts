@@ -88,16 +88,16 @@ julianlong <- rbind(along_df, blong_df, clong_df, dlong_df)
 
 julianshort$ma <- rollmean(julianshort)
 
-# ggplot(data = julianshort, aes(x = all.dates, y = log(short_mean), color = V3))+
-#   geom_point(size = 1, alpha = 0.5)+
-#   stat_smooth(geom = "smooth", formula =y ~x)+
-#   scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
-#   theme_bw()+
-#   #stat_poly_eq(parse=T, aes(label = ..eq.label..), formula=y ~ poly(x,3))+
-#   xlab("Julian Date")+
-#   ylab("Log Abundance")+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+ggplot(data = julianshort, aes(x = all.dates, y = (short_mean), color = V3))+
+  geom_point(size = 1, alpha = 0.5)+
+  stat_smooth(geom = "smooth", formula =y ~x)+
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  theme_bw()+
+  #stat_poly_eq(parse=T, aes(label = ..eq.label..), formula=y ~ poly(x,3))+
+  xlab("Julian Date")+
+  ylab("Log Abundance")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 ggplot(data = julianresil, aes(x = all.dates, y = resil_mean/10000, color = V3))+
   geom_point(size = 1, alpha = 0.5)+
@@ -130,15 +130,15 @@ source("SpB_PulseMagnitude.R")
 source("SpC_PulseMagnitude.R")
 source("SpD_PulseMagnitude.R")
 
-magnitude_df <- rbind(a_magnitude_df, b_magnitude_df, c_magnitude_df, d_magnitude_df)
-magnitude_df$magnitudes <- as.numeric(magnitude_df$magnitudes)
-magnitude_df$immediate_response <- as.numeric(magnitude_df$immediate_response)
+# magnitude_df <- rbind(a_magnitude_df, b_magnitude_df, c_magnitude_df, d_magnitude_df)
+# magnitude_df$magnitudes <- as.numeric(magnitude_df$magnitudes)
+# magnitude_df$immediate_response <- as.numeric(magnitude_df$immediate_response)
 
 
 max_df <- rbind(a_short_df, b_short_df, c_short_df, d_short_df)
 max_df$magnitudes <- as.numeric(max_df$magnitudes)
 max_df$short_response <- as.numeric(max_df$short_response)
-ggplot(data = max_df, aes(x = magnitudes, y = (short_response), color = V3))+
+ggplot(data = max_df, aes(x = magnitudes, y = (short_response)/10000, color = V3))+
   geom_point(size = 1, alpha = 0.5)+
   stat_smooth(geom = "smooth",
 position = "identity",
