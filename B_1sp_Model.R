@@ -123,10 +123,13 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   output.N.list <- reparray
   
   Qmin <- Qmin
-  a <- 0.01
-  g <- 0.05
-  h <- high$m$getPars()[2]  
-  k <- high$m$getPars()[1] 
+  a <- 0.06
+  g <- 0.01
+  #h <- high$m$getPars()[2]  
+  #k <- high$m$getPars()[1] 
+  h <- med$m$getPars()[2]  
+  k <- med$m$getPars()[1] 
+  
   
   iterlist <- c(1:iterations)
   extinction <- extinct
@@ -285,13 +288,13 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       
       #s1
       output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t, 1, iter], k, h, Q[t-1], Qmin)
-      #s2Q
+      # #s2Q
       output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
-      
+      # 
       output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
-      
-      flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
-      
+      # 
+      #flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
+      # 
       #------------------------------------------------------
       # check extinction threshold and if below set to 0
       Total.N[t,iter] <- sum(output.N.list[t,,iter])

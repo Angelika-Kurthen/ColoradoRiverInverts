@@ -26,7 +26,7 @@ Year <- year(temp$dts)
 uYear <- unique(Year)
 Month <- month(temp$dts)
 
-selected_date <- temp$dts[temp$dts >= as.Date("2032-04-15") & temp$dts <= as.Date("2032-04-30")]
+selected_date <- temp$dts[temp$dts >= as.Date("2035-05-01") & temp$dts <= as.Date("2035-05-15")]
 selected_date <- sample(selected_date, 1)
 
 discharge <- rep(0.1, length(temp$dts))
@@ -34,26 +34,66 @@ discharge <- rep(0.1, length(temp$dts))
 magnitudes <- seq(0.1, 1, by = 0.05)
 immediate_response <- vector()
 short_response <- vector() 
+
 for (i in 1:length(magnitudes)){
     discharge[which(temp$dts == selected_date)] <- magnitudes[i]
     # calculate the response to the different magnitudes
-    out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 10, peaklist = 0, peakeach = length(temp$Temperature))
-    m <- rowSums(out)
-    immediate_response[i] <- m[which(temp$dts == selected_date)+1]
-    #short_response[i] <- mean(m[(which(temp$dts == selected_date) + 2):(which(temp$dts == selected_date) + 6)])
+    out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+    m <- mean.data.frame(data = out, burnin = 250, iteration = 2)
+    m <- cbind.data.frame(temp$dts[250:last(m$timesteps)], m)   
+    colnames(m) <- c("time", 'timestep', "mean.abund", "sd", "se")
+    immediate_response[i] <- m$mean.abund[which(m$time == selected_date)+1]
+    short_response[i] <- max(m$mean.abund[(which(m$time == selected_date)):(which(m$time == selected_date) + 6)])
   }
 # calculate immediate response to the different magnitudes
 
 b_magnitude_df <- as.data.frame(cbind(magnitudes, immediate_response, rep("B", times = length(immediate_response))))
-#short_df <- as.data.frame(cbind(magnitudes, short_response))
-
-# bmag <- ggplot(data = immediate_df, aes(x = magnitudes, y = immediate_response/10000))+
+b_short_df <- as.data.frame(cbind(magnitudes, short_response, rep("B", times = length(short_response))))
+b_short_df$magnitudes <- as.numeric (b_short_df$magnitudes) 
+b_short_df$short_response <- as.numeric(b_short_df$short_response)
+# bmag <- ggplot(data = b_short_df, aes(x = magnitudes, y = short_response/10000))+
 #   geom_line(size = 1, col = "#228833")+
 #   xlab("Discharge Magnitude (Proportion Bankfull)")+
 #   ylab("Sp B post pulse abundance relative to K")+
 #   theme_bw()+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
 #         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 # 
 # 
+# alph <- seq(0.01,1, by = 0.05)
+# tim <- seq(343, 349, by = 1)
 # 
+# for(ti in tim){
+# for (al in alph){
+#   selected_date <- temp$dts[ti]
+#   discharge <- rep(0.1, length(temp$dts))
+#   magnitudes <- seq(0.1, 1, by = 0.05)
+#   immediate_response <- vector()
+#   short_response <- vector() 
+#   for (i in 1:length(magnitudes)){
+#     discharge[which(temp$dts == selected_date)] <- magnitudes[i]
+#     # calculate the response to the different magnitudes
+#     out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature), alph = al)
+#     m <- mean.data.frame(data = out, burnin = 250, iteration = 2)
+#     m <- cbind.data.frame(temp$dts[250:last(m$timesteps)], m)   
+#     colnames(m) <- c("time", 'timestep', "mean.abund", "sd", "se")
+#     #immediate_response[i] <- m$mean.abund[which(m$time == selected_date)+1]
+#     short_response[i] <- max(m$mean.abund[(which(m$time == selected_date)):(which(m$time == selected_date) + 6)])
+#   }
+#   # calculate immediate response to the different magnitudes
+#   
+#   #b_magnitude_df <- as.data.frame(cbind(magnitudes, immediate_response, rep("B", times = length(immediate_response))))
+#   b_short_df <- as.data.frame(cbind(magnitudes, short_response, rep("B", times = length(short_response))))
+#   b_short_df$magnitudes <- as.numeric (b_short_df$magnitudes) 
+#   b_short_df$short_response <- as.numeric(b_short_df$short_response)
+#   bmag <- ggplot(data = b_short_df, aes(x = magnitudes, y = short_response/10000))+
+#     geom_line(size = 1, col = "#228833")+
+#     xlab("Discharge Magnitude (Proportion Bankfull)")+
+#     ylab("Sp B post pulse abundance relative to K")+
+#     theme_bw()+
+#     theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+#           axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+#   png(filename = paste0(al,"Bmag_himort", selected_date, ".png"))
+#   plot(bmag)
+#   dev.off()
+# }}

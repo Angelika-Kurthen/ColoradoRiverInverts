@@ -29,7 +29,7 @@ flow.surv.rate <- function(h, k, max, min, interval, Qmin) {
 
 
 mag <- c(0.3, 0.5, 0.75, 1, 3)
-mort <- c(0.3, 0.5, 0.8, 0.85, 0.999)
+mort <- c(0.3, 0.5, 0.7, 0.75, 0.9)
 high <- flow.surv.fit(mag, mort, 0.25)
 high.df <- flow.surv.rate(high$m$getPars()[2], high$m$getPars()[1],2, 0.001, 0.001, 0.25 )
 high.df <- as.data.frame(cbind(high.df, rep("High Response", times = length(high.df$Q))))

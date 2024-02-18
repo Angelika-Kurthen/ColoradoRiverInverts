@@ -32,7 +32,7 @@ out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, distur
 means.list.NZMS <- mean.data.frame(out,burnin = 50, iteration= 9)
 means.list.NZMS <- cbind(means.list.NZMS, temps$dts[1:length(means.list.NZMS$timesteps)])
 means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
-# plot abundance over time
+# plot abundance over 
 
 drift.data.total <- readDB(gear = "Drift", type = "Sample", updater = TRUE)
 
@@ -45,9 +45,45 @@ NZMS.samp$Density <- NZMS.samp$CountTotal/NZMS.samp$Volume
 
 NZMS.samp <- merge(NZMS.samp, discharge[, 3:4], by = "Date")
 NZMS.samp$Density <- (NZMS.samp$Density/(9e-15 *(NZMS.samp$X_00060_00003 * 0.02831683)^4.1))
-NZMS.samp <- aggregate(NZMS.samp$Density, list(NZMS.samp$Date), FUN = mean)
+#NZMS.samp <- aggregate(NZMS.samp$Density, list(NZMS.samp$Date), FUN = mean)
 
-means <- vector()
+max_visit <- vector()
+for (i in 1:length(temps$dts)){
+  d <- NZMS.samp[which(NZMS.samp$Date %within% interval(temps$dts[i], temps$dts[i+1] -1) == T),]
+  max_visit[i] <- length(d$Density)
+}
+
+# max_visit
+# R <- length(temps$dts)
+# J <- max(max_visit)
+
+
+abund <- vector()
+for (i in 1:length(temps$dts)){
+  d <- NZMS.samp[which(NZMS.samp$Date %within% interval(temps$dts[i], temps$dts[i+1]) == T),]
+  if (length(d$Density) == 0){
+    abund[i] <- NA
+  } else {
+    year <- as.data.frame(rep(year(temps$dts[i]),times = length(d$Density)))
+    year <- as.data.frame(year(temps$dts[i]))
+    colnames(year) <- c("year")
+    #mat <- matrix(nrow=1, ncol=length(d$Density), byrow=TRUE)
+    mat <- matrix(data = as.integer(d$Density), nrow = 1, ncol = length(d$Density))
+    df <- unmarkedFramePCount(mat, siteCovs=year, obsCovs=NULL)
+    K <- as.integer(max(NZMS.samp$Density, na.rm = T)+1000)
+    fm <- pcount(~year ~1, data = df, K) # fit a model
+  }
+}
+
+library(unmarked)
+year <- as.data.frame(as.character(year(temps$dts)))
+colnames(year) <- c("year")
+df <- unmarkedFramePCount(mat, siteCovs=year, obsCovs=NULL)
+fm <- pcount(~1 ~1, data = df, K=1167244, starts = c(0,1)) # fit a model
+
+
+
+fmmeans <- vector()
 for (i in 1:length(temps$dts)){
   d <- NZMS.samp[which(NZMS.samp$Group.1 %within% interval(temps$dts[i], temps$dts[i+1]) == T),]
   if (is.nan(mean(d$x)) == T) {
