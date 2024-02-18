@@ -123,8 +123,8 @@ Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   output.N.list <- reparray
   
   Qmin <- Qmin
-  a <- 0.001
-  g <- 1
+  a <- 0.05
+  g <- 0.01
   h <- med$m$getPars()[2]  
   k <- med$m$getPars()[1] 
   

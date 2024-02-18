@@ -50,23 +50,23 @@ source("1spFunctions.R")
 # Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
 # 
 # temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
-peaklist <- 0
-peakeach <- length(temp$Temperature)
-iteration <- 1
-baselineK <- 10000
-disturbanceK <- 40000
-peaklist <- 0
-peakeach <- length(temp$Temperature)
-iteration <- 10
-baselineK <- 10000
-disturbanceK <- 40000
-extinct = 50
-discharge <- rep(0.1, time = length(temp$dts))
-flow.data <- discharge
-temp.data <- temp
-Qmin <- 0.25
-fecundity <- 300
-dds <- 1500
+# peaklist <- 0
+# peakeach <- length(temp$Temperature)
+# iteration <- 1
+# baselineK <- 10000
+# disturbanceK <- 40000
+# peaklist <- 0
+# peakeach <- length(temp$Temperature)
+# iteration <- 10
+# baselineK <- 10000
+# disturbanceK <- 40000
+# extinct = 50
+# discharge <- rep(0.1, time = length(temp$dts))
+# flow.data <- discharge
+# temp.data <- temp
+# Qmin <- 0.25
+# fecundity <- 300
+# dds <- 1500
 
 Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 300, dds = 1500){
   
@@ -121,8 +121,8 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   
   
   Qmin <- Qmin
-  a <- 0.001
-  g <- 1
+  a <- 0.05
+  g <- 0.01
   h <- low$m$getPars()[2]  
   k <- low$m$getPars()[1] 
   
