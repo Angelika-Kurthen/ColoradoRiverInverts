@@ -1,5 +1,5 @@
 ##################################
-## Sp  A Flood Pulse Magnitude
+## Sp C Flood Pulse Magnitude
 ##################################
 library(lubridate)
 source("C_1sp_Model.R")
@@ -26,7 +26,7 @@ Year <- year(temp$dts)
 uYear <- unique(Year)
 Month <- month(temp$dts)
 
-selected_date <- temp$dts[temp$dts >= as.Date("2032-04-15") & temp$dts <= as.Date("2032-04-30")]
+selected_date <- temp$dts[temp$dts >= as.Date("2035-05-01") & temp$dts <= as.Date("2035-05-15")]
 selected_date <- sample(selected_date, 1)
 
 discharge <- rep(0.1, length(temp$dts))
@@ -37,15 +37,17 @@ short_response <- vector()
 for (i in 1:length(magnitudes)){
     discharge[which(temp$dts == selected_date)] <- magnitudes[i]
     # calculate the response to the different magnitudes
-    out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 10, peaklist = 0, peakeach = length(temp$Temperature))
-    m <- rowSums(out)
-    immediate_response[i] <- m[which(temp$dts == selected_date)+1]
-    #short_response[i] <- mean(m[(which(temp$dts == selected_date) + 2):(which(temp$dts == selected_date) + 6)])
-  }
+    out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+    m <- mean.data.frame(data = out, burnin = 250, iteration = 2)
+    m <- cbind.data.frame(temp$dts[250:last(m$timesteps)], m)   
+    colnames(m) <- c("time", 'timestep', "abund", "sd", "se")
+    immediate_response[i] <- m$abund[which(m$time == selected_date)+1]
+    short_response[i] <- max(m$abund[(which(m$time == selected_date)):(which(m$time == selected_date) + 6)])
+     }
 # calculate immediate response to the different magnitudes
 
 c_magnitude_df <- as.data.frame(cbind(magnitudes, immediate_response, rep("C", times = length(immediate_response))))
-#short_df <- as.data.frame(cbind(magnitudes, short_response))
+c_short_df <- as.data.frame(cbind(magnitudes, short_response, rep("C", times = length(immediate_response))))
 
 # cmag <- ggplot(data = immediate_df, aes(x = magnitudes, y = immediate_response/10000))+
 #   geom_line(size = 1, col = "#EE6677")+
