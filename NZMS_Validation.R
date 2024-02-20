@@ -54,9 +54,9 @@ for (i in 1:length(temps$dts)){
 }
 
 # max_visit
-# R <- length(temps$dts)
-# J <- max(max_visit)
-
+R <- length(temps$dts)
+J <- max(max_visit)
+m <- matrix(data = Na, nrow = R, ncol = J)
 
 abund <- vector()
 for (i in 1:length(temps$dts)){
@@ -67,15 +67,16 @@ for (i in 1:length(temps$dts)){
     year <- as.data.frame(rep(year(temps$dts[i]),times = length(d$Density)))
     year <- as.data.frame(year(temps$dts[i]))
     colnames(year) <- c("year")
-    #mat <- matrix(nrow=1, ncol=length(d$Density), byrow=TRUE)
-    mat <- matrix(data = as.integer(d$Density), nrow = 1, ncol = length(d$Density))
-    df <- unmarkedFramePCount(mat, siteCovs=year, obsCovs=NULL)
-    K <- as.integer(max(NZMS.samp$Density, na.rm = T)+1000)
-    fm <- pcount(~year ~1, data = df, K) # fit a model
+   #mat <- matrix(nrow=1, ncol=length(d$Density), byrow=TRUE)
+    m[i, ] <- matrix(data = as.integer(d$Density),nrow = 1)
+    #df <- unmarkedFramePCount(mat, siteCovs=year, obsCovs=NULL)
+    #K <- as.integer(max(NZMS.samp$Density, na.rm = T)+1000)
   }
 }
 
-library(unmarked)
+
+
+library(ubms)
 year <- as.data.frame(as.character(year(temps$dts)))
 colnames(year) <- c("year")
 df <- unmarkedFramePCount(mat, siteCovs=year, obsCovs=NULL)
