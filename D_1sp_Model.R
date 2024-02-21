@@ -110,7 +110,7 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
                    dim  <-c((length(timestep) +1 ), iterations),
                    dimnames <- list(1:(length(timestep) + 1), 1:iterations))
   
-  # create list of arrays w/ abundance data for each spp
+  # create list o1f arrays w/ abundance data for each spp
   reparray <- array(0,
                     
                     dim = c(length(timestep) + 1, 3, iterations),
@@ -121,8 +121,8 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   
   
   Qmin <- Qmin
-  a <- 0.05
-  g <- 0.01
+  a <- 0.01
+  g <- 0.075
   h <- low$m$getPars()[2]  
   k <- low$m$getPars()[1] 
   
@@ -304,5 +304,6 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   # End Outer Loop
   #----------------------
   return(output.N.list[ , 1:3, ])
+  #return(output.N.list[ ,3, ])
 }
 
