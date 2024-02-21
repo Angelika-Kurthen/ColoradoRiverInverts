@@ -150,6 +150,8 @@ formula = y~x, se = F)+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
+
+
 # code for pulse frequency figure
 source("SpA_Frequency.R")
 source("SpB_Frequency.R")
@@ -241,7 +243,7 @@ ggplot(data = annual, aes(x = Date, y  =Abundance/10000, color = Taxa))+
   #stat_smooth(size= 1, span = 0.4, se =F)+
   xlab("Month")+
   ylab("Relativized Abundance")+
-  ylim(c(0,80))+
+  ylim(c(0,120))+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme_bw()+
@@ -261,7 +263,7 @@ ggplot(data = pulse, aes(x = Date, y  =Abundance/10000, color = Taxa))+
              color = "black", 
              lwd = 1,
              linetype = "dotted") +
-  ylim(c(0,80))+
+  ylim(c(0,120))+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme_bw()+
@@ -369,3 +371,22 @@ source("SpC_Freq_V_Mag.R")
 source("SpD_Freq_V_Mag.R")
 
 #or run them on the HPC and read in csv(still take a long time)
+
+
+#code to make heatmap for K in response to Disturbance and time post disturbance
+source("kwireplot.R")
+ggplot(data = KQT, aes(x = t , y = Q))+
+  geom_raster(aes(fill = K), interpolate = F)+
+  scale_fill_viridis_c(option = "magma") +
+  scale_color_grey()+
+  labs(shape = "") +
+  theme_bw()+
+  xlab("Timesteps Post Disturbance")+
+  ylab("Disturbance Magnitude")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+      axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  guides(fill=guide_legend(title="K (carrying capacity)"))+
+  theme(strip.text.x = element_text(size = 14), 
+        strip.background = element_rect(
+          color="black", fill="white", linetype="solid"))+
+  theme(legend.margin = margin(-1,0,0,0, unit="cm"))
