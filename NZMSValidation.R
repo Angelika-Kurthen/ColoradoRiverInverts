@@ -146,3 +146,46 @@ abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
 #NZMS.samp.sum <- NZMS.samp.sum[which(NZMS.samp.sum$V1 %in% sample(NZMS.samp.sum$V1, size = 30)),]
 #forecast::auto.arima(NZMS.samp.sum$V2, ic = "bic")
 #NZMS.samp.sum$V2[2:125] <- diff(NZMS.samp.sum$V2, differences=1)
+
+
+
+
+install.packages("ubms")
+library(ubms)
+
+# need to fit our data to an unmarked frame
+
+# observations need to be in MxJ matrix, where M is # of sites and J is max number of obs per site
+
+# we measured over temps$dts (those are our timesteps)
+
+max_visits <- vector()
+for (i in 1:length(temps$dts)){
+  d <- NZMS.samp[which(NZMS.samp$Date >= temps$dts[i] & NZMS.samp$Date < temps$dts[i+1]), ]
+  max_visits[i] <- length(d$Date)
+  }
+
+R <- length(temps$dts)
+J <- max(max_visits)
+
+site_mat <- matrix(data = NA, nrow = R, ncol = J)
+flows <- vector()
+volumes <- matrix(data = NA, nrow = R, ncol = J)
+for (i in 1:length(temps$dts)){
+  d <- NZMS.samp[which(NZMS.samp$Date >= temps$dts[i] & NZMS.samp$Date < temps$dts[i+1]), ]
+  flows[i] <- mean(d$X_00060_00003)
+  site_mat[i, ] <- c(d$CountTotal, rep(NA, times = (J- length(d$CountTotal))))
+  volumes[i, ] <- c(d$Volume,rep(NA, times = (J- length(d$CountTotal))))
+}
+
+# we need to remove all timesteps that are just NAs
+# first identify all the timsteps that don't have data (so we can match them up later)
+nodata <- which(is.na(site_mat[,1]))
+length(temps$dts) - length(nodata)
+site_mat <- site_mat[-nodata,]
+flows <- flows[-nodata]
+volumes = volumes[-nodata]
+names(volumes) <- seq(1:19130)
+volumes <- as.matrix(volumes)
+
+unmarkedFramePCount(y = site_mat, siteCovs = flows, obsCovs = volumes)
