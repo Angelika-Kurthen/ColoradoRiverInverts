@@ -26,7 +26,7 @@ temp <- TimestepTemperature(temp)
 temp <- temp[c(1,3)]
 
 discharge <- rep(0.1, length(temp$dts))
-selected_date <- temp$dts[temp$dts >= as.Date("2035-03-01") & temp$dts <= as.Date("2035-03-15")]
+selected_date <- temp$dts[temp$dts >= as.Date("2035-05-01") & temp$dts <= as.Date("2035-05-15")]
 
 
 press_magnitudes <- seq(0, 1, by = 0.1)
@@ -39,11 +39,13 @@ max_response <- array(data= NA, dim = c(length(press_magnitudes), length(pulse_m
 for (j in 1:length(pulse_magnitudes)){
 for (i in 1:length(press_magnitudes)){
   discharge[which(temp$dts == selected_date)] <- pulse_magnitudes[j]
-  out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = press_magnitudes[i], peakeach = length(temp$Temperature))
-  m <- rowSums(out)
-  immediate_response[i, j] <- m[which(temp$dts == selected_date)+1]
-  short_response[i, j] <- mean(m[(which(temp$dts == selected_date) + 2):(which(temp$dts == selected_date) + 6)])
-  max_response[i,j] <- max(m[(which(temp$dts == selected_date)):(which(temp$dts == selected_date) + 6)])
+  out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = press_magnitudes[i], peakeach = length(temp$Temperature))
+  m <- mean.data.frame(out, burnin = 250, iteration = 2)
+  m <- cbind.data.frame(temp$dts[250:last(m$timesteps)], m)
+  colnames(m) <- c("time", 'timestep', "abund", "sd", "se")
+  immediate_response[i, j] <- m$abund[which(m$time == selected_date)+1]
+  short_response[i, j] <- mean(m$abund[(which(m$time == selected_date) + 2):(which(m$time == selected_date) + 6)])
+  max_response[i,j] <- max(m$abund[(which(m$time == selected_date)):(which(m$time == selected_date) + 6)])
 }
 }
 
@@ -76,7 +78,7 @@ c_max_df <- cbind.data.frame(c_max_df, rep("C", times = length(c_max_df$abundanc
 colnames(c_max_df) <- c("Press_mag", "Pulse_mag", "abundance", "Taxa")
 
 
-# ggplot(data = d_short_df, aes(x = Press_mag, y = Pulse_mag))+
+# ggplot(data = a_immediate_df, aes(x = Press_mag, y = Pulse_mag))+
 #   geom_raster(aes(fill = abundance/10000), interpolate = TRUE)+
 #   scale_fill_viridis_c() +
 #   xlab("Press Magnitude")+

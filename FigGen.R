@@ -219,6 +219,20 @@ ggplot(data = tempsurvdf, aes(x = tem, y = temSurv))+
   theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
+# code for flood pulse mortalty curves
+df <- as.data.frame(rbind(med.df, low.df))
+
+ggplot(df, aes(x = Q, y = Survival, col = Response))+
+  geom_line(linewidth = 1)+
+  coord_cartesian(ylim = c(0,1)) +
+  ylab('Immediate Post-Disturbance Survival') +
+  scale_color_manual(name = " ", labels=c("High Survival", "Low Survival"), values=c("#feb078","#2c115f"))+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  xlab('Max Event Discharge/Bankfull Discharge')
+
+
 # annual 
 source("Annual.R")
 ggplot(data = annual, aes(x = Date, y  =Abundance/10000, color = Taxa))+
