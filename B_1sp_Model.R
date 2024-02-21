@@ -123,8 +123,8 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   output.N.list <- reparray
   
   Qmin <- Qmin
-  a <- 0.06
-  g <- 0.01
+  a <- 0.01
+  g <- 0.075
   #h <- high$m$getPars()[2]  
   #k <- high$m$getPars()[1] 
   h <- med$m$getPars()[2]  
@@ -311,5 +311,6 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   #----------------------
   #return(Klist)
   return(output.N.list[ , 1:3, ])
+  #return(output.N.list[ , 3, ])
 }
 
