@@ -123,8 +123,8 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   output.N.list <- reparray
   
   Qmin <- Qmin
-  a <- 0.05
-  g <- 0.01
+  a <- 0.01
+  g <- 0.075
   h <- med$m$getPars()[2]  
   k <- med$m$getPars()[1] 
   
@@ -307,5 +307,6 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   # End Outer Loop
   #----------------------
   return(output.N.list[ , 1:3, ])
+  #return(output.N.list[ ,3, ])
 }
 
