@@ -57,5 +57,27 @@ c_short_df <- as.data.frame(cbind(magnitudes, short_response, rep("C", times = l
 #   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
 #         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 # 
-
-
+#-----------------------
+# selected_date <- temp$dts[temp$dts >= as.Date("2035-05-01") & temp$dts <= as.Date("2035-05-08")]
+# selected_date <- sample(selected_date, 1)
+# 
+# discharge <- rep(0.1, length(temp$dts))
+# 
+# magnitudes <- seq(0.1, 1, by = 0.05)
+# immediate_response <- vector()
+# short_response <- vector() 
+# for (i in 1:length(magnitudes)){
+#   discharge[which(temp$dts == selected_date)] <- magnitudes[i]
+#   # calculate the response to the different magnitudes
+#   out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature))
+#   m <- cbind.data.frame(temp$dts[250:length(out)], out[-c(1:249)])
+#   colnames(m) <- c("time", "abund")
+#   immediate_response[i] <- m$abund[which(m$time == selected_date)+1]
+#   short_response[i] <- max(m$abund[(which(m$time == selected_date)):(which(m$time == selected_date) + 6)])
+# }
+# # calculate immediate response to the different magnitudes
+# 
+# c_S3magnitude_df <- as.data.frame(cbind(magnitudes, immediate_response, rep("C", times = length(immediate_response))))
+# c_S3short_df <- as.data.frame(cbind(magnitudes, short_response, rep("C", times = length(immediate_response))))
+# 
+# 
