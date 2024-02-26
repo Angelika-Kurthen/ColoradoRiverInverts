@@ -45,6 +45,9 @@ NZMS.samp$Density <- NZMS.samp$CountTotal/NZMS.samp$Volume
 
 NZMS.samp <- merge(NZMS.samp, discharge[, 3:4], by = "Date")
 NZMS.samp$Density <- (NZMS.samp$Density/(9e-15 *(NZMS.samp$X_00060_00003 * 0.02831683)^4.1))
+write.csv(NZMS.samp, "NZMSsamp.csv")
+
+
 NZMS.samp <- aggregate(NZMS.samp$Density, list(NZMS.samp$Date), FUN = mean)
 
 means <- vector()
@@ -153,6 +156,8 @@ abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
 install.packages("ubms")
 library(ubms)
 
+NZMS.samp <- read.csv("NZMSsamp.csv", header = T)
+
 # need to fit our data to an unmarked frame
 
 # observations need to be in MxJ matrix, where M is # of sites and J is max number of obs per site
@@ -169,23 +174,107 @@ R <- length(temps$dts)
 J <- max(max_visits)
 
 site_mat <- matrix(data = NA, nrow = R, ncol = J)
+dens_mat <- matrix(data = NA, nrow = R, ncol = J)
 flows <- vector()
 volumes <- matrix(data = NA, nrow = R, ncol = J)
 for (i in 1:length(temps$dts)){
   d <- NZMS.samp[which(NZMS.samp$Date >= temps$dts[i] & NZMS.samp$Date < temps$dts[i+1]), ]
   flows[i] <- mean(d$X_00060_00003)
   site_mat[i, ] <- c(d$CountTotal, rep(NA, times = (J- length(d$CountTotal))))
-  volumes[i, ] <- c(d$Volume,rep(NA, times = (J- length(d$CountTotal))))
+  dens_mat[i, ] <- c(as.integer(d$Density), rep (NA, times = (J - length(d$Density))))
+  volumes[i, ] <- c(scale(d$Volume),rep(NA, times = (J- length(d$CountTotal))))
 }
 
 # we need to remove all timesteps that are just NAs
 # first identify all the timsteps that don't have data (so we can match them up later)
 nodata <- which(is.na(site_mat[,1]))
 length(temps$dts) - length(nodata)
-site_mat <- site_mat[-nodata,]
-flows <- flows[-nodata]
-volumes = volumes[-nodata]
-names(volumes) <- seq(1:19130)
-volumes <- as.matrix(volumes)
+site_mat <- as.matrix(site_mat[-nodata,])
+dens_mat <- as.matrix(dens_mat[-nodata, ])
+flows <- as.data.frame(flows[-nodata])
+volumes <- as.matrix(volumes[-nodata, ])
+dimnames(volumes) <- list(temps$dts[-nodata], seq(1:48))
 
-unmarkedFramePCount(y = site_mat, siteCovs = flows, obsCovs = volumes)
+
+volumes <- list(volumes)
+names(volumes) <- c("vol")
+
+dat <- unmarkedFramePCount(y = site_mat, siteCovs = flows, obsCovs = volumes)
+dat_dens <- unmarkedFramePCount(y = dens_mat, siteCovs = flows, obsCovs = volumes)
+# Model with no covariates or random effect on abundance
+mod_null <- stan_pcount(~ 1 ~1, dat, K=10453,
+                        chains=3, iter=2000, seed=123, prior_coef_det = logistic(0.69, 0.97), log_lik = F)
+mod_vol <- stan_pcount(~scale(vol)~1, dat, K = 10453, chains = 3, iter = 2000, seed= 123,prior_coef_det = logistic(0, 1), log_lik= F)
+
+mod_um <- pcount(~1~1, dat, K = 10453)
+mod_um_vol <- pcount(~ scale(vol) ~1 , dat, K = 10453)
+fmList <- fitList(Null=mod_um_dens, vol = mod_um_dens_vol)
+# Model selection
+modSel(fmList, nullmod="Null")
+
+# Function returning three fit-statistics.
+fitstats <- function(fm, na.rm=TRUE) {
+  observed <- getY(fm@data)
+  expected <- fitted(fm)
+  resids <- residuals(fm)
+  sse <- sum(resids^2, na.rm=na.rm)
+  chisq <- sum((observed - expected)^2 / expected, na.rm=na.rm)
+  freeTuke <- sum((sqrt(observed) - sqrt(expected))^2, na.rm=na.rm)
+  out <- c(SSE=sse, Chisq=chisq, freemanTukey=freeTuke)
+  return(out)
+}
+(pb <- parboot(mod_um_dens, fitstats, nsim=25, report=1))
+plot(pb, main="")
+# Finite-sample inference for a derived parameter.
+# Population size in sampled area
+Nhat <- function(fm) {
+  sum(bup(ranef(fm, K=50)))
+}
+set.seed(345)
+(pb.N <- parboot(fm, Nhat, nsim=25, report=5))
+# Compare to empirical Bayes confidence intervals
+colSums(confint(ranef(fm, K=50)))
+
+# Estimates of conditional abundance distribution at each site
+(re <- ranef(fm))
+# Best Unbiased Predictors
+bup(re, stat="mean") # Posterior mean
+bup(re, stat="mode") # Posterior mode
+confint(re, level=0.9) # 90% CI
+# Plots
+plot(re, subset=site %in% c(1:10), layout=c(5, 2), xlim=c(-1,20))
+
+mod_um_dens <- pcount(~1 ~1, dat_dens, K = 1176244)
+mod_um_dens_vol <- pcount(~scale(vol) ~1, dat_dens, K = 1176244)
+
+
+dens_mod_mull <- stan_pcount(~1 ~1, dat_dens, K = 1176244, chains = 3, iter = 2000, seed = 123, log_lik = T)
+
+# occupancy to get global p 
+site_mat[site_mat >0] <- 1
+occu_dat <- unmarkedFramePCount(y = site_mat, siteCovs = flows, obsCovs = volumes)
+
+occu_mod_null <- stan_occu(~1 ~1, occu_dat, chains = 3, iter = 2000)
+occu_mod_vol <- stan_occu(~scale(vol)~1, occu_dat, chains = 3, iter = 2000)
+
+#posterior
+names(mod_um)
+## [1] "beta_state[(Intercept)]" "beta_det[(Intercept)]"
+occ_intercept <- extract(mod_um, "det")[[1]]
+hist(occ_intercept, freq=FALSE)
+lines(density(occ_intercept), col='red', lwd=2)
+
+#Compare the models
+#First we combine the models into a fitList:
+mods <- fitList(mod_um, mod_um_vol)
+#Then we generate a model selection table:
+round(modSel(mods), 3)
+#the model with the largest elpd performed best
+plot_residuals(mod_um_vol, submodel="det")
+fit_top_gof <- gof(mod_um_vol, raws=100, quiet=TRUE)
+
+prob_det <- predict(mod_um_vol, submodel="det")
+# from predicted detection probabilities, get range
+range(prob_det$Predicted, na.rm = T)
+
+
