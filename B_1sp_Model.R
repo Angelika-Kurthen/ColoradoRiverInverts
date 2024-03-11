@@ -71,7 +71,7 @@ source("1spFunctions.R")
  #  fecundity <- 1200
  # dds <- 500
 
-Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 1200, dds = 500){
+Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 1200, dds = 500, stage_output = "all"){
   
   # set up model
   source("NegExpSurv.R")
@@ -310,7 +310,11 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   # End Outer Loop
   #----------------------
   #return(Klist)
-  return(output.N.list[ , 1:3, ])
-  #return(output.N.list[ , 3, ])
+  if (stage_output == "all"){
+    return(output.N.list[ , 1:3, ])
+  }
+  if (stage_output == "3"){
+  return(output.N.list[ , 3, ])
+  }
 }
 
