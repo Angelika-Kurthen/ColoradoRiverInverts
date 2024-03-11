@@ -3,7 +3,7 @@
 ##################################
 #library(lubridate)
 library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-
+library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 source("D_1sp_Model.R")
 source("1spFunctions.R")
 Time <- c(1:36500)
