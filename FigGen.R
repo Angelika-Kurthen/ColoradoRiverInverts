@@ -138,14 +138,14 @@ source("SpD_PulseMagnitude.R")
 max_df <- rbind(a_short_df, b_short_df, c_short_df, d_short_df)
 max_df$magnitudes <- as.numeric(max_df$magnitudes)
 max_df$short_response <- as.numeric(max_df$short_response)
-ggplot(data = max_df, aes(x = magnitudes, y = (short_response)/10000, color = V3))+
+ggplot(data = max_df, aes(x = magnitudes, y = log(short_response), color = V3))+
   geom_point(size = 1, alpha = 0.5)+
   stat_smooth(geom = "smooth",
 position = "identity",
 formula = y~x, se = F)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
   xlab("Pulse Disturbance Magnitude (proportion bankfull discharge)")+
-  ylab("Log Post-Pulse Relatived Abundance")+
+  ylab("Log Post-Pulse Abundance")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
@@ -171,10 +171,10 @@ long_df$V2 <- as.numeric(long_df$V2)
 
 ggplot(data = immediate_df, aes(x = V2, y = immediate/10000, color = V3))+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
-  geom_point(size = 1, alpha = 0.5)+
+  #geom_point(size = 1, alpha = 0.5)+
   stat_smooth(se= F)+
   xlab("Annual Frequency of Pulse Disturbance")+
-  ylab("Relativized Abundance")+
+  ylab("Log Abundance")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
@@ -184,7 +184,7 @@ ggplot(data = short_df, aes(x = V2, y = short/10000, color = V3))+
   geom_point(size = 1, alpha = 0.5)+
   stat_smooth(se= F)+
   xlab("Annual Frequency of Pulse Disturbance")+
-  ylab("Relativized Abundance")+
+  ylab("Log Abundance")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
@@ -237,13 +237,15 @@ ggplot(df, aes(x = Q, y = Survival, col = Response))+
 
 # annual 
 source("Annual.R")
-ggplot(data = annual, aes(x = Date, y  =Abundance/10000, color = Taxa))+
-  geom_point(size = 1, alpha = 0.5)+
-  geom_line(size = 1)+
+ggplot(data = annual, aes(x = Date, y  = 
+                            log(Abundance), color = Taxa))+
+  #geom_point(size = 1, alpha = 0.5)+
+  geom_line(size = 1, alpha = 0.8)+
   #stat_smooth(size= 1, span = 0.4, se =F)+
   xlab("Month")+
-  ylab("Relativized Abundance")+
-  ylim(c(0,120))+
+  ylab("Abundance")+
+  ylim(c(5, 18))+
+  #ylim(c(0, 5000000))+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme_bw()+
@@ -253,17 +255,19 @@ ggplot(data = annual, aes(x = Date, y  =Abundance/10000, color = Taxa))+
 # disturbance
 source("Annual.R")
 #
-ggplot(data = pulse, aes(x = Date, y  =Abundance/10000, color = Taxa))+
-  geom_point(size = 1, alpha = 0.5)+
-  geom_line(size = 1)+
+ggplot(data = pulse, aes(x = Date, y  =
+                           log(Abundance), color = Taxa))+
+  #geom_point(size = 1, alpha = 0.5)+
+  geom_line(size = 1, alpha = 0.8)+
  # stat_smooth(size= 1, span = 0.4, se =F)+
+  ylim(c(5, 18))+
+  #ylim(c(0, 5000000))+
   xlab("Month")+
-  ylab("Relativized Abundance")+
+  ylab("Abundance")+
   geom_vline(xintercept = as.numeric(as.Date("2035-05-08")), 
              color = "black", 
              lwd = 1,
              linetype = "dotted") +
-  ylim(c(0,120))+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme_bw()+
@@ -303,13 +307,24 @@ source("SPD_PressVPulse.R")
 
 press_pulse <- rbind(a_immediate_df, b_immediate_df, c_immediate_df, d_immediate_df)
 
+TaxaNames <- list(
+  'A'="Stonefly",
+  'B'="Mayfly",
+  'C'="Caddisfly",
+  'D'="Beetle"
+)
+
+Taxa_labeller <- function(variable,value){
+  return(TaxaNames[value])
+}
+
 ggplot(data = press_pulse, aes(x = Press_mag, y = Pulse_mag))+
   geom_raster(aes(fill = log(abundance)), interpolate = F)+
   scale_fill_viridis_c(option = "magma") +
   geom_point(data = subset(press_pulse, abundance == 0), aes(x= Press_mag, y = Pulse_mag, shape = "Extirpated"))+
   scale_color_grey()+
   labs(shape = "") +
-  facet_wrap(~Taxa, ncol = 2)+
+  facet_wrap(~Taxa, nrow =2, labeller = Taxa_labeller)+
   theme_bw()+
   xlab("Press Magnitude")+
   scale_y_discrete(breaks = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1))+
@@ -322,6 +337,9 @@ ggplot(data = press_pulse, aes(x = Press_mag, y = Pulse_mag))+
       color="black", fill="white", linetype="solid"))+
   theme(legend.margin = margin(-1,0,0,0, unit="cm"))
 
+
+
+
 press_pulse_short <- rbind(a_short_df, b_short_df, c_short_df, d_short_df)
 ggplot(data = press_pulse_short, aes(x = Press_mag, y = Pulse_mag))+
   geom_raster(aes(fill = log(abundance)), interpolate = F)+
@@ -329,7 +347,7 @@ ggplot(data = press_pulse_short, aes(x = Press_mag, y = Pulse_mag))+
   geom_point(data = subset(press_pulse, abundance == 0), aes(x= Press_mag, y = Pulse_mag, shape = "Extirpated"))+
   scale_color_grey()+
   labs(shape = "") +
-  facet_wrap(~Taxa, ncol = 2)+
+  facet_wrap(~Taxa, ncol = 2, labeller = Taxa_labeller)+
   theme_bw()+
   xlab("Press Magnitude")+
   scale_y_discrete(breaks = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1))+
@@ -349,7 +367,7 @@ ggplot(data = press_pulse_max, aes(x = Press_mag, y = Pulse_mag))+
   geom_point(data = subset(press_pulse_max, abundance == 0), aes(x= Press_mag, y = Pulse_mag, shape = "Extirpated"))+
   scale_color_grey()+
   labs(shape = "") +
-  facet_wrap(~Taxa, ncol = 2)+
+  facet_wrap(~Taxa, ncol = 2, labeller = Taxa_labeller)+
   theme_bw()+
   xlab("Press Magnitude")+
   scale_y_discrete(breaks = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1))+
@@ -390,3 +408,24 @@ ggplot(data = KQT, aes(x = t , y = Q))+
         strip.background = element_rect(
           color="black", fill="white", linetype="solid"))+
   theme(legend.margin = margin(-1,0,0,0, unit="cm"))
+
+
+spA <- read.csv(file = "SpA_FreqVMag_short.csv")
+ggplot(data = spA, aes(x = frequency, y = magnitude))+
+  geom_raster(aes(fill = log(abundance)), interpolate = F)+
+  scale_fill_viridis_c(option = "magma")
+
+spAim <- read.csv(file = "SpA_FreqVMag_immediate.csv")
+ggplot(data = spAim, aes(x = frequency, y = magnitude))+
+  geom_raster(aes(fill = log(abundance)), interpolate = F)+
+  scale_fill_viridis_c(option = "magma")
+
+spB <- read.csv(file = "SpB_FreqVMag_short.csv")
+ggplot(data = spB, aes(x = frequency, y = magnitude))+
+  geom_raster(aes(fill = log(abundance)), interpolate = F)+
+  scale_fill_viridis_c(option = "magma")
+
+spBim <- read.csv(file = "SpB_FreqVMag_immediate.csv")
+ggplot(data = spBim, aes(x = frequency, y = magnitude))+
+  geom_raster(aes(fill= log(abundance)), interpolate  =F)+
+  scale_fill_viridis_c(option = "magma")
