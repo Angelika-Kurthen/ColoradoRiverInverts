@@ -3,31 +3,31 @@
 ###########################
 
 # 
-library(purrr)
-library(tidyverse)
-library(lubridate)
-library(plyr)
-library(dplyr)
-library(ggplot2)
+#library(purrr)
+#library(tidyverse)
+#library(lubridate)#
+#library(plyr)
+#library(dplyr)
+#library(ggplot2)
 # data retrieval tool from USGS
-library(dataRetrieval)
+#library(dataRetrieval)
 
 #Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 #We have to manually load all tidyverse packages
-# library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(forcats, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(plyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(forcats, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(plyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
+library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
-source("BAETSurvivorship.R")
-source("1spFunctions.R")
+source("/home/ib/kurthena/ColoradoRiverInverts/BAETSurvivorship.R")
+source("/home/ib/kurthena/ColoradoRiverInverts/BAETSurvivorship.R/1spFunctions.R")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 #flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
