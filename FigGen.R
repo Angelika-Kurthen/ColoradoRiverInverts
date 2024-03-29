@@ -243,10 +243,10 @@ ggplot(data = annual, aes(x = Date, y  =
   geom_line(size = 1, alpha = 0.8)+
   #stat_smooth(size= 1, span = 0.4, se =F)+
   xlab("Month")+
-  ylab("Abundance")+
+  ylab("Log Abundance")+
   ylim(c(5, 18))+
   #ylim(c(0, 5000000))+
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
@@ -254,21 +254,46 @@ ggplot(data = annual, aes(x = Date, y  =
 
 # disturbance
 source("Annual.R")
-#
-ggplot(data = pulse, aes(x = Date, y  =
+threeyear
+ggplot(data = threeyear, aes(x = Date, y  =
                            log(Abundance), color = Taxa))+
   #geom_point(size = 1, alpha = 0.5)+
-  geom_line(size = 1, alpha = 0.8)+
+  geom_line(size = 0.8, alpha = 0.7)+
  # stat_smooth(size= 1, span = 0.4, se =F)+
   ylim(c(5, 18))+
   #ylim(c(0, 5000000))+
   xlab("Month")+
-  ylab("Abundance")+
+  ylab("Log Abundance")+
   geom_vline(xintercept = as.numeric(as.Date("2035-05-08")), 
              color = "black", 
              lwd = 1,
              linetype = "dotted") +
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+  scale_x_date(date_labels="%B", date_breaks  ="3 month")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+threeyear[which(threeyear$Date == "2034-05-09"),]
+threeyear[which(threeyear$Date == "2036-05-07"),]
+threeyear[which(threeyear$Date == "2037-05-06"),]
+
+source("Annual.R")
+
+ggplot(data = pulse, aes(x = Date, y  =
+                           log(Abundance), color = Taxa))+
+  #geom_point(size = 1, alpha = 0.5)+
+  geom_line(size = 1, alpha = 0.8)+
+  # stat_smooth(size= 1, span = 0.4, se =F)+
+  ylim(c(5, 18))+
+  #ylim(c(0, 5000000))+
+  xlab("Month")+
+  ylab("Log Abundance")+
+  geom_vline(xintercept = as.numeric(as.Date("2035-05-08")), 
+             color = "black", 
+             lwd = 1,
+             linetype = "dotted") +
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
@@ -392,7 +417,7 @@ source("SpD_Freq_V_Mag.R")
 
 
 #code to make heatmap for K in response to Disturbance and time post disturbance
-source("kwireplot.R")
+source("Kwireplot.R")
 ggplot(data = KQT, aes(x = t , y = Q))+
   geom_raster(aes(fill = K), interpolate = F)+
   scale_fill_viridis_c(option = "magma") +
