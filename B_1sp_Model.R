@@ -125,6 +125,7 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   Qmin <- Qmin
   a <- 0.01
   g <- 0.075
+  #g <- 0.125
   #h <- high$m$getPars()[2]  
   #k <- high$m$getPars()[1] 
   h <- med$m$getPars()[2]  
