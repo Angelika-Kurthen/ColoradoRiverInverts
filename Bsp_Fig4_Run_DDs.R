@@ -43,18 +43,18 @@ temp <- temp[c(1,3)]
 # what if we iterated fecundities 
 dds <- seq(375,625, by = 12.5)
 # # Initializes the progress bar
-# pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
-#                      max = length(fecs),  # Maximum value of the progress bar
-#                      style = 3,    # Progress bar style (also available style = 1 and style = 2)
-#                      width = 50,   # Progress bar width. Defaults to getOption("width")
-#                      char = "=")   # Character used to create the bar
+ pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+                     max = length(s]),  # Maximum value of the progress bar
+                     style = 3,    # Progress bar style (also available style = 1 and style = 2)
+                     width = 50,   # Progress bar width. Defaults to getOption("width")
+                     char = "=")   # Character used to create the bar
 all.dates <- unique(format(temp$dts, "%m-%d"))[order(unique(format(temp$dts, "%m-%d")))]
 IDT <- vector()
 IDT.ratio <- vector()
 
 for (f in 1:length(dds)) {
   # Sets the progress bar to the current state
-  # setTxtProgressBar(pb, f)
+   setTxtProgressBar(pb, f)
   # loop to select a date from a Week-Month combo from each unique year
   means <- list()
   for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
@@ -67,6 +67,7 @@ for (f in 1:length(dds)) {
     source("B_1sp_Model.R")
     # run model
     out <- Bmodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0, peakeach = length(temp$Temperature), dds = dds[f])
+    # create summary dataframe 
     m <- mean.data.frame(out, burnin = 250, iteration = 9)
     means[d] <- list(m)
   }
@@ -77,19 +78,24 @@ for (f in 1:length(dds)) {
   jday.df$all.dates <- yday(as.Date(jday.df$all.dates, "%m-%d"))
   IDT[f] <- max(jday.df$jday_max)-min(jday.df$jday_max)
   IDT.ratio[f] <- min(jday.df$jday_max)/max(jday.df$jday_max)
-  # close(pb) # close progress bar
+  close(pb) # close progress bar
 }
 
-IDT.df <- as.data.frame(cbind(IDT, fecs))
-ggplot(data = IDT.df, aes(x = fecs, y = IDT))+
+IDT.df <- as.data.frame(cbind(IDT, dds))
+IDT.df1 <- ggplot(data = IDT.df, aes(x = dds, y = IDT))+
   geom_line(linewidth = 1)+
   ylab('Importance of Disturbance Timing') +
-  xlab("Mean Fecundity")+
+  xlab("Mean Degree Days")+
   theme_bw()
 
-IDT.ratio.df <- as.data.frame(cbind(IDT.ratio, fecs))
-ggplot(data = IDT.ratio.df, aes(x = fecs, y = IDT.ratio))+
-  geom_line(linewidth = 1)+
-  ylab('Importance of Disturbance Timing')+
-  xlab("Mean Fecundity")+
-  theme_bw()
+#IDT.ratio.df1 <- IDT.ratio.df <- as.data.frame(cbind(IDT.ratio, dds))
+#ggplot(data = IDT.ratio.df, aes(x = dds, y = IDT.ratio))+
+#  geom_line(linewidth = 1)+
+#  ylab('Importance of Disturbance Timing')+
+#  xlab("Mean Fecundity")+
+#  theme_bw()
+  
+pdf("IDT_DegreeDay")
+print(IDT.df1)
+
+dev.off()
