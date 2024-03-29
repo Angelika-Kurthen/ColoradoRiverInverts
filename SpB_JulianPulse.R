@@ -45,7 +45,7 @@ for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
   discharge[match(temp$dts[samp], dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
   
   # run model
-  out <- Bmodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Bmodel(discharge, dates, baselineK = 10000, disturbanceK = 1000000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
   # create summary dataframe 
   m <- mean.data.frame(out, burnin = 250, iteration = 2)
   m <- cbind(m, discharge[250:402])
