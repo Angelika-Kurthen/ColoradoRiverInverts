@@ -42,18 +42,18 @@ for (d in 1:length(all.dates)){ # 30 reps takes 60 mins
   samp <- which(temp$dts == sample(sample_dates[which(sample_dates > temp$dts[300] & sample_dates < temp$dts[2508])], size = 1))
   dates <- temp[(samp-300):(samp+100),]
   discharge <- rep(0.1, time = length(dates$dts)) # create a list of non-disturbance discharges
-  discharge[match(temp$dts[samp], dates$dts)] <- 0.3 # from that list of dates from above, assign a disturbance discharge to that date
+  discharge[match(temp$dts[samp], dates$dts)] <- 1 # from that list of dates from above, assign a disturbance discharge to that date
   
   source("C_1sp_Model.R")
   # run model
-  out <- Cmodel(discharge, dates, baselineK = 10000, disturbanceK = 1000000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Cmodel(discharge, dates, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
   # create summary dataframe 
   m <- mean.data.frame(out, burnin = 250, iteration = 2)
   m <- cbind(m, discharge[250:402])
   means[d] <- list(m)
-  short_abund <- means[[d]][which(discharge[250:402] == "0.3"), 2]
-  resil_abund <- means[[d]][(which(discharge[250:402] == "0.3") + 1):(which(discharge[250:402] == "0.3") + 6), 2]
-  long_abund <- means[[d]][(which(discharge[250:402] == "0.3") + 26):(which(discharge[250:402] == "0.3") + 36), 2]
+  short_abund <- means[[d]][which(discharge[250:402] == 1), 2]
+  resil_abund <- means[[d]][(which(discharge[250:402] == 1) + 1):(which(discharge[250:402] == 1) + 6), 2]
+  long_abund <- means[[d]][(which(discharge[250:402] == 1) + 26):(which(discharge[250:402] == 1) + 36), 2]
   #post <- seq(0, 10, by = 1)
   #dat <- rep(d, times = length(post))
   #jday_data <- as.data.frame(rbind(jday_data, cbind(dat, post, abund)))
