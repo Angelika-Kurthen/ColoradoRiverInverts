@@ -39,13 +39,13 @@ max_response <- array(data= NA, dim = c(length(press_magnitudes), length(pulse_m
 for (j in 1:length(pulse_magnitudes)){
 for (i in 1:length(press_magnitudes)){
   discharge[which(temp$dts == selected_date)] <- pulse_magnitudes[j]
-  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = press_magnitudes[i], peakeach = length(temp$Temperature))
+  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 1000000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = press_magnitudes[i], peakeach = length(temp$Temperature))
   m <- mean.data.frame(out, burnin = 250, iteration = 2)
   m <- cbind.data.frame(temp$dts[250:last(m$timesteps)], m)
   colnames(m) <- c("time", 'timestep', "abund", "sd", "se")
   immediate_response[i, j] <- m$abund[which(m$time == selected_date)+1]
   short_response[i, j] <- mean(m$abund[(which(m$time == selected_date) + 2):(which(m$time == selected_date) + 6)])
-  max_response[i,j] <- max(m$abund[(which(m$time == selected_date)):(which(m$time == selected_date) + 6)])
+  max_response[i,j] <- max(m$abund[(which(m$time == selected_date)):(which(m$time == selected_date) + 9)])
 }
 }
 
