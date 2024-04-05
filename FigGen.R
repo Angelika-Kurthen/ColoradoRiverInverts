@@ -61,7 +61,7 @@ ggplot(data = dd_df, aes(dd_seq, dd_means/10000, color = V3)) +
   stat_smooth(method = "lm", 
               position = "identity",
               formula = y~x, se = F)+
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   geom_vline(aes(xintercept = mean(add_df$dd_seq), color = "A"), linetype = "dotdash", 
              size=1)+
   geom_vline(aes(xintercept = mean(bdd_df$dd_seq),color = "B" ), linetype="dotted", 
@@ -81,29 +81,27 @@ source("SpA_JulianPulse.R")
 source("SpB_JulianPulse.R")
 source("SpC_JulianPulse.R")
 source("SpD_JulianPulse.R")
-
+library(zoo)
 julianshort <-rbind(ashort_df, bshort_df, cshort_df, dshort_df) 
 julianresil <- rbind(aresil_df, bresil_df, cresil_df, dresil_df)
 julianlong <- rbind(along_df, blong_df, clong_df, dlong_df)
 
-julianshort$ma <- rollmean(julianshort)
-
-ggplot(data = julianshort, aes(x = all.dates, y = (short_mean), color = V3))+
-  geom_point(size = 1, alpha = 0.5)+
-  stat_smooth(geom = "smooth", formula =y ~x)+
-  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
-  theme_bw()+
-  #stat_poly_eq(parse=T, aes(label = ..eq.label..), formula=y ~ poly(x,3))+
-  xlab("Julian Date")+
-  ylab("Log Abundance")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# ggplot(data = julianshort, aes(x = all.dates, y = (short_mean), color = V3))+
+#   geom_point(size = 1, alpha = 0.5)+
+#   stat_smooth(geom = "smooth", formula =y ~x)+
+#   scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+#   theme_bw()+
+#   #stat_poly_eq(parse=T, aes(label = ..eq.label..), formula=y ~ poly(x,3))+
+#   xlab("Julian Date")+
+#   ylab("Log Abundance")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 ggplot(data = julianresil, aes(x = all.dates, y = resil_mean/10000, color = V3))+
   geom_point(size = 1, alpha = 0.5)+
   stat_smooth(geom = "smooth", 
               position = "identity", se = F)+
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   theme_bw()+
   xlab("Julian Date")+
   ylab("Relativized Abundance")+
@@ -111,18 +109,18 @@ ggplot(data = julianresil, aes(x = all.dates, y = resil_mean/10000, color = V3))
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-ggplot(data = julianlong, aes(x = all.dates, y = long_mean/10000, color = V3))+
-  geom_point(size = 1, alpha = 0.5)+
-  stat_smooth(geom = "smooth",
-              position = "identity",
-              formula = y~x, se = F)+
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
-  theme_bw()+
-  xlab("Julian Date")+
-  ylab("Relativized Abundance")+
-  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(angle = 45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# ggplot(data = julianlong, aes(x = all.dates, y = long_mean/10000, color = V3))+
+#   geom_point(size = 1, alpha = 0.5)+
+#   stat_smooth(geom = "smooth",
+#               position = "identity",
+#               formula = y~x, se = F)+
+#   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+#   theme_bw()+
+#   xlab("Julian Date")+
+#   ylab("Relativized Abundance")+
+#   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(angle = 45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 # code for pulse magnitude figure
 source("SpA_PulseMagnitude.R")
@@ -143,7 +141,7 @@ ggplot(data = max_df, aes(x = magnitudes, y = log(short_response), color = V3))+
   stat_smooth(geom = "smooth",
 position = "identity",
 formula = y~x, se = F)+
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   xlab("Pulse Disturbance Magnitude (proportion bankfull discharge)")+
   ylab("Log Post-Pulse Abundance")+
   theme_bw()+
@@ -164,13 +162,13 @@ immediate_df$immediate <- as.numeric(immediate_df$immediate)
 immediate_df$V2 <- as.numeric(immediate_df$V2)
 short_df <- rbind(a_short_df, b_short_df, c_short_df, d_short_df)
 short_df$short <- as.numeric(short_df$short)
-short_df$V2 <- as.numeric(short_df$V2)
+short_df$short_response <- as.numeric(short_df$short_response)
 long_df <- rbind(a_long_df, b_long_df, c_long_df, d_long_df)
 long_df$long <- as.numeric(long_df$long)
 long_df$V2 <- as.numeric(long_df$V2)
 
 ggplot(data = immediate_df, aes(x = V2, y = immediate/10000, color = V3))+
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   #geom_point(size = 1, alpha = 0.5)+
   stat_smooth(se= F)+
   xlab("Annual Frequency of Pulse Disturbance")+
@@ -179,8 +177,8 @@ ggplot(data = immediate_df, aes(x = V2, y = immediate/10000, color = V3))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-ggplot(data = short_df, aes(x = V2, y = short/10000, color = V3))+
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+ggplot(data = short_df, aes(x = all.dates, y = short/10000, color = V3))+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   geom_point(size = 1, alpha = 0.5)+
   stat_smooth(se= F)+
   xlab("Annual Frequency of Pulse Disturbance")+
@@ -190,7 +188,7 @@ ggplot(data = short_df, aes(x = V2, y = short/10000, color = V3))+
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 ggplot(data = long_df, aes(x = V2, y = long/10000, color = V3))+
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   geom_point(size = 1, alpha = 0.5)+
   stat_smooth(se= F)+
   xlab("Annual Frequency of Pulse Disturbance")+
@@ -256,14 +254,14 @@ ggplot(data = annual, aes(x = Date, y  =
 source("Annual.R")
 threeyear
 ggplot(data = threeyear, aes(x = Date, y  =
-                           log(Abundance), color = Taxa))+
+                           (Abundance)/100000, color = Taxa))+
   #geom_point(size = 1, alpha = 0.5)+
   geom_line(size = 0.8, alpha = 0.7)+
  # stat_smooth(size= 1, span = 0.4, se =F)+
-  ylim(c(5, 18))+
+  #ylim(c(5, 18))+
   #ylim(c(0, 5000000))+
   xlab("Month")+
-  ylab("Log Abundance")+
+  ylab("Abundance")+
   geom_vline(xintercept = as.numeric(as.Date("2035-05-08")), 
              color = "black", 
              lwd = 1,
@@ -314,7 +312,7 @@ ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000, color = 
   geom_point(size = 1, alpha = 0.5)+
   #geom_line()+
   stat_smooth(size = 1, span = 0.4, se = F)+
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   xlab("Press Magnitude (Hydropeaking Index)")+
   ylab("Relatived Abundance")+
   theme_bw()+
@@ -454,3 +452,6 @@ spBim <- read.csv(file = "SpB_FreqVMag_immediate.csv")
 ggplot(data = spBim, aes(x = frequency, y = magnitude))+
   geom_raster(aes(fill= log(abundance)), interpolate  =F)+
   scale_fill_viridis_c(option = "magma")
+
+# multivoltinism
+
