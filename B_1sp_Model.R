@@ -317,5 +317,9 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   if (stage_output == "3"){
   return(output.N.list[ , 3, ])
   }
+  
+  if (stage_output == "size"){
+    return(sizelist)
+  }
 }
 
