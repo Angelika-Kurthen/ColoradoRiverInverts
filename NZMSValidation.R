@@ -32,47 +32,21 @@ out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, distur
 means.list.NZMS <- mean.data.frame(out,burnin = 50, iteration= 9)
 means.list.NZMS <- cbind(means.list.NZMS, temps$dts[1:length(means.list.NZMS$timesteps)])
 means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
-# plot abundance over time
-
-drift.data.total <- readDB(gear = "Drift", type = "Sample", updater = TRUE)
-
-drift.LF <- drift.data.total[which(drift.data.total$RiverMile >= -6 & drift.data.total$RiverMile <= 0),]
-
-NZMS.samp.LF <- sampspec(samp = drift.LF, species = "NZMS", stats = T)
-NZMS.samp <- merge(NZMS.samp.LF$Statistics, NZMS.samp.LF$Samples, by = "BarcodeID", all = T)
-NZMS.samp <- NZMS.samp[which(NZMS.samp$GearID == 4),] 
-NZMS.samp$Density <- NZMS.samp$CountTotal/NZMS.samp$Volume
-
-NZMS.samp <- merge(NZMS.samp, discharge[, 3:4], by = "Date")
-NZMS.samp$Density <- (NZMS.samp$Density/(9e-15 *(NZMS.samp$X_00060_00003 * 0.02831683)^4.1))
-write.csv(NZMS.samp, "NZMSsamp.csv")
-
-
-NZMS.samp <- aggregate(NZMS.samp$Density, list(NZMS.samp$Date), FUN = mean)
-
-means <- vector()
-for (i in 1:length(temps$dts)){
-  d <- NZMS.samp[which(NZMS.samp$Group.1 %within% interval(temps$dts[i], temps$dts[i+1]) == T),]
-  if (is.nan(mean(d$x)) == T) {
-    s = NA
-  } else {
-    s<- mean(d$x)}
-  means <- append(means, s)
-}
-
-
-NZMS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.NZMS$`temps$dts`, format = "%Y-%m-%d"), means[51:406])))
-NZMS.samp.sum$V1 <- as.Date(NZMS.samp.sum$V1, origin = "1970-01-01")
 
 # culling data by lags - Temporal autocorrelation: a neglected factor in the study of behavioral repeatability and plasticity  
 
-cor.df <- left_join(NZMS.samp.sum, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
-cor.lm <- lm((cor.df$mean.abund) ~ (cor.df$V2))
-cor.test((cor.df$V2+1), (cor.df$mean.abund+1), method = "spearman")
+source(NMix_HPC.R)
+
+
+
+
+cor.df <- left_join(estimate, means.list.NZMS, by=c('date'="temps$dts"), copy = T)
+cor.lm <- lm((cor.df$mean.abund) ~ (cor.df$est/vols))
+cor.test((cor.df$est), (cor.df$mean.abund+1), method = "spearman")
 
 NZMS.samp.sum1 <- NZMS.samp.sum %>% slice(which(row_number() %% 3 == 0))
 NZMS.samp.sum2 <- NZMS.samp.sum %>%  slice(which(row_number() %% 3 == 1))
-NZMS.samp.sum3 <- NZMS.samp.sum %>%  slice(which(row_number() %% 3 == 2))
+NZMS.samp.sum3 <- NZMS.samp.sum %>%  slice(which(row_number() %%  3 == 2))
   
 cor.df1 <- left_join(NZMS.samp.sum1, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
 cor.lm1 <- lm(cor.df1$mean.abund ~ cor.df1$V2)
@@ -93,7 +67,7 @@ rho <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate))
 sd <- sd(c(rho1$estimate, rho2$estimate, rho3$estimate))
 
 summary(cor.df)
-ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
+ggplot(data = cor.df, aes(x = (est) , y = (mean.abund)))+
   geom_point()+
   stat_smooth(method = "lm",
               formula = y ~ x,
@@ -124,6 +98,9 @@ abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%B", date_breaks  ="6 months")
+
+
+
 
 # ggplot(data = adults, aes(x = Time,
 #                                    y = Adult, group = 1)) +
