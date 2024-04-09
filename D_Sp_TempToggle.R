@@ -52,6 +52,22 @@ d_temp_adjust_df <- as.data.frame(cbind(temp_regime, temp_means, rep("D", times 
 d_temp_adjust_df$temp_regime <- as.numeric(d_temp_adjust_df$temp_regime)
 d_temp_adjust_df$temp_means <- as.numeric(d_temp_adjust_df$temp_means)
 
+
+
+size_means <- vector()
+for (te in 1:length(temp_seq)){
+  temp$Temperature <- temp$Temperature + temp_seq[te]
+  temp_regime[te] <- mean(temp$Temperature)
+  out <- Dmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "size")
+  temp$Temperature <- temp$Temperature - temp_seq[te]
+  size_means[te] <- mean(out)
+}
+
+size_means <- 0.0077*(size_means)^2.910  # multiply relative size (which is also biologically plausible) by Benke et al 1999 Table 2 a and b params (M(mg) = aL^b) 
+
+d_size_df <- as.data.frame(cbind(temp_regime, size_means, rep("D", times = length(temp_means))))
+d_size_df$temp_regime <- as.numeric(d_size_df$temp_regime)
+d_size_df$size_means <- as.numeric(d_size_df$size_means)
 # ctemp <- ggplot(data = temp_adjust_df, mapping = aes(x = temp_seq, y = temp_means/10000))+
 #   geom_line(size = 1, col = "#EE6677")+
 # xlab("Degree C Change")+
