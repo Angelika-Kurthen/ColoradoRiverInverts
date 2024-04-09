@@ -51,6 +51,23 @@ for (te in 1:length(temp_seq)){
 b_temp_adjust_df <- as.data.frame(cbind(temp_regime, temp_means, rep("B", times = length(temp_means))))
 b_temp_adjust_df$temp_regime <- as.numeric(b_temp_adjust_df$temp_regime)
 b_temp_adjust_df$temp_means <- as.numeric(b_temp_adjust_df$temp_means)
+
+
+size_means <- vector()
+for (te in 1:length(temp_seq)){
+  temp$Temperature <- temp$Temperature + temp_seq[te]
+  temp_regime[te] <- mean(temp$Temperature)
+  out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "size")
+  temp$Temperature <- temp$Temperature - temp_seq[te]
+  size_means[te] <- mean(out)
+}
+size_means <- 0.0071*(size_means)^2.832  # multiply relative size (which is also biologically plausible) by Benke et al 1999 Table 2 a and b params (M(mg) = aL^b) 
+
+b_size_df <- as.data.frame(cbind(temp_regime, size_means, rep("B", times = length(temp_means))))
+b_size_df$temp_regime <- as.numeric(b_size_df$temp_regime)
+b_size_df$size_means <- as.numeric(b_size_df$size_means)
+
+
 # #
 # 
 # btemp <- ggplot(data = temp_adjust_df, mapping = aes(x = temp_seq, y = temp_means/10000))+
