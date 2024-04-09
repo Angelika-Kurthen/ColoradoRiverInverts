@@ -31,7 +31,7 @@ selected_date <- sample(selected_date, 1)
 
 discharge <- rep(0.1, length(temp$dts))
 
-magnitudes <- seq(0.1, 1, by = 0.05)
+magnitudes <- seq(0.1, 2, by = 0.05)
 immediate_response <- vector()
 short_response <- vector() 
 
