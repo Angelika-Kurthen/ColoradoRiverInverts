@@ -22,6 +22,33 @@ ggplot(data = temp_df, aes(temp_regime, temp_means/10000, color = V3))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
+
+size_df <- rbind(a_size_df, b_size_df, c_size_df, d_size_df)
+
+ggplot(data = size_df, aes(temp_regime, size_means, size_means, color = V3))+
+  geom_line(size = 1, alpha = 0.8)+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+  theme_bw()+
+  geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
+             size=1)+
+  xlab("Mean Annual Water Temperature in C")+
+  ylab("Mean Annual Biomass (mg)")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+size_df$totbiomass <- temp_df$temp_means * size_df$size_means
+ggplot(data = size_df, aes(temp_regime, totbiomass, size_means, color = V3))+
+  geom_line(size = 1, alpha = 0.8)+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+  theme_bw()+
+  geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
+             size=1)+
+  xlab("Mean Annual Water Temperature in C")+
+  ylab("Mean Total Annual Biomass (mg)")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+
 # code for fecundity sensitivity analysis
 source("A_sp_Fecundity_Toggle.R")
 source("B_sp_fecundity_Toggle.R")
@@ -433,13 +460,10 @@ ggplot(data = KQT, aes(x = t , y = Q))+
   theme(legend.margin = margin(-1,0,0,0, unit="cm"))
 
 
+# code to make heatmaps for pulse Freq v Mag
+
 spA <- read.csv(file = "SpA_FreqVMag_short.csv")
 ggplot(data = spA, aes(x = frequency, y = magnitude))+
-  geom_raster(aes(fill = log(abundance)), interpolate = F)+
-  scale_fill_viridis_c(option = "magma")
-
-spAim <- read.csv(file = "SpA_FreqVMag_immediate.csv")
-ggplot(data = spAim, aes(x = frequency, y = magnitude))+
   geom_raster(aes(fill = log(abundance)), interpolate = F)+
   scale_fill_viridis_c(option = "magma")
 
@@ -448,10 +472,44 @@ ggplot(data = spB, aes(x = frequency, y = magnitude))+
   geom_raster(aes(fill = log(abundance)), interpolate = F)+
   scale_fill_viridis_c(option = "magma")
 
-spBim <- read.csv(file = "SpB_FreqVMag_immediate.csv")
-ggplot(data = spBim, aes(x = frequency, y = magnitude))+
+spC <- read.csv(file = "SpC_FreqVMag_short.csv")
+ggplot(data = spC, aes(x = frequency, y = magnitude))+
+  geom_raster(aes(fill = log(abundance)), interpolate = F)+
+  scale_fill_viridis_c(option = "magma")
+
+spD <- read.csv(file = "SpD_FreqVMag_short.csv")
+ggplot(data = spD, aes(x = frequency, y = magnitude))+
   geom_raster(aes(fill= log(abundance)), interpolate  =F)+
   scale_fill_viridis_c(option = "magma")
 
-# multivoltinism
 
+AppendMe <- function(dfNames) {
+  do.call(rbind, lapply(dfNames, function(x) {
+    cbind(get(x), source = x)
+  }))
+}
+
+
+freq_mag <- AppendMe(c("spA", "spB", "spC", "spD"))
+ggplot(data = freq_mag, aes(x = frequency, y = magnitude))+
+  facet_wrap(~source, ncol = 2)+
+  geom_raster(aes(fill = log(abundance)), interpolate = F)+
+  scale_fill_viridis_c(option = "magma") +
+  labs(shape = "") +
+  theme_bw()+
+  xlab("Pluse Frequency")+
+  #scale_y_discrete(breaks = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1))+
+  ylab("Pulse Magnitude")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  guides(fill=guide_legend(title="Log Abundance"))+
+  theme(strip.text.x = element_text(size = 14), 
+        strip.background = element_rect(
+          color="black", fill="white", linetype="solid"))+
+  theme(legend.margin = margin(-1,0,0,0, unit="cm"))
+
+# multivoltinism
+source(SpA_Multivolt.R)
+source(SpB_Multivolt.R)
+source(SpC_Multivolt.R)
+source(SpD_Multivolt.R)
