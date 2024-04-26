@@ -2,7 +2,7 @@
 ##Code to produce figures for Manuscript 1
 ##########################
 
-
+library(ggpubr)
 
 # code for temperature regime shift 
 source("A_sp_Temp_Toggle.R")
@@ -11,42 +11,49 @@ source("CspTempToggle.R")
 source("D_sp_TempToggle.R")
 temp_df <- rbind(a_temp_adjust_df, b_temp_adjust_df ,c_temp_adjust_df ,d_temp_adjust_df)
 
-ggplot(data = temp_df, aes(temp_regime, temp_means/10000, color = V3))+
+abund <- ggplot(data = temp_df, aes(temp_regime, temp_means/10000, color = V3))+
   geom_line(size = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   theme_bw()+
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
-  xlab("Mean Annual Water Temperature in C")+
+  xlab(" ")+
   ylab("Relativized Abundance")+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 
 
 size_df <- rbind(a_size_df, b_size_df, c_size_df, d_size_df)
 
-ggplot(data = size_df, aes(temp_regime, size_means, size_means, color = V3))+
+biomass <- ggplot(data = size_df, aes(temp_regime, size_means, size_means, color = V3))+
   geom_line(size = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   theme_bw()+
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
-  xlab("Mean Annual Water Temperature in C")+
-  ylab("Mean Annual Biomass (mg)")+
+  xlab(" ")+
+  ylab("Biomass (mg)")+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 
 size_df$totbiomass <- temp_df$temp_means * size_df$size_means
-ggplot(data = size_df, aes(temp_regime, totbiomass, size_means, color = V3))+
+totbiomass <- ggplot(data = size_df, aes(temp_regime, totbiomass, size_means, color = V3))+
   geom_line(size = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   theme_bw()+
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
   xlab("Mean Annual Water Temperature in C")+
-  ylab("Mean Total Annual Biomass (mg)")+
+  ylab("Total Biomass (mg)")+
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
+
+x11()
+
+ggarrange(abund, biomass, totbiomass, 
+          labels = c("a", "b", "c"),
+          ncol = 1, nrow = 3, common.legend = T)
 
 
 # code for fecundity sensitivity analysis
@@ -225,16 +232,27 @@ ggplot(data = long_df, aes(x = V2, y = long/10000, color = V3))+
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 # code for temperature regime used in most runs where temp isn't adjusted
-source("SpA_Frequency.R")
+source("SpA_PulseMagnitude.R")
 temp$dts <- as.Date(temp$dts, origin = "1970-01-01")
-ggplot(data = temp[1:27,], aes(dts, Temperature))+
+temp <- ggplot(data = temp[1:27,], aes(dts, Temperature))+
   geom_line(size = 1)+
   xlab("Month")+
   ylab("Temperature C")+
   theme_bw()+
   scale_x_date(date_labels="%B", date_breaks  ="2 months")+
   theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
-  axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+
+yr4temp <- ggplot(data = temp[1:108,], aes(dts, Temperature))+
+  geom_line(size = 1)+
+  xlab("Month")+
+  ylab("Temperature C")+
+  theme_bw()+
+  scale_x_date(date_labels="%B", date_breaks  ="12 months")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
 
 # code for Temperature-Mortality relationship  
 source("NegExpSurv.R")
@@ -288,8 +306,24 @@ ggplot(data = threeyear, aes(x = Date, y  =
   #ylim(c(5, 18))+
   #ylim(c(0, 5000000))+
   xlab("Month")+
-  ylab("Abundance")+
+  ylab("Relativized Abundance")+
   geom_vline(xintercept = as.numeric(as.Date("2035-05-08")), 
+             color = "black", 
+             lwd = 1,
+             linetype = "dotted") +
+  geom_vline(xintercept = as.numeric(as.Date("2035-05-22")), 
+             color = "black", 
+             lwd = 1,
+             linetype = "dotted") +
+  geom_vline(xintercept = as.numeric(as.Date("2035-06-05")), 
+             color = "black", 
+             lwd = 1,
+             linetype = "dotted") +
+  geom_vline(xintercept = as.numeric(as.Date("2035-06-19")), 
+             color = "black", 
+             lwd = 1,
+             linetype = "dotted") +
+  geom_vline(xintercept = as.numeric(as.Date("2035-07-03")), 
              color = "black", 
              lwd = 1,
              linetype = "dotted") +
@@ -297,7 +331,10 @@ ggplot(data = threeyear, aes(x = Date, y  =
   scale_x_date(date_labels="%B", date_breaks  ="3 month")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  inset_element(temp, 0.6, 0.6, 1, 1)+
+  plot_annotation(tag_levels = '1')
+
 
 threeyear[which(threeyear$Date == "2034-05-09"),]
 threeyear[which(threeyear$Date == "2036-05-07"),]
@@ -489,15 +526,25 @@ AppendMe <- function(dfNames) {
   }))
 }
 
-
 freq_mag <- AppendMe(c("spA", "spB", "spC", "spD"))
+
+TaxaNames <- list(
+  'spA'="Stonefly",
+  'spB'="Mayfly",
+  'spC'="Caddisfly",
+  'spD'="Beetle"
+)
+
+Taxa_labeller <- function(variable,value){
+  return(TaxaNames[value])
+}
 ggplot(data = freq_mag, aes(x = frequency, y = magnitude))+
-  facet_wrap(~source, ncol = 2)+
+  facet_wrap(~source, ncol = 2, labeller = Taxa_labeller)+
   geom_raster(aes(fill = log(abundance)), interpolate = F)+
   scale_fill_viridis_c(option = "magma") +
   labs(shape = "") +
   theme_bw()+
-  xlab("Pluse Frequency")+
+  xlab("Pulse Frequency")+
   #scale_y_discrete(breaks = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1))+
   ylab("Pulse Magnitude")+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
