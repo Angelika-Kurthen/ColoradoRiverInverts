@@ -65,8 +65,8 @@ ggplot(data = annual, aes(x = Date, y  =Abundance/10000, color = Taxa))+
 
 
   
-selected_date <- temp$dts[temp$dts >= as.Date("2035-05-01") & temp$dts <= as.Date("2035-05-15")]
-discharge[match(selected_date, temp$dts)] <- 0.8
+selected_date <- temp$dts[temp$dts >= as.Date("2035-05-01") & temp$dts <= as.Date("2035-07-15")]
+discharge[match(selected_date, temp$dts)] <- 0.5
 
 A_pout <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
 A_pout <- mean.data.frame(A_pout, burnin = 250, iteration = 2)
