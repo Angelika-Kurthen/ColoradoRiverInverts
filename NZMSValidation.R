@@ -38,30 +38,30 @@ means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
 source(NMix_HPC.R)
 
 
-
+acf(estimate$adjust)
 
 cor.df <- left_join(estimate, means.list.NZMS, by=c('date'="temps$dts"), copy = T)
-cor.lm <- lm((cor.df$mean.abund) ~ (cor.df$est/vols))
-cor.test((cor.df$est), (cor.df$mean.abund+1), method = "spearman")
+cor.lm <- lm((cor.df$mean.abund) ~ (cor.df$est_flow))
+cor.test((cor.df$est_flow), (cor.df$mean.abund+1), method = "spearman")
 
-NZMS.samp.sum1 <- NZMS.samp.sum %>% slice(which(row_number() %% 3 == 0))
-NZMS.samp.sum2 <- NZMS.samp.sum %>%  slice(which(row_number() %% 3 == 1))
-NZMS.samp.sum3 <- NZMS.samp.sum %>%  slice(which(row_number() %%  3 == 2))
+NZMS.samp.sum1 <- cor.df %>% slice(which(row_number() %% 3 == 0))
+NZMS.samp.sum2 <- cor.df %>%  slice(which(row_number() %% 3 == 1))
+NZMS.samp.sum3 <- cor.df %>%  slice(which(row_number() %%  3 == 2))
   
-cor.df1 <- left_join(NZMS.samp.sum1, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
-cor.lm1 <- lm(cor.df1$mean.abund ~ cor.df1$V2)
+cor.df1 <- left_join(NZMS.samp.sum1, means.list.NZMS, by=c('date'="temps$dts"), copy = T)
+cor.lm1 <- lm(cor.df1$mean.abund.x ~ cor.df1$est_flow)
 summary(cor.lm1)
 plot(cor.df1$V2, cor.df1$mean.abund)
-rho1 <- cor.test((cor.df1$V2+1), (cor.df1$mean.abund+1), method = "spearman")
+rho1 <- cor.test((cor.df1$est_flow), (cor.df1$mean.abund.x), method = "spearman")
 
-cor.df2 <- left_join(NZMS.samp.sum2, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
-cor.lm2 <- lm(cor.df2$mean.abund ~ cor.df2$V2)
-rho2 <- cor.test((cor.df2$V2+1), (cor.df2$mean.abund+1), method = "spearman")
+cor.df2 <- left_join(NZMS.samp.sum2, means.list.NZMS, by=c('date'="temps$dts"), copy = T)
+cor.lm2 <- lm(cor.df2$mean.abund.x ~ cor.df2$est_flow)
+rho2 <- cor.test((cor.df2$est_flow+1), (cor.df2$mean.abund.x+1), method = "spearman")
 
-cor.df3 <- left_join(NZMS.samp.sum3, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
-cor.lm3 <- lm(cor.df3$mean.abund ~ cor.df3$V2)
+cor.df3 <- left_join(NZMS.samp.sum3, means.list.NZMS, by=c('date'="temps$dts"), copy = T)
+cor.lm3 <- lm(cor.df3$mean.abund.x ~ cor.df3$est_flow)
 summary(cor.lm3)
-rho3 <- cor.test((cor.df3$V2+1), (cor.df3$mean.abund+1), method = "spearman")
+rho3 <- cor.test((cor.df3$est_flow+1), (cor.df3$mean.abund.x+1), method = "spearman")
 
 rho <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate))
 sd <- sd(c(rho1$estimate, rho2$estimate, rho3$estimate))
@@ -76,6 +76,32 @@ ggplot(data = cor.df, aes(x = (est) , y = (mean.abund)))+
   labs(y = "NZMS Model Output", x = "NZMS Emprical Data")
   
 
+#flow
+cor.df <- left_join(estimate, means.list.NZMS, by=c('date'="temps$dts"), copy = T)
+cor.lm <- lm((cor.df$mean.abund) ~ (cor.df$adjust))
+cor.test((cor.df$adjust), (cor.df$mean.abund+1), method = "spearman")
+
+NZMS.samp.sum1 <- cor.df %>% slice(which(row_number() %% 3 == 0))
+NZMS.samp.sum2 <- cor.df %>%  slice(which(row_number() %% 3 == 1))
+NZMS.samp.sum3 <- cor.df %>%  slice(which(row_number() %%  3 == 2))
+
+cor.df1 <- left_join(NZMS.samp.sum1, means.list.NZMS, by=c('date'="temps$dts"), copy = T)
+cor.lm1 <- lm(cor.df1$mean.abund.x ~ cor.df1$adjust)
+summary(cor.lm1)
+plot(cor.df1$V2, cor.df1$mean.abund)
+rho1 <- cor.test((cor.df1$adjust), (cor.df1$mean.abund.x), method = "spearman")
+
+cor.df2 <- left_join(NZMS.samp.sum2, means.list.NZMS, by=c('date'="temps$dts"), copy = T)
+cor.lm2 <- lm(cor.df2$mean.abund.x ~ cor.df2$adjust)
+rho2 <- cor.test((cor.df2$adjust+1), (cor.df2$mean.abund.x+1), method = "spearman")
+
+cor.df3 <- left_join(NZMS.samp.sum3, means.list.NZMS, by=c('date'="temps$dts"), copy = T)
+cor.lm3 <- lm(cor.df3$mean.abund.x ~ cor.df3$adjust)
+summary(cor.lm3)
+rho3 <- cor.test((cor.df3$adjust+1), (cor.df3$mean.abund.x+1), method = "spearman")
+
+rho <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate))
+sd <- sd(c(rho1$estimate, rho2$estimate, rho3$estimate))
 
 
 
@@ -179,13 +205,11 @@ names(volumes) <- c("vol")
 dat <- unmarkedFramePCount(y = site_mat, siteCovs = flows, obsCovs = volumes)
 dat_dens <- unmarkedFramePCount(y = dens_mat, siteCovs = flows, obsCovs = volumes)
 # Model with no covariates or random effect on abundance
-mod_null <- stan_pcount(~ 1 ~1, dat, K=10453,
+mod_null <- stan_pcount(~ 1 ~1, dat, K=11000,
                         chains=3, iter=2000, seed=123, prior_coef_det = logistic(0.69, 0.97), log_lik = F)
-mod_vol <- stan_pcount(~scale(vol)~1, dat, K = 10453, chains = 3, iter = 2000, seed= 123,prior_coef_det = logistic(0, 1), log_lik= F)
+mod_vol <- stan_pcount(~1 + offset(vol)~1, dat, K = 11000, chains = 3, iter = 2000, seed= 123,prior_coef_det = logistic(0, 1), log_lik= F)
 
-mod_um <- pcount(~1~1, dat, K = 10453)
-mod_um_vol <- pcount(~ scale(vol) ~1 , dat, K = 10453)
-fmList <- fitList(Null=mod_um_dens, vol = mod_um_dens_vol)
+fmList <- fitList(Null=mod_null, vol = mod_vol)
 # Model selection
 modSel(fmList, nullmod="Null")
 
@@ -228,11 +252,11 @@ mod_um_dens_vol <- pcount(~scale(vol) ~1, dat_dens, K = 1176244)
 dens_mod_mull <- stan_pcount(~1 ~1, dat_dens, K = 1176244, chains = 3, iter = 2000, seed = 123, log_lik = T)
 
 # occupancy to get global p 
-site_mat[site_mat >0] <- 1
-occu_dat <- unmarkedFramePCount(y = site_mat, siteCovs = flows, obsCovs = volumes)
-
-occu_mod_null <- stan_occu(~1 ~1, occu_dat, chains = 3, iter = 2000)
-occu_mod_vol <- stan_occu(~scale(vol)~1, occu_dat, chains = 3, iter = 2000)
+# site_mat[site_mat >0] <- 1
+# occu_dat <- unmarkedFramePCount(y = site_mat, siteCovs = flows, obsCovs = volumes)
+# 
+# occu_mod_null <- stan_occu(~1 ~1, occu_dat, chains = 3, iter = 2000)
+# occu_mod_vol <- stan_occu(~scale(vol)~1, occu_dat, chains = 3, iter = 2000)
 
 #posterior
 names(mod_um)
