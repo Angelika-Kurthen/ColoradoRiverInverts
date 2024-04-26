@@ -30,7 +30,7 @@ selected_date <- temp$dts[temp$dts >= as.Date("2035-05-01") & temp$dts <= as.Dat
 
 discharge <- rep(0.1, length(temp$dts))
 
-magnitudes <- seq(0.1, 1, by = 0.05)
+magnitudes <- seq(0.1, 2, by = 0.05)
 immediate_response <- vector()
 short_response <- vector() 
 for (i in 1:length(magnitudes)){
