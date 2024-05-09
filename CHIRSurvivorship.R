@@ -51,31 +51,46 @@ CHIRSurvRate <- as.data.frame(CHIRSurvRate)
 #fit <- nlsLM(logit(Survival) ~ a*Temp^4 + b*Temp^3 + c*Temp^2 + d*Temp + e, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1, d = 1, e = 1))
 fit <- nlsLM(logit(Survival) ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1))
 inv.logit(predict(fit))
+fit <- nlsLM(Survival ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a=1, b=1, c=1))
+TempSurv <- function(n){
+  a <- -0.001785*n^2+ 0.074341*n -0.154283 
+  if (a < 0){
+    a <-  0
+  }
+  return((a))
+}
 #a = -1.016e-04  b = 9.412e-03 c = -3.121e-01 d = 4.317e+00 e =-2.032e+01 
 # TempSurv <- function(n){
 #   a <-  -1.016e-04*n^4 +  9.412e-03*n^3 -3.121e-01*n^2 + 4.317*n -2.032e+01
 #   return(inv.logit(a))
 # }
 # 
-TempSurv <- function(n){
-  a <- -0.01462*n^2+  0.67162*n -6.72790
-  return(inv.logit(a))
-}
+# TempSurv <- function(n){
+#   a <- -0.01462*n^2+  0.67162*n -6.72790
+#   #a <- -1.016e-04*n^4 +  9.412e-03*n^3 -3.121e-01*n^2 + 4.317*n -2.032e+01
+#   return(inv.logit(a))
+# }
 # # 
 # min.RSS <- function(par){
-#   mod <- dnbinom(as.integer(-CHIRSurvRate$Temp + 37.5), size = par[2], prob = par[1])
+#   mod <- dnbinom(as.integer(CHIRSurvRate$Temp), size = par[2], prob = par[1])
 #   a <- sum(CHIRSurvRate$Survival - (mod*(max(CHIRSurvRate$Survival)/max(mod))))^2
 # }
-# params <- optim(par = c(0.2, 4), fn = min.RSS, method = "BFGS")
+# params <- optim(par = c(0.01, 6), fn = min.RSS, method = "BFGS")
+# # 
 # 
+# 
+# params <- optim(par = c(0, 0), fn = min.RSS, method = "BFGS")
+# # 
 # TempSurv <- function(n){
 #   if (n <= 0){
 #     a <- 0
 #   }else {
-#     a <-  dnbinom(as.integer(-n + 37.5), size = params$par[2] , prob = params$par[1])*(max(CHIRSurvRate$Survival)/max(dnbinom(as.integer(-CHIRSurvRate$Temp + 37.5), size =params$par[2], prob = params$par[1])))
+#     a <-  dnbinom(as.integer(n), size = params$par[2] , prob = params$par[1])*(max(CHIRSurvRate$Survival)/max(dnbinom(as.integer(CHIRSurvRate$Temp), size =params$par[2], prob = params$par[1])))
 #   }
 #   return((a))
 # }
+# 
+# try with just nlsLM for a 
 
 
 # ggplot(surv.df.CHIR, aes(x = Q, y = surv))+
@@ -87,10 +102,10 @@ TempSurv <- function(n){
 #   xlab('`Max Event Discharge/Bankfull Discharge`')
 
 # 
-# tem <- seq(0, 40, by = 1)
-# plot(CHIRSurvRate$Temp, CHIRSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
-# lines(tem, TempSurv(tem))
-# lines(tem,  dnbinom(as.integer(-tem + 37.5), size = params$par[2] , prob = params$par[1])*(max(CHIRSurvRate$Survival)/max(dnbinom(as.integer(-CHIRSurvRate$Temp + 37.5), size =params$par[2], prob = params$par[1]))))
+# tem <- seq(0, 40, by = 1)http://127.0.0.1:23003/graphics/ed0483c1-b811-4223-bfde-c3d3a3dceb62.png
+plot(CHIRSurvRate$Temp, CHIRSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+ lines(tem, TempSurv(tem), col = "green")
+#lines(tem,  dnbinom(as.integer(-tem + 37.5), size = params$par[2] , prob = params$par[1])*(max(CHIRSurvRate$Survival)/max(dnbinom(as.integer(-CHIRSurvRate$Temp + 37.5), size =params$par[2], prob = params$par[1]))))
 # plot(temp, s, xlab = "Temperature C", ylab = "Survival", col = "red", pch = 16, cex = 1.5, xlim = c(0,40), ylim = c(0,1))
 # points(temp, predict(fit.betalogit), col = "blue", pch = 1)
 # points(temp, inv.logit(predict(fit4)), col = "hotpink", pch = 2)points(temp, inv.logit(predict(fit2)), col = "green", pch = 5)     
