@@ -199,7 +199,7 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # if above the max temp threshold (30), no one remains more than 1 timestep in each stage (fast maturation, small growth)
 
   if (10 > temps$Temperature[t-1]) {
-  P1 <- (1-(1/3)) #* TempSurvival[t-1]
+  P1 <- (1-(1/3)) * TempSurvival[t-1]
   P2 <- P1 
   G1 <- 0 #* TempSurvival[t-1]
   G2 <- 0 #* TempSurvival[t-1]
