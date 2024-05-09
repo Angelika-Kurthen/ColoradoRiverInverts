@@ -198,19 +198,19 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # in this function, we assume that if below the min temp threshold (9) slow maturation
       # if above the max temp threshold (30), no one remains more than 1 timestep in each stage (fast maturation, small growth)
 
-      # if (7 > temps$Temperature[t-1]) {
-      #   P1 <- (1-(1/4)) * TempSurvival[t-1]
-      #   P2 <- P1 * TempSurvival[t-1]
-      #   G1 <- (0.35/4) * TempSurvival[t-1] 
-      #   G2 <- (0.775/4) * TempSurvival[t-1]
-      # }
-      # if (temps$Temperature[t-1] > 30){
-      #   P1 <- 0
-      #   P2 <- 0
-      #   G1 <- 0.35 * TempSurvival[t-1] 
-      #   G2 <- 0.775 * TempSurvival[t-1]
-      #   }
-      
+  if (9 > temps$Temperature[t-1]) {
+  P1 <- (1-(1/7)) * TempSurvival[t-1]
+  P2 <- P1 
+  G1 <- (0.35/7) * TempSurvival[t-1]
+  G2 <- (0.775/7) * TempSurvival[t-1]
+  }
+if (temps$Temperature[t-1] > 30){
+  P1 <- 0
+  P2 <- 0
+  G1 <- 0.35 * TempSurvival[t-1]
+  G2 <- 0.775 * TempSurvival[t-1]
+  }
+
       if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
         G1 <- (0.35/((emergetime[t-1])/2)) * TempSurvival[t-1]
         G2 <- (0.775/((emergetime[t-1])/2)) * TempSurvival[t-1]
@@ -277,7 +277,6 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
     } #-------------------------
     # End Inner Loop  
     #------------------------- 
-    print(emergetime)
   } #----------------------
   # End Outer Loop
   #----------------------
