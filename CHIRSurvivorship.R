@@ -103,8 +103,8 @@ TempSurv <- function(n){
 
 # 
 # tem <- seq(0, 40, by = 1)http://127.0.0.1:23003/graphics/ed0483c1-b811-4223-bfde-c3d3a3dceb62.png
-plot(CHIRSurvRate$Temp, CHIRSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
- lines(tem, TempSurv(tem), col = "green")
+#plot(CHIRSurvRate$Temp, CHIRSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+#lines(tem, TempSurv(tem), col = "green")
 #lines(tem,  dnbinom(as.integer(-tem + 37.5), size = params$par[2] , prob = params$par[1])*(max(CHIRSurvRate$Survival)/max(dnbinom(as.integer(-CHIRSurvRate$Temp + 37.5), size =params$par[2], prob = params$par[1]))))
 # plot(temp, s, xlab = "Temperature C", ylab = "Survival", col = "red", pch = 16, cex = 1.5, xlim = c(0,40), ylim = c(0,1))
 # points(temp, predict(fit.betalogit), col = "blue", pch = 1)
