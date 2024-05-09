@@ -235,7 +235,7 @@ for (iter in c(1:iterations)) {
     #   P1 <-0.32(1-(1/((emergetime[t-1])/2)))
     #   P2 <- P1
     # }
-    if (7 > temps$Temperature[t-1]) {
+    if (9 > temps$Temperature[t-1]) {
       P1 <- (1-(1/9)) 
       P2 <- P1
       G1 <- 0.3/9 
@@ -248,7 +248,7 @@ for (iter in c(1:iterations)) {
       G2 <- G1
     }
     
-    if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
+    if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
       G1 <- 0.3/((emergetime[t-1])/2) 
       G2 <- G1
       P1 <- (1-(1/((emergetime[t-1])/2))) 
