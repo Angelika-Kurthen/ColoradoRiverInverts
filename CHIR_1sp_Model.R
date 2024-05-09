@@ -198,7 +198,7 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # in this function, we assume that if below the min temp threshold (9) slow maturation
       # if above the max temp threshold (30), no one remains more than 1 timestep in each stage (fast maturation, small growth)
 
-  if (9 > temps$Temperature[t-1]) {
+  if (11 > temps$Temperature[t-1]) {
   P1 <- (1-(1/3)) * TempSurvival[t-1]
   P2 <- P1 
   G1 <- 0 * TempSurvival[t-1]
@@ -211,13 +211,13 @@ if (temps$Temperature[t-1] > 30){
   G2 <- G1
   }
 
-      if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
+      if (11 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
         G1 <- (0.42/((emergetime[t-1])/2)) * TempSurvival[t-1]
         G2 <- G1
         P1 <- (1-(1/((emergetime[t-1])/2))) * TempSurvival[t-1]
         P2 <- P1
       }
-      if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == T)) {
+      if (11 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == T)) {
         G1 <- (0.42*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
         P1 <- (1-(1/((-0.136 * temps$Temperature[t-1]) + 5.088))) * TempSurvival[t-1]
         G2 <- G1
