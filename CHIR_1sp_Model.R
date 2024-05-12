@@ -41,7 +41,7 @@ temps <- TimestepTemperature(temp)
 flow.data = flow.magnitude$Discharge
 temp.data <- temps
 baselineK <- 10000
-disturbanceK <- 40000
+disturbanceK <- 1000000
 Qmin <- 0.25
 extinct <- 50
 iteration <- 1
@@ -156,7 +156,7 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       
       # we start by pulling fecundities from normal distribution
       # assuming 50 50 sex ration
-      F3 = 208 *0.5* hydropeaking.mortality(0.8, 1, h = hp[t-1]) * 0.698896
+      F3 = 2250 * 0.5* hydropeaking.mortality(0.8, 1, h = hp[t-1]) * 0.698896
       #CHIR egg # and % mortality from Charles et al 2004
       # we can also relate fecundities to body size which is between 6 and 15 mm (also from Charles et al 2004)
       # we can "convert" emergetime to size by multiplying to get size between 6 and 15 mm and then convert to fecunity
@@ -164,7 +164,7 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       if (t > 19) {
         size <- 3*emergetime[t-1]-6
         sizelist <- append(sizelist, size)
-        F3 <- (4.622*size)+159.468 *0.5* hydropeaking.mortality(0.8, 1, h = hp[t-1]) * 0.698896
+        F3 <- 50*size + 1725 *0.5* hydropeaking.mortality(0.8, 1, h = hp[t-1]) * 0.698896
         }
       # #--------------------------------------------------
       # Calculate the disturbance magnitude-K relationship
@@ -198,48 +198,32 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # in this function, we assume that if below the min temp threshold (9) slow maturation
       # if above the max temp threshold (30), no one remains more than 1 timestep in each stage (fast maturation, small growth)
 
-  if (11 > temps$Temperature[t-1]) {
-  P1 <- (1-(1/3)) * TempSurvival[t-1]
-  P2 <- P1 
-  G1 <- 0 * TempSurvival[t-1]
-  G2 <- 0 * TempSurvival[t-1]
+  if (10 > temps$Temperature[t-1]) {
+    P1 <- (1-(1/4)) #* TempSurvival[t-1]
+    P2 <- P1 
+    G1 <- 0 * TempSurvival[t-1]
+    G2 <- 0 * TempSurvival[t-1]
   }
 if (temps$Temperature[t-1] > 30){
-  P1 <- 0
-  P2 <- 0
-  G1 <- 0.42 * TempSurvival[t-1]
-  G2 <- G1
+    P1 <- 0
+    P2 <- 0
+    G1 <- 0.35 * TempSurvival[t-1]
+    G2 <- 0.775 * TempSurvival[t-1]
   }
 
-      if (11 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
-        G1 <- (0.42/((emergetime[t-1])/2)) * TempSurvival[t-1]
-        G2 <- G1
+      if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == F)){
+        G1 <- (0.35/((emergetime[t-1])/2)) * TempSurvival[t-1]
+        G2 <- (0.775/((emergetime[t-1])/2)) * TempSurvival[t-1]
         P1 <- (1-(1/((emergetime[t-1])/2))) * TempSurvival[t-1]
         P2 <- P1
       }
-      if (11 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == T)) {
-        G1 <- (0.42*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
+      if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == T)) {
+        G1 <- (0.35*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
         P1 <- (1-(1/((-0.136 * temps$Temperature[t-1]) + 5.088))) * TempSurvival[t-1]
-        G2 <- G1
+        G2 <- (0.775*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
         P2 <- P1
       }
       
-      
-      # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21){
-      #   G1 <- 0.32/((delta[t-1]/2))
-      #   G2 <- G1
-      #   P1 <- 0.32*(1-1/(delta[t-1]/2))
-      #   P2 <- P1
-      # }
-      
-      
-      # #if temp dependent surival curve is know, we can also use that, applying either a) constant mortality to all stages or b) giving specific weights of survival to different stages
-      # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G1 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
-      # if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 25) G2 <- growth.development.tradeoff(temps$Temperature[t-1], 7, 25, 0.15, 0.25)
-      
-      # growth (if below 10C, no growth can occur - everything basically freezes, if between 10 and 11, prob of remaining in same stage = 0.6395, if above 13, prob of transition to next stage is 0 )
-      # P1 <- 0.55 - G1
-      # P2 <- 0.55 - G2
       #-----------------------------------------------
       # Create Lefkovitch Matrix
       
@@ -280,7 +264,7 @@ if (temps$Temperature[t-1] > 30){
   } #----------------------
   # End Outer Loop
   #----------------------
-  return(output.N.list[ , 1:2, ])
+  return(output.N.list[ , 1:3, ])
 }
 #------------------
 # Analyzing Results
