@@ -201,26 +201,26 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
   if (10 > temps$Temperature[t-1]) {
     P1 <- (1-(1/4)) * TempSurvival[t-1]
     P2 <- P1 
-    G1 <- 0 * TempSurvival[t-1]
-    G2 <- 0 * TempSurvival[t-1]
+    G1 <- 0.42 * TempSurvival[t-1]
+    G2 <- 0.42 * TempSurvival[t-1]
   }
 if (temps$Temperature[t-1] > 30){
     P1 <- 0
     P2 <- 0
-    G1 <- 0.35 * TempSurvival[t-1]
-    G2 <- 0.775 * TempSurvival[t-1]
+    G1 <- 0.42 * TempSurvival[t-1]
+    G2 <- 0.42 * TempSurvival[t-1]
   }
 
       if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == F)){
-        G1 <- (0.35/((emergetime[t-1])/2)) * TempSurvival[t-1]
-        G2 <- (0.775/((emergetime[t-1])/2)) * TempSurvival[t-1]
+        G1 <- (0.42/((emergetime[t-1])/2)) * TempSurvival[t-1]
+        G2 <- (0.42/((emergetime[t-1])/2)) * TempSurvival[t-1]
         P1 <- (1-(1/((emergetime[t-1])/2))) * TempSurvival[t-1]
         P2 <- P1
       }
       if (10 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == T)) {
-        G1 <- (0.35*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
+        G1 <- (0.42*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
         P1 <- (1-(1/((-0.136 * temps$Temperature[t-1]) + 5.088))) * TempSurvival[t-1]
-        G2 <- (0.775*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
+        G2 <- (0.42*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
         P2 <- P1
       }
       
