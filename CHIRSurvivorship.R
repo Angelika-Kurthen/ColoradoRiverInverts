@@ -48,25 +48,28 @@ surv.df.CHIR <- flow.surv.rate(surv.fit.CHIR$m$getPars()[2] , surv.fit.CHIR$m$ge
 # Calculate Temperature Dependent Survival
 CHIRSurvRate <- read_excel("VitalRates.xlsx", sheet = "Chiro Survival")
 CHIRSurvRate <- as.data.frame(CHIRSurvRate)
-#fit <- nlsLM(logit(Survival) ~ a*Temp^4 + b*Temp^3 + c*Temp^2 + d*Temp + e, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1, d = 1, e = 1))
+fit <- nlsLM(logit(Survival) ~ a*Temp^4 + b*Temp^3 + c*Temp^2 + d*Temp + e, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1, d = 1, e = 1))
 fit <- nlsLM(logit(Survival) ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1))
 inv.logit(predict(fit))
 fit <- nlsLM(Survival ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a=1, b=1, c=1))
-TempSurv <- function(n){
-  a <- -0.001785*n^2+ 0.074341*n -0.154283 
-  if (a < 0){
-    a <-  0
-  }
-  return((a))
-}
-#a = -1.016e-04  b = 9.412e-03 c = -3.121e-01 d = 4.317e+00 e =-2.032e+01 
 # TempSurv <- function(n){
-#   a <-  -1.016e-04*n^4 +  9.412e-03*n^3 -3.121e-01*n^2 + 4.317*n -2.032e+01
-#   return(inv.logit(a))
+#   a <- -0.001785*n^2+ 0.074341*n -0.154283 
+#   if (a < 0){
+#     a <-  0
+#   }
+#   return((a))
 # }
+
+
+#a = -1.016e-04  b = 9.412e-03 c = -3.121e-01 d = 4.317e+00 e =-2.032e+01 
+# 
+TempSurv <- function(n){
+  a <-  4.011e-05*n^4 -2.260e-03*n^3 -6.379e-04*n^2 + 1.231e+00*n -1.096e+01
+  return(inv.logit(a))
+}
 # 
 # TempSurv <- function(n){
-#   a <- -0.01462*n^2+  0.67162*n -6.72790
+#   a <- -0.02884*n^2+  1.12797*n -9.38446
 #   #a <- -1.016e-04*n^4 +  9.412e-03*n^3 -3.121e-01*n^2 + 4.317*n -2.032e+01
 #   return(inv.logit(a))
 # }
