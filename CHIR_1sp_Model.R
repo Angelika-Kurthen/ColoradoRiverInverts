@@ -156,7 +156,7 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       
       # we start by pulling fecundities from normal distribution
       # assuming 50 50 sex ration
-      F3 = 208 *0.5* hydropeaking.mortality(0.8, 1, h = hp[t-1]) * 0.698896
+      F3 = 600 *0.5* hydropeaking.mortality(0.8, 1, h = hp[t-1])
       #CHIR egg # and % mortality from Charles et al 2004
       # we can also relate fecundities to body size which is between 6 and 15 mm (also from Charles et al 2004)
       # we can "convert" emergetime to size by multiplying to get size between 6 and 15 mm and then convert to fecunity
@@ -164,7 +164,7 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       if (t > 19) {
         size <- 3*emergetime[t-1]-6
         sizelist <- append(sizelist, size)
-        F3 <- (4.622*size)+159.468 *0.5* hydropeaking.mortality(0.8, 1, h = hp[t-1]) * 0.698896
+        F3 <- (13.33*size)+460 *0.5* hydropeaking.mortality(0.8, 1, h = hp[t-1])
       }
       # #--------------------------------------------------
       # Calculate the disturbance magnitude-K relationship
@@ -201,8 +201,8 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
   if (10 > temps$Temperature[t-1]) {
     P1 <- (1-(1/4)) #* TempSurvival[t-1]
     P2 <- P1 
-    G1 <- 0.42 * TempSurvival[t-1]
-    G2 <- 0.42 * TempSurvival[t-1]
+    G1 <- 0 * TempSurvival[t-1]
+    G2 <- 0 * TempSurvival[t-1]
   }
 if (temps$Temperature[t-1] > 30){
     P1 <- 0
