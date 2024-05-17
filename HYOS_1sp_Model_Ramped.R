@@ -32,20 +32,41 @@ source("HYOS_1sp.R")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
+flows <- average.yearly.flows(flowdata = flow, "X_00060_00003", "Date")
+
 # read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
 temp <- read.delim("gcmrc20230123125915.tsv", header=T)
 colnames(temp) <- c("Date", "Temperature")
+tempslist <- average.yearly.temp(temp, "Temperature", "Date")
+years <- seq(0, 100, by = 1)
 temps <- average.yearly.temp(temp, "Temperature", "Date")
-n <- 50
-# qr is the temp ramps I want to increase the average Ferry temp by 
-qr <- c(0, 1, 2.5, 5, 7.5)
-# how many years I want each temp ramp to last
-r <- c(30, 5, 5, 5, 5)
-temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
-temps <- temps[2:3]
-flow.magnitude <- rep(mean(flow$X_00060_00003)/85000, times = length(temps$Temperature))
 
-out <- HYOSmodel(flow.data = flow.magnitude,temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+for(year in years){
+  year(tempslist$dts) <- (2000 + year)
+  temps <- rbind(temps, tempslist)
+}
+temps <- temps[-(1:26),-c(1,4, 5, 6)]
+flow.df <- as.data.frame(cbind(temps$dts, rep(flows$Discharge/85000, times = 101)))
+colnames(flow.df) <- c("dts", "flow.magnitude")
+
+means <- vector()
+increase <- seq(0, 5, by = 0.5)
+for (inc in 1:length(increase)){
+temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] + increase[inc]
+out <- HYOSmodel(flow.data = flow.df$flow.magnitude ,temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+HYOS.df <- mean.data.frame(out, 250, 9)
+means[inc] <- mean(HYOS.df$mean.abund)
+temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] - increase[inc]
+}
+
+
+summer.HYOS <- as.data.frame(cbind(increase, means))
+
+
+ggplot(data = summer.HYOS, aes(x = increase, y = means))+
+  geom_point()+
+  geom_line()+
+  xlab("")
 
 
 # #
