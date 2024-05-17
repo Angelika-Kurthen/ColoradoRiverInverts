@@ -63,13 +63,12 @@ HYOSDevRates <- as.data.frame(HYOSDevRates)
 polyfit <- nlsLM(logit(MaturationRate) ~ a*Temperature^2 + b*Temperature + c, data = HYOSDevRates, start = c(a = 1, b = 1, c = 1))
 
 devtime <- function(x){
-  y = -0.01385  *x^2+ 0.30973*x -5.72982 
+  y = -0.01385  *x^2+ 0.30973*x -5.72982
   return(1/inv.logit(y))
 }
-
+# 
 HYOSSurvRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Survival Rates ")
 HYOSSurvRates <- as.data.frame(HYOSSurvRates)
-
 # fit <- nlsLM(logit(Survival)~ a*Temperature^2 + b*Temperature + c, data = HYOSSurvRates, start = c(a= 1, b=1, c = 1))
 # 
 # TempSurv <- function(x){
