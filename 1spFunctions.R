@@ -256,6 +256,36 @@ mean.data.frame <- function(data, burnin, iteration){
   return(means.list)
 }
 
+# want to make a function to find the yearly average time series of a set of flows
+average.yearly.flows <- function(flowdata, flow.column_name, date.column_name){
+  require(tidyverse)
+  flowdata$Date <- as_datetime(flowdata[[date.column_name]])
+  flowdata$Date <- yday(flowdata$Date)
+  flowdata$Discharge <- flowdata[[flow.column_name]]
+  flowdata <- flowdata %>% group_by(Date) %>% dplyr::summarise(Discharge = mean(Discharge), 
+                                                               sd = sd(Discharge), 
+                                                               count = n(), 
+                                                               se = sd(Discharge/count))
+  # Make an index to be used for aggregating
+  ID <- as.numeric(as.factor(flowdata$Date)) 
+  # want it to be every 14 days, hence the 14
+  ID <- ID %/% 14
+  
+  ID[which(ID ==26)] <- 25
+  # aggregate over ID and TYPEall numeric data.
+  outs <- aggregate(flowdata[sapply(flowdata,is.numeric)],
+                    by=list(ID),
+                    FUN=mean)
+  names(outs)[2:3] <-c("dts","Discharge")
+  # add the correct dates as the beginning of every period
+  outs$dts <- strptime(round(outs$dts), "%j") ###Note need to subtract 365 if larger than 365
+  
+  # order by date in chronological order#
+  #outs <- outs[order(outs$dts),]
+  outs$dts <- as_date(outs$dts)
+  return(outs)
+}
+
 # want to make a function to find the yearly average time series of a set of temps
 average.yearly.temp <- function(tempdata, temp.column_name, date.column_name){
   require(tidyverse)
