@@ -69,6 +69,10 @@ ggplot(data = summer.HYOS, aes(x = increase, y = means))+
   xlab("")
 
 
+# what about down by Diamond Creek
+
+
+
 # #
 # degreedays <- as.data.frame(cbind(temp_seq$dts, temps$Temperature * 14))
 # colnames(degreedays) <- c("dts", "DegreeDay")
