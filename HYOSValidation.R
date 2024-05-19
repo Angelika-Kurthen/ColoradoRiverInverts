@@ -15,7 +15,7 @@ library(devtools)
 #install_github(repo = "jmuehlbauer-usgs/R-packages", subdir = "foodbase")
 library(foodbase)
 
-source("1spFunctions.R")
+source("1spFunctions_CR.R")
 source("HYOS_1sp.R")
 # load Water Temperature data from above Diamond Creek Confluence (RM226)
 temp <- read.delim("CRaboveDC_Temp.tsv", header=T)
