@@ -17,6 +17,68 @@ source("BAET_1sp_Model.R")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
+flows <- average.yearly.flows(flowdata = flow, "X_00060_00003", "Date")
+
+# read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
+temp <- read.delim("gcmrc20230123125915.tsv", header=T)
+colnames(temp) <- c("Date", "Temperature")
+tempslist <- average.yearly.temp(temp, "Temperature", "Date")
+years <- seq(0, 100, by = 1)
+temps <- average.yearly.temp(temp, "Temperature", "Date")
+
+for(year in years){
+  year(tempslist$dts) <- (2000 + year)
+  temps <- rbind(temps, tempslist)
+}
+temps <- temps[-(1:26),-c(1,4, 5, 6)]
+flow.df <- as.data.frame(cbind(temps$dts, rep(flows$Discharge/85000, times = 101)))
+colnames(flow.df) <- c("dts", "flow.magnitude")
+
+means <- vector()
+increase <- seq(0, 5, by = 0.5)
+for (inc in 1:length(increase)){
+  temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] + increase[inc]
+  out <- BAETmodel(flow.data = flow.df$flow.magnitude ,temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.15, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+  BAET.df <- mean.data.frame(out, 250, 9)
+  means[inc] <- mean(BAET.df$mean.abund)
+  temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] - increase[inc]
+}
+
+
+summer.BAET <- as.data.frame(cbind(increase, means))
+
+
+ggplot(data = summer.BAET, aes(x = increase, y = means))+
+  geom_point()+
+  geom_line()+
+  xlab("")
+
+
+hydropeak <- seq(0, 0.5, by = 0.025)
+means <- vector()
+for (hydr in 1:length(hydropeak)){
+  out <- BAETmodel(flow.data = flow.df$flow.magnitude, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.15, extinct = 50, iteration = 9, peaklist = hydropeak[hydr], peakeach = length(temps$Temperature))
+  BAET.df <- mean.data.frame(out, 250, 9)
+  means[hydr] <- mean(BAET.df$mean.abund)
+}
+
+
+hydropeak <- as.data.frame(cbind(hydropeak, means))
+
+ggplot(data = hydropeak, aes(x = hydropeak, y = means))+
+  geom_point()+
+  geom_line()
+
+
+#HFE Timing
+
+
+
+
+
+
+#read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
+flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
 
 # read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
@@ -32,6 +94,12 @@ temps <- temps[2:3]
 flow.magnitude <- rep(mean(flow$X_00060_00003)/85000, times = length(temps$Temperature))
 
 out <- BAETmodel(flow.data = flow.magnitude,temp.data = temps, disturbanceK = 40000, baselineK = 7000, Qmin = 0.12, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+
+
+
+
+
+
 
 # 
 # # if desired, can pre-count how many degreedays each cohort should experience
