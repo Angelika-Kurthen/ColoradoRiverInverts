@@ -12,7 +12,7 @@ library(dataRetrieval)
 
 
 source("BAETSurvivorship.R")
-source("1spFunctions.R")
+source("1spFunctions_CR.R")
 source("BAET_1sp_Model.R")
 
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
@@ -93,7 +93,7 @@ temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
 temps <- temps[2:3]
 flow.magnitude <- rep(mean(flow$X_00060_00003)/85000, times = length(temps$Temperature))
 
-out <- BAETmodel(flow.data = flow.magnitude,temp.data = temps, disturbanceK = 40000, baselineK = 7000, Qmin = 0.12, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- BAETmodel(flow.data = flow.magnitude,temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.17, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 
 
