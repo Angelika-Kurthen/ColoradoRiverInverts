@@ -11,7 +11,7 @@ library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
-source("1spFunctions.R")
+source("1spFunctions_CR.R")
 
 # Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 # We have to manually load all tidyverse packages
@@ -188,7 +188,7 @@ for (iter in c(1:iterations)) {
     
     #---------------------------------------------------------
     # Calculate fecundity per adult
-    F3 = 235.6*  hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+    F3 = 235.6 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     #F3 = rnorm(1, mean = 235.6, sd = 11.05102 ) * 0.5 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     #from Willis Jr & Hendricks, sd calculated from 95% CI = 21.66 = 1.96*sd
     # * 0.5 assuming 50% female.
@@ -197,7 +197,7 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F3 <- ((7.219 * size) + 163.4) *hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+      F3 <- ((7.219 * size) + 163.4) * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     }
     # size <- delta[t-1]
     # sizelist <- append(sizelist, size)
