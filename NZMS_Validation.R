@@ -105,6 +105,14 @@ cor.df <- left_join(NZMS.samp.sum, means.list.NZMS, by=c('V1'="temps$dts"), copy
 cor.lm <- lm((cor.df$mean.abund) ~ (cor.df$V2))
 cor.test((cor.df$V2+1), (cor.df$mean.abund+1), method = "spearman")
 
+nmix.df <- left_join(nmix, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
+nmix.lm <- lm(nmix.df$mean.abund ~ nmix.df$est)
+cor.test(nmix.df$mean.abund, nmix.df$est, method = "spearman")
+summ <- summary(nmix.lm)
+mse <- mean(summ$residuals^2)
+
+plot(nmix.df$mean.abund, nmix.df$est)
+
 NZMS.samp.sum1 <- NZMS.samp.sum %>% slice(which(row_number() %% 3 == 0))
 NZMS.samp.sum2 <- NZMS.samp.sum %>%  slice(which(row_number() %% 3 == 1))
 NZMS.samp.sum3 <- NZMS.samp.sum %>%  slice(which(row_number() %% 3 == 2))
