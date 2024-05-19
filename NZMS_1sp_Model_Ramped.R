@@ -29,6 +29,53 @@ source("NZMSSurvivorship.R")
 source("1spFunctions.R")
 source("NZMS_1sp_Model.R")
 
+
+#read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
+flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
+flows <- average.yearly.flows(flowdata = flow, "X_00060_00003", "Date")
+
+# read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
+temp <- read.delim("gcmrc20230123125915.tsv", header=T)
+colnames(temp) <- c("Date", "Temperature")
+tempslist <- average.yearly.temp(temp, "Temperature", "Date")
+years <- seq(0, 100, by = 1)
+temps <- average.yearly.temp(temp, "Temperature", "Date")
+
+for(year in years){
+  year(tempslist$dts) <- (2000 + year)
+  temps <- rbind(temps, tempslist)
+}
+temps <- temps[-(1:26),-c(1,4, 5, 6)]
+flow.df <- as.data.frame(cbind(temps$dts, rep(flows$Discharge/85000, times = 101)))
+colnames(flow.df) <- c("dts", "flow.magnitude")
+
+means <- vector()
+increase <- seq(0, 5, by = 0.5)
+for (inc in 1:length(increase)){
+  temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] + increase[inc]
+  out <- NZMSmodel(flow.data = flow.df$flow.magnitude ,temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.15, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+  NZMS.dfd <- mean.data.frame(out, 250, 9)
+  means[inc] <- mean(NZMS.df$mean.abund)
+  temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] - increase[inc]
+}
+
+
+summer.NZMS <- as.data.frame(cbind(increase, means))
+
+
+ggplot(data = summer.NZMS, aes(x = increase, y = means))+
+  geom_point()+
+  geom_line()+
+  xlab("")
+
+
+
+
+
+
+
+
+
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
 # read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
