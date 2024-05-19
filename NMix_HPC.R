@@ -145,7 +145,7 @@ re <- ranef(mod_um_vol_NB)
 est <- bup(re) # estimated population size at each timestep
 conf <- as.data.frame(confint(re, level=0.95)) # 90% CI
 
-plot(rowSums(site_mat, na.rm = T), est, xlim = c(0,20000))
+plot(rowSums(site_mat, na.rm = T), est, xlim = c(0,10000))
 lines(x = seq(0,10000), y = seq(0,20000), col = "red")
 
 
