@@ -66,9 +66,17 @@ dens_mat <- matrix(data = NA, nrow = R, ncol = J)
 # make RxJ matrix full of volumes sampled for each abundance
 flows <- vector()
 volumes <- matrix(data = NA, nrow = R, ncol = J)
+reach <- matrix(data = NA, nrow = R, ncol = J)
+region <- matrix(data = NA, nrow = R, ncol = J)
+rivermile <- matrix(data = NA, nrow = R, ncol = J)
+time <- matrix(data = NA, nrow = R, ncol = J)
 for (i in 1:length(temps$dts)){
   d <- NZMS.samp[which(NZMS.samp$Date >= temps$dts[i] & NZMS.samp$Date < temps$dts[i+1]), ]
   flows[i] <- mean(d$X_00060_00003)
+  reach[i, ] <- c(d$Reach, rep(NA, times = (J- length(d$CountTotal))))
+  region[i,] <- c(d$Region, rep(NA, times = (J- length(d$CountTotal))))
+  rivermile[i,] <- c(d$RiverMile, rep(NA, times = (J- length(d$CountTotal))))
+  time[i,] <- c(d$TimeDay, rep(NA, times = (J- length(d$CountTotal))))
   site_mat[i, ] <- c(d$CountTotal, rep(NA, times = (J- length(d$CountTotal))))
   dens_mat[i, ] <- c(as.integer(d$Density), rep (NA, times = (J - length(d$Density))))
   volumes[i, ] <- c((d$Volume),rep(NA, times = (J- length(d$CountTotal))))
@@ -80,13 +88,29 @@ nodata <- which(is.na(site_mat[,1]))
 site_mat <- as.matrix(site_mat[-nodata,])
 dens_mat <- as.matrix(dens_mat[-nodata, ])
 flows <- as.data.frame(flows[-nodata])
+region <- as.matrix(region[-nodata,])
+dimnames(region) <- list(temps$dts[-nodata], seq(1:48))
+region <- list(region)
+names(region) <- c("region")
+reach <- as.matrix(reach[-nodata,])
+dimnames(reach) <- list(temps$dts[-nodata], seq(1:48))
+reach <- list(reach)
+names(reach) <- c("reach")
+rivermile <- as.matrix(rivermile[-nodata,])
+dimnames(rivermile) <- list(temps$dts[-nodata], seq(1:48))
+rivermile <- list(rivermile)
+names(rivermile) <- c("rivermile")
+time <- as.matrix(time[-nodata,])
+dimnames(time) <- list(temps$dts[-nodata], seq(1:48))
+time <- list(time)
+names(time) <- c("time")
 volumes <- as.matrix(volumes[-nodata, ])
 dimnames(volumes) <- list(temps$dts[-nodata], seq(1:48))
 volumes <- list(volumes)
 names(volumes) <- c("vol")
 
 # convert organized data into unmarked dataframe format, with flow as site covariate and volume of sample as observation covariate
-dat <- unmarkedFramePCount(y = site_mat, siteCovs = data.frame(flows), obsCovs = volumes)
+dat <- unmarkedFramePCount(y = site_mat, siteCovs = data.frame(flows), obsCovs = c(volumes, region, reach, rivermile, time))
 
 # pcount is N-mixture model to estimate counts at each site
 # we are doing space-time approximation
@@ -94,11 +118,11 @@ dat <- unmarkedFramePCount(y = site_mat, siteCovs = data.frame(flows), obsCovs =
 # we want adjust our count data by volume (since volumes vary by each sample)
 # these are basically our three different hypotheses
 #Poisson mixture
-mod_um_vol_P <- pcount(~ 1 + (vol) ~1 , dat, K = 11000, mixture = "P")
+mod_um_vol_P <- pcount(~ 1 + vol + region + reach + rivermile + time ~1 + flows..nodata., dat, K = 11000, mixture = "P")
 # Neg Binom mixture
-mod_um_vol_NB <- pcount(~ 1 + (vol) ~1 , dat, K = 11000, mixture = "NB")
+mod_um_vol_NB <- pcount(~ 1 + vol + region + reach + rivermile + time ~1 + flows..nodata., dat, K = 11000, mixture = "NB")
 # Zero Inflated Poisson mixture
-mod_um_vol_ZIP <- pcount(~ 1 + (vol) ~1 , dat, K =11000, mixture = "ZIP")
+mod_um_vol_ZIP <- pcount(~ 1 + vol + region + reach + rivermile + time ~1 + flows..nodata., dat, K =11000, mixture = "ZIP")
 
 # now we want to compare the models
 fm <- fitList(mod_um_vol_P, mod_um_vol_NB, mod_um_vol_ZIP)
@@ -107,7 +131,7 @@ modSel(fm)
 # Model selectionfit
 # suggests that NB is best model
 
-Nmix.gof.test(mod_um_vol_NB, nsim = 10)
+Nmix.gof.test(mod_um_vol_NB, nsim = 10)# --> not working
 # Compare to empirical Bayes confidence intervals
 colSums(confint(ranef(mod_um_vol_NB, K=11000)), na.rm = T)
 # Estimates of conditional abundance distribution at each site
@@ -116,36 +140,42 @@ re <- ranef(mod_um_vol_NB)
 est <- bup(re) # estimated population size at each timestep
 conf <- as.data.frame(confint(re, level=0.95)) # 90% CI
 
+
+nmix <- as.data.frame(cbind(df$`temps$dts`, est))
+nmix$V1 <- as.Date(as.POSIXct(nmix$V1), origin = "1970-01-01")
+
+
+
 ###############################
 # occupancy to get global p with ubms
 ###############################
 # need 0s and 1s
-site_mat[site_mat >0] <- 1
-
-# turn into unmarked data frame
-occu_dat <- unmarkedFramePCount(y = site_mat, siteCovs = flows, obsCovs = volumes)
+# site_mat[site_mat >0] <- 1
 # 
-occu_mod_null <- stan_occu(~1 ~1, occu_dat, chains = 3, iter = 2000)
-occu_mod_vol <- stan_occu(~scale(vol)~1, occu_dat, chains = 3, iter = 2000)
+# # turn into unmarked data frame
+# occu_dat <- unmarkedFramePCount(y = site_mat, siteCovs = flows, obsCovs = volumes)
+# # 
+# occu_mod_null <- stan_occu(~1 ~1, occu_dat, chains = 3, iter = 2000)
+# occu_mod_vol <- stan_occu(~scale(vol)~1, occu_dat, chains = 3, iter = 2000)
+# # 
+# # #posterior
+# names(occu_mod_vol)
+# # ## [1] "beta_state[(Intercept)]" "beta_det[(Intercept)]"
+# occ_intercept <- extract(occu_mod_vol, "beta_det")[[1]]
+# hist(occ_intercept, freq=FALSE)
+# lines(density(occ_intercept), col='red', lwd=2)
+# # 
+# # #Compare the models
+# # #First we combine the models into a fitList:
+# mods <- fitList(occu_mod_null, occu_mod_vol)
+# # #Then we generate a model selection table:
+# round(modSel(mods), 3)
+# # #the model with the largest elpd performed best
+# plot_residuals(occu_mod_vol, submodel="det")
+#fit_top_gof <- gof(occu_mod_vol, raws=100, quiet=TRUE)
 # 
-# #posterior
-names(occu_mod_vol)
-# ## [1] "beta_state[(Intercept)]" "beta_det[(Intercept)]"
-occ_intercept <- extract(occu_mod_vol, "beta_det")[[1]]
-hist(occ_intercept, freq=FALSE)
-lines(density(occ_intercept), col='red', lwd=2)
-# 
-# #Compare the models
-# #First we combine the models into a fitList:
-mods <- fitList(occu_mod_null, occu_mod_vol)
-# #Then we generate a model selection table:
-round(modSel(mods), 3)
-# #the model with the largest elpd performed best
-plot_residuals(occu_mod_vol, submodel="det")
-fit_top_gof <- gof(occu_mod_vol, raws=100, quiet=TRUE)
-# 
-prob_det <- predict(occu_mod_vol, submodel="det")
-# # from predicted detection probabilities, get range
-range(prob_det$Predicted, na.rm = T)
-# 
+# prob_det <- predict(occu_mod_vol, submodel="det")
+# # # from predicted detection probabilities, get range
+# range(prob_det$Predicted, na.rm = T)
+# # 
 # Now what? 
