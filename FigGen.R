@@ -3,6 +3,7 @@
 ##########################
 
 library(ggpubr)
+library(patchwork)
 
 # code for temperature regime shift 
 source("A_sp_Temp_Toggle.R")
@@ -32,7 +33,7 @@ biomass <- ggplot(data = size_df, aes(temp_regime, size_means, size_means, color
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
   xlab(" ")+
-  ylab("Biomass (mg)")+
+  ylab("Body Mass (mg)")+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 
@@ -374,8 +375,8 @@ press_mag_df$magnitudes <- as.numeric(press_mag_df$magnitudes)
 press_mag_df$mag_response <- as.numeric(press_mag_df$mag_response)
 ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000, color = V3))+
   geom_point(size = 1, alpha = 0.5)+
-  #geom_line()+
-  stat_smooth(size = 1, span = 0.4, se = F)+
+  geom_line(linewidth = 1, alpha = 0.8)+
+  #stat_smooth(size = 1, span = 0.3, se = F)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   xlab("Press Magnitude (Hydropeaking Index)")+
   ylab("Relatived Abundance")+
