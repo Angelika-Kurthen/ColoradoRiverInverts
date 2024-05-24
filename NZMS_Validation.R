@@ -22,7 +22,7 @@ discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 temps <- TimestepTemperature(temp)
-out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.3, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 
 # adults<-as.data.frame(cbind(as.Date(temps$dts), out[1:length(temps$dts),2:3,1]))
@@ -168,6 +168,7 @@ abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%B", date_breaks  ="6 months")
 
+colors <- 
 ggplot(data = adults, aes(x = Time,
                           y = Adult, group = 1)) +
   # #geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
@@ -177,15 +178,16 @@ ggplot(data = adults, aes(x = Time,
   #             show.legend = FALSE) +
   geom_line(show.legend = FALSE, linewidth = 0.7) +
   geom_point()+
-  geom_line(data = NZMS.samp, aes(x = V1, y = exp(x)), color = "red")+
+  geom_line(data = NZMS.samp, aes(x = V1, y = exp(x)), color = "#B95B22")+
   geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
   coord_cartesian(ylim = c(0,70000)) +
   ylab('New Zealand Mudsnail Abundance') +
   xlab("")+
+  theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13))+
-  scale_x_date(date_labels="%B", date_breaks  ="6 months")
+  scale_x_date(date_labels="%Y")
 
 
 
