@@ -48,13 +48,13 @@ flow.surv.rate <- function(h, k, max, min, interval, Qmin) {
 surv.fit.HYOS <- flow.surv.fit(HYOSVitalRates$`Max Event Discharge/Bankfull Discharge`, HYOSVitalRates$Mortality, 0.25)
 surv.df.HYOS <- flow.surv.rate(surv.fit.HYOS$m$getPars()[2] , surv.fit.HYOS$m$getPars()[1], 2, 0.001, 0.001, 0.25)
 
-# ggplot(surv.df.HYOS, aes(x = Q, y = surv))+
-#   geom_line()+
-#   geom_point(data = HYOSVitalRates, aes(x = `Max Event Discharge/Bankfull Discharge` , y = 1-(Mortality), color = Citation))+
-#   #coord_cartesian(ylim = c(0,1)) +
-#   ylab('Immediate Post-Disturbance Survival') +
-#   theme_bw()+
-#   xlab('`Max Event Discharge/Bankfull Discharge`')
+ggplot(surv.df.HYOS, aes(x = Q, y = surv))+
+  geom_line()+
+  geom_point(data = HYOSVitalRates, aes(x = `Max Event Discharge/Bankfull Discharge` , y = 1-(Mortality), color = Citation))+
+  #coord_cartesian(ylim = c(0,1)) +
+  ylab('Immediate Post-Disturbance Survival') +
+  theme_bw()+
+  xlab('`Max Event Discharge/Bankfull Discharge`')
 
 # Calculate temperature dependent development time
 HYOSDevRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Development Rates")
@@ -76,7 +76,7 @@ HYOSSurvRates <- as.data.frame(HYOSSurvRates)
 #   return(inv.logit(a))
 # }
 min.RSS <- function(par){
-  mod <- dnbinom(as.integer(-HYOSSurvRates$Temperature + 32), size = par[2], prob = par[1])
+  mod <- dnbinom(as.integer(-HYOSSurvRates$Temperature + 31), size = par[2], prob = par[1])
   a <- sum(HYOSSurvRates$Survival - (mod*(max(HYOSSurvRates$Survival)/max(mod))))^2
 }
 params <- optim(par = c(0.23, 4.5), fn = min.RSS)
@@ -96,4 +96,4 @@ TempSurv <- function(n){
 # temSurv <- unlist(lapply(tem, TempSurv))
 #  plot(HYOSSurvRates$Temperature, HYOSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
 #  lines(tem,  unlist(lapply(tem, TempSurv)))
-# 
+# # 
