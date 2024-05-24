@@ -29,32 +29,37 @@ source("NZMSSurvivorship.R")
 source("1spFunctions.R")
 source("NZMS_1sp_Model.R")
 
-
 #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
-flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
+flow <- readNWISdv("09380000", "00060", "2014-01-01", "2024-09-30")
 flows <- average.yearly.flows(flowdata = flow, "X_00060_00003", "Date")
 
 # read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
-temp <- read.delim("gcmrc20230123125915.tsv", header=T)
+temp <- readNWISdv("09380000", "00010", "2014-05-01", "2024-05-01")
+temp <- temp[, c(3,4)]
 colnames(temp) <- c("Date", "Temperature")
 tempslist <- average.yearly.temp(temp, "Temperature", "Date")
 years <- seq(0, 100, by = 1)
 temps <- average.yearly.temp(temp, "Temperature", "Date")
 
+# add new years so we can progress forwards in time, then concatonate
 for(year in years){
   year(tempslist$dts) <- (2000 + year)
   temps <- rbind(temps, tempslist)
 }
 temps <- temps[-(1:26),-c(1,4, 5, 6)]
+
+# do the same with out yearly flows
 flow.df <- as.data.frame(cbind(temps$dts, rep(flows$Discharge/85000, times = 101)))
 colnames(flow.df) <- c("dts", "flow.magnitude")
+flow.df$dts <- as.Date(flow.df$dts)
 
+# Increase in summer temps
 means <- vector()
 increase <- seq(0, 5, by = 0.5)
 for (inc in 1:length(increase)){
   temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] + increase[inc]
-  out <- NZMSmodel(flow.data = flow.df$flow.magnitude ,temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.15, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
-  NZMS.dfd <- mean.data.frame(out, 250, 9)
+  out <- NZMSmodel(flow.data = flow.df$flow.magnitude ,temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+  NZMS.df <- mean.data.frame(out, 250, 9)
   means[inc] <- mean(NZMS.df$mean.abund)
   temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] - increase[inc]
 }
@@ -68,35 +73,228 @@ ggplot(data = summer.NZMS, aes(x = increase, y = means))+
   geom_line()+
   xlab("")
 
+# sensitivity to hydropeaking
+
+hydropeak <- seq(0, 0.5, by = 0.025)
+means <- vector()
+for (hydr in 1:length(hydropeak)){
+  out <- NZMSmodel(flow.data = flow.df$flow.magnitude, temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = hydropeak[hydr], peakeach = length(temps$Temperature))
+  NZMS.df <- mean.data.frame(out, 250, 9)
+  means[hydr] <- mean(NZMS.df$mean.abund)
+}
+
+
+hydropeak <- as.data.frame(cbind(hydropeak, means))
+
+ggplot(data = hydropeak, aes(x = hydropeak, y = means))+
+  geom_point()+
+  geom_line()+
+  theme_bw()+
+  labs(x = "Hydropeaking Index", y = "Average Annual Abundance")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 
 
 
+#BAU scenario
+# regular temps and regular flows - we will look at year 2024 thru year 
+bauflow <- flow.df
+bauflow[which(month(bauflow$dts) == 11 & day(bauflow$dts) == 9),] <- 0.28
+out <- NZMSmodel(flow.data = bauflow$flow.magnitude, temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+NZMS.df <- mean.data.frame(out, 250, 9)
+NZMS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], NZMS.df$mean.abund))
+colnames(NZMS.df) <- c("Date", "Abundance")
+NZMS.df$Date <- as.Date(NZMS.df$Date)
+# 2024 - 2027
+
+# HFE of around 37000 cfs allowed Oct 1 through Nov 30. Will split the difference with 11-09 HFE day
+# assume 7 days at high cfs and 7 days at baseline, so magnitude = 0.28 
+
+bau <- NZMS.df[which(NZMS.df$Date >= "2024-01-01" & NZMS.df$Date < "2028-01-01"),]
+plot(bau$Date, bau$Abundance, type = "l")
+
+# cool mix scenario
+coolmix <- temps
+# all temperatures are supposed to be 15.5 or below - this won't affect Lees Ferry because we don't really have super warm average temps (BUT we did in 2023)
+coolmix[coolmix$Temperature > 15.5,] <- 15.5
+
+# will use bauflow, since HFE still allowed
+out <- NZMSmodel(flow.data = bauflow$flow.magnitude, temp.data = coolmix, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+NZMS.df <- mean.data.frame(out, 250, 9)
+NZMS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], NZMS.df$mean.abund))
+colnames(NZMS.df) <- c("Date", "Abundance")
+NZMS.df$Date <- as.Date(NZMS.df$Date)
+
+cool <- NZMS.df[which(NZMS.df$Date >= "2024-01-01" & NZMS.df$Date < "2028-01-01"),]
+cool2 <- NZMS.df[which(NZMS.df$Date >= "2010-01-01" & NZMS.df$Date < "2014-01-01"),]
+
+# cool mix + flow spike (suggested is 32000) in Late May Early June
+# average daily flow is around 11000 cfs per fortnight, based on proposed hydrograph, with a 3 day increase to 32000 (this average flow would be 12500)... not such a large jump. Could 
+# so we have tw0 options
+# a) one time increase using mean (0.1823529) on 5-25-2024, 2 in 2025, 2 in 2025, 0 in 2027 (pg 3-10)
+# b) one time increase using max (0.3764706) on 5-25-2025,2 in 2025, 2 in 2025, 0 in 2027 (pg 3-10)
 
 
+# will do scenario based on suggested # of flow spikes, HFEs, and proposed hydrograph
+coolflow <- bauflow
+# add in flow spikes
+coolflow$flow.magnitude[which(coolflow$dts == "2024-05-25")] <- 0.18
+coolflow$flow.magnitude[which(coolflow$dts == "2025-05-25" | coolflow$dts == "2025-06-08")] <- 0.18
+coolflow$flow.magnitude[which(coolflow$dts == "2026-05-25" | coolflow$dts == "2026-06-08")] <- 0.18
 
 
+out <- NZMSmodel(flow.data = coolflow$flow.magnitude, temp.data = coolmix, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+NZMS.df <- mean.data.frame(out, 250, 9)
+NZMS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], NZMS.df$mean.abund))
+colnames(NZMS.df) <- c("Date", "Abundance")
+NZMS.df$Date <- as.Date(NZMS.df$Date)
 
-#read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
-flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
-# read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
-temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
+coolspike <- NZMS.df[which(NZMS.df$Date >= "2024-01-01" & NZMS.df$Date < "2028-01-01"),]
+plot(coolspike$Date, coolspike$Abundance, type = "l" )
 
-#flow.magnitude <- TimestepDischarge(flow, 85000) #discharge data from USGS is in cfs, bankfull dischage (pers comm TK) 85000 cfs
-temps <- TimestepTemperature(temp) # calculate mean temperature data for each timestep
+# cold schock alternative
+# keep water below 13 C
+coldtemps <- temps
+coldtemps$Temperature[which(coldtemps$Temperature > 13)] <- 13
+# use bauflows
 
-## Uncomment if Using Colorado River Temp Ramp 
-temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
-n <- 50
-# qr is the temp ramps I want to increase the average Lees Ferry temp by 
-qr <- c(0, 1, 2.5, 5, 7.5)
-# how many years I want each temp ramp to last
-r <- c(30, 5, 5, 5, 5)
-temps <- rep.avg.year(temps, n, change.in.temp = qr, years.at.temp = r)
-temps <- temps[2:3]
-flow.magnitude <- rep(mean(flow$X_00060_00003)/85000, times = length(temps$Temperature))
+out <- NZMSmodel(flow.data = bauflow$flow.magnitude, temp.data = coldtemps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+NZMS.df <- mean.data.frame(out, 250, 9)
+NZMS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], NZMS.df$mean.abund))
+colnames(NZMS.df) <- c("Date", "Abundance")
+NZMS.df$Date <- as.Date(NZMS.df$Date)
 
-out <- NZMSmodel(flow.data = flow.magnitude,temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+coldshock <- NZMS.df[which(NZMS.df$Date >= "2024-01-01" & NZMS.df$Date < "2028-01-01"),]
+plot(coldshock$Date, coldshock$Abundance, type = "l" )
 
+
+# scenario 2
+# coolflow$flow.magnitude[which(coolflow$dts == "2024-05-25")] <- 0.376
+# coolflow$flow.magnitude[which(coolflow$dts == "2025-05-25" | coolflow$dts == "2025-06-08")] <- 0.376
+# coolflow$flow.magnitude[which(coolflow$dts == "2026-05-25" | coolflow$dts == "2026-06-08")] <- 0.376
+# 
+# 
+# out <- NZMSmodel(flow.data = coolflow$flow.magnitude, temp.data = coolmix, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.1, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+# NZMS.df <- mean.data.frame(out, 250, 9)
+# NZMS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], NZMS.df$mean.abund))
+# colnames(NZMS.df) <- c("Date", "Abundance")
+# NZMS.df$Date <- as.Date(NZMS.df$Date)
+# 
+# coolspike <- NZMS.df[which(NZMS.df$Date >= "2024-01-01" & NZMS.df$Date < "2028-01-01"),]
+# plot(coolspike$Date, coolspike$Abundance, type = "l" )
+
+# cold schock alternative
+# keep water below 13 C
+coldtemps <- temps
+coldtemps$Temperature[which(coldtemps$Temperature > 13)] <- 13
+# use bauflows
+
+out <- NZMSmodel(flow.data = bauflow$flow.magnitude, temp.data = coldtemps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+NZMS.df <- mean.data.frame(out, 250, 9)
+NZMS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], NZMS.df$mean.abund))
+colnames(NZMS.df) <- c("Date", "Abundance")
+NZMS.df$Date <- as.Date(NZMS.df$Date)
+
+coldshock <- NZMS.df[which(NZMS.df$Date >= "2024-01-01" & NZMS.df$Date < "2028-01-01"),]
+plot(coldshock$Date, coldshock$Abundance, type = "l" )
+
+# cold schock with flow spike
+# we will add flow spikes on same dates as for cool spike alt
+# magnitude will be either a) mean given hydrograph or b) max
+# mean = (9*11000)+(3*14000)+(2*32000)/14/85000 = 0.1722689
+# max = 0.376
+coldflow <- bauflow
+# add in flow spikes
+coldflow$flow.magnitude[which(coldflow$dts == "2024-05-25")] <- 0.17
+coldflow$flow.magnitude[which(coldflow$dts == "2025-05-25" | coldflow$dts == "2025-06-08")] <- 0.17
+coldflow$flow.magnitude[which(coldflow$dts == "2026-05-25" | coldflow$dts == "2026-06-08")] <- 0.17
+
+out <- NZMSmodel(flow.data = coldflow$flow.magnitude, temp.data = coldtemps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+NZMS.df <- mean.data.frame(out, 250, 9)
+NZMS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], NZMS.df$mean.abund))
+colnames(NZMS.df) <- c("Date", "Abundance")
+NZMS.df$Date <- as.Date(NZMS.df$Date)
+
+coldspike <- NZMS.df[which(NZMS.df$Date >= "2024-01-01" & NZMS.df$Date < "2028-01-01"),]
+plot(coldspike$Date, coldspike$Abundance, type = "l" )
+
+# scenario 2
+# coldflow$flow.magnitude[which(coldflow$dts == "2024-05-25")] <- 0.376
+# coldflow$flow.magnitude[which(coldflow$dts == "2025-05-25" | coldflow$dts == "2025-06-08")] <- 0.376
+# coldflow$flow.magnitude[which(coldflow$dts == "2026-05-25" | coldflow$dts == "2026-06-08")] <- 0.376
+# 
+# out <- NZMSmodel(flow.data = coldflow$flow.magnitude, temp.data = coldtemps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.1, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+# NZMS.df <- mean.data.frame(out, 250, 9)
+# NZMS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], NZMS.df$mean.abund))
+# colnames(NZMS.df) <- c("Date", "Abundance")
+# NZMS.df$Date <- as.Date(NZMS.df$Date)
+# 
+# coldshock <- NZMS.df[which(NZMS.df$Date >= "2024-01-01" & NZMS.df$Date < "2028-01-01"),]
+# plot(coldshock$Date, coldshock$Abundance, type = "l" )
+
+# nonbypass drop
+# this one is a little tricky
+# mean would be 0.1416807
+# but we can divide up that is split so that one fortnight has 3 (2000s) and next has 3 (27300)
+# so one timestep 0.12
+# and the next is 0.16
+# other option is to just do max 0.32
+# seems like June would be the time for this
+
+
+nonbypass <- bauflow
+nonbypass$flow.magnitude[which(nonbypass$dts == "2024-06-08" )] <- 0.12
+nonbypass$flow.magnitude[which(nonbypass$dts == "2025-06-08" )] <- 0.12
+nonbypass$flow.magnitude[which(nonbypass$dts == "2026-06-08" )] <- 0.12
+nonbypass$flow.magnitude[which(nonbypass$dts == "2027-06-08" )] <- 0.12
+nonbypass$flow.magnitude[which(nonbypass$dts == "2024-06-22" )] <- 0.16
+nonbypass$flow.magnitude[which(nonbypass$dts == "2025-06-22" )] <- 0.16
+nonbypass$flow.magnitude[which(nonbypass$dts == "2026-06-22" )] <- 0.16
+nonbypass$flow.magnitude[which(nonbypass$dts == "2027-06-22" )] <- 0.16
+
+out <- NZMSmodel(flow.data = nonbypass$flow.magnitude, temp.data = temps, disturbanceK = 1000000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+NZMS.df <- mean.data.frame(out, 250, 9)
+NZMS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], NZMS.df$mean.abund))
+colnames(NZMS.df) <- c("Date", "Abundance")
+NZMS.df$Date <- as.Date(NZMS.df$Date)
+
+nbypass <- NZMS.df[which(NZMS.df$Date >= "2024-01-01" & NZMS.df$Date < "2028-01-01"),]
+plot(nbypass$Date, nbypass$Abundance, type = "l" )
+
+NZMS.scenarios <- as.data.frame(cbind(bau, cool$Abundance, coolspike$Abundance, coldshock$Abundance, coldspike$Abundance, nbypass$Abundance))
+
+
+colors <- c("No Action" = "#FF7F00", "Cool Mix" = "#A6CEE3", "Cool Mix with Flow Spike" = "#1F78B4")
+ggplot(data = NZMS.scenarios, aes(x = Date, y = Abundance))+
+  geom_line(aes(color = "No Action" ), alpha = 0.8, size = 1)+  
+  geom_line(aes(y = cool$Abundance,  color = "Cool Mix"),linetype = "dashed", alpha = 0.8, size = 1)+
+  geom_line(aes(y = coolspike$Abundance, color = "Cool Mix with Flow Spike"), size = 1, linetype = "dashed", alpha = 0.8)+
+  scale_color_manual(values = colors)+
+  theme_bw()+
+  labs(x = "Year", y = "Abundance", color = "Scenario")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
+
+colors <- c("No Action" = "#FF7F00", "Cold Shock" = "#CAB2D6", "Cold Shock with Flow Spike" = "#6A3D9A")
+ggplot(data = NZMS.scenarios, aes(x = Date, y = Abundance))+
+  geom_line(aes(color = "No Action" ), alpha = 0.8, size = 1)+  
+  geom_line(aes(y = coldshock$Abundance, color = "Cold Shock"), size = 1, linetype = "dotdash",alpha = 0.8)+
+  geom_line(aes(y = coldspike$Abundance, color = "Cold Shock with Flow Spike"), size = 1, linetype = "longdash", alpha = 0.8)+
+  scale_color_manual(values = colors)+
+  theme_bw()+
+  labs(x = "Year", y = "Abundance", color = "Scenario")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
+
+colors <- c("No Action" = "#FF7F00", "NonBypass" = "#33A02C")
+ggplot(data = NZMS.scenarios, aes(x = Date, y = Abundance))+
+  geom_line(aes(color = "No Action" ), alpha = 0.8, size = 1)+ 
+  geom_line(aes(y = nbypass$Abundance, color = "NonBypass"), linetype = "dashed", size = 1, alpha = 0.8)+
+  scale_color_manual(values = colors)+
+  theme_bw()+
+  labs(x = "Year", y = "Abundance", color = "Scenario")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 
 # # specify iterations
 # iterations <- 5
@@ -104,7 +302,7 @@ out <- NZMSmodel(flow.data = flow.magnitude,temp.data = temps, disturbanceK = 10
 # # baseline K in the absence of disturbance
 # Kb <- 10000
 # # max K after a big disturbance
-# Kd <- 40000
+# Kd <- 1000000
 # 
 # # specify baseline transition probabilities
 # # its speculated (Cross et al 2010) that survivorship is between 80 - 100% for NZMS in Grand Canyon - will say 90% survive, 10% baseline mortality
