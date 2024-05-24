@@ -11,7 +11,7 @@ library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
-source("1spFunctions_CR.R")
+source("1spFunctions.R")
 
 # Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 # We have to manually load all tidyverse packages
@@ -197,7 +197,7 @@ for (iter in c(1:iterations)) {
     if (t > 15) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F3 <- ((7.219 * size) + 163.4) * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+      F3 <- ((7.219 * size) + 180.4) * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
     }
     # size <- delta[t-1]
     # sizelist <- append(sizelist, size)
@@ -238,9 +238,9 @@ for (iter in c(1:iterations)) {
       G1 <- 0.05/20 *TempSurvival[t-1]
       P1 <- 1-(1/20)*TempSurvival[t-1]
     }
-    if (16 > temps$Temperature[t-1]){ # from Rhame + Stewart, 1967; threshold to emergence around 15 - 17 C. We choose 15 because lower. 
-      G2 <- 0.11/20 * TempSurvival[t-1]
-      P2 <- 1-(1/20) *TempSurvival[t-1] 
+    if (15 > temps$Temperature[t-1]){ # from Rhame + Stewart, 1967; threshold to emergence around 15 - 17 C. We choose 16 because lower.
+      G2 <- 0.11/20 * TempSurvival[t-1] # no emergence below 16 C
+      P2 <- 1-(1/20) *TempSurvival[t-1]
     } else {
       G2 = 0.11/3 *TempSurvival[t-1]  # move onto stage 3
       P2 = 1 - (1/3) *TempSurvival[t-1]
