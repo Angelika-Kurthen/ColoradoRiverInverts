@@ -24,7 +24,7 @@ temps <- rep.avg.year(temps, 15, change.in.temp = 0, years.at.temp = 15)
 temps <- temps[20:359,2:3]
 temps$dts <- flow.magnitude$dts
 
-out <- BAETmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.15, extinct = 50, iteration = 9, peaklist = 0.13, peakeach = length(temps$Temperature))
+out <- BAETmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.1, extinct = 50, iteration = 9, peaklist = 0.13, peakeach = length(temps$Temperature))
 
 # upload larval baet data from Flaming Gorge Dam 
 bugdata <- read_delim("bugdata.txt", delim = "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
@@ -49,11 +49,11 @@ for (i in 1:length(temps$dts)){
 }
 means[length(temps$dts)] <- BAET.samp$x[length(BAET.samp$x)]
 
-means.list.BAET <- mean.data.frame(out, burnin = 188, iteration= 9)
-means.list.BAET <- cbind(means.list.BAET, temps$dts[188:341])
+means.list.BAET <- mean.data.frame(out, burnin = 200, iteration= 9)
+means.list.BAET <- cbind(means.list.BAET, temps$dts[200:341])
 means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
 
-BAET.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.BAET$`temps$dts`), means[188:340])))
+BAET.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.BAET$`temps$dts`), means[200:340])))
 BAET.samp.sum$V1 <- as.Date(BAET.samp.sum$V1, origin = "1970-01-01")
 
 #BAET.samp.sum <- BAET.samp.sum[which(BAET.samp.sum$V1 %in% sample(BAET.samp.sum$V1, size = 30)),]
@@ -72,7 +72,7 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
   geom_text(x = 1000, y = 3250, label = "y = 0.00021x, R^2 = 0.37")+
   labs(y = "Baetidae Model Output", x = "Baetidae Emprical Data")
 
-abund.trends.NZMS <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,
+abund.trends.BAET <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,
                                                         y = mean.abund, group = 1, color = "Model")) +
   geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
                   ymax = mean.abund + 1.96 * se.abund),
