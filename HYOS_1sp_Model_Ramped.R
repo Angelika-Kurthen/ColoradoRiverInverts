@@ -12,61 +12,317 @@ library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
 
-# Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
-# We have to manually load all tidyverse packages
-# library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(forcats, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(plyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
-source("HYOSSurvivorship.R")
+source("HYOS_1sp.R")
+
 source("1spFunctions.R")
 source("HYOS_1sp.R")
 
-#read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
-flow <- readNWISdv("09380000", "00060", "1985-10-01", "2021-09-30")
-flows <- average.yearly.flows(flowdata = flow, "X_00060_00003", "Date")
 
-# read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
-temp <- read.delim("gcmrc20230123125915.tsv", header=T)
+# load Water Temperature data from above Diamond Creek Confluence (RM226)
+temp <- read.delim("CRaboveDC_Temp.tsv", header=T)
 colnames(temp) <- c("Date", "Temperature")
-tempslist <- average.yearly.temp(temp, "Temperature", "Date")
-years <- seq(0, 100, by = 1)
-temps <- average.yearly.temp(temp, "Temperature", "Date")
+temp$Date <- as.Date(temp$Date, format = "%Y-%m-%d")
+temp <- aggregate(temp$Temperature, by = list(temp$Date), FUN = mean)
+colnames(temp) <- c("Date", "Temperature")
+temp$Temperature[which(temp$Temperature < 0)] <- NA
+temp <- na.omit(temp)
+#want last 10 years of data (data ends in 2023)
+temps <- temp[which(temp$Date >= "2013-01-01"),]
+tempslist <- average.yearly.temp(temps, "Temperature", "Date")
 
+years <- seq(23, 30, by = 1)
+temps <- average.yearly.temp(temps, "Temperature", "Date")
+# add average yearly temps to 
+# add new years so we can progress forwards in time, then concatonate
 for(year in years){
   year(tempslist$dts) <- (2000 + year)
   temps <- rbind(temps, tempslist)
 }
 temps <- temps[-(1:26),-c(1,4, 5, 6)]
-flow.df <- as.data.frame(cbind(temps$dts, rep(flows$Discharge/85000, times = 101)))
+
+# but also want those average temps to line up seamlessly with out emprical data
+# before 2000, lots of missing data
+temp <- temp[which(temp$Date >= "2000-01-05"),]
+temp <- TimestepTemperature(temp)
+lastval <- last(temp)
+
+colnames(temp) <- c("dts", "Temperature")
+temperature <- rbind(temp, temps)
+plot(temperature$dts, temperature$Temperature)
+
+
+
+# want to check what water temp was when lees ferry temp over 15.5 and 13
+lftemp <- readNWISdv("09380000", "00010", "2014-05-01", "2024-05-01")
+lftemp <- lftemp[, c(3,4)]
+colnames(lftemp) <- c("Date", "Temperature")
+lftemps <- (lftemp$Date[which(lftemp$Temperature == 15.5)]) # in 2021, it was from 09-03 and 09-30; in 2022 it was 06-09, 06-16, and 11-03; and in 2023 it was 06-26, 06-27, and 11-1
+lftempscold <- lftemp$Date[which(lftemp$Temperature == 13)]
+# match the temperatures and calculate mean when LF is at that temp, what is RM 226?
+# these values will be what we put into the temperature model, while flow will be the same
+
+value15.5 <- mean(temps$Temperature[temps$Date %in% as.Date(lftemps)])
+value13 <- mean(temps$Temperature[temps$Date %in% as.Date(lftempscold)])
+
+# load discharge data from above Diamond Creek Confluence (RM226)
+discharge <- readNWISdv("09404200", "00060", "2000-01-07", "2024-01-01")
+discharge <- TimestepDischarge(discharge, 85000)
+
+flow10yr <- readNWISdv("09404200", "00060", "2014-01-01", "2024-01-01")
+flows10yr <- average.yearly.flows(flowdata = flow10yr, "X_00060_00003", "Date")
+
+# do the same with out yearly flows
+flow.df <- as.data.frame(cbind(temps$dts[which(year(temps$dts) > 2023)], rep(flows$Discharge/85000, times = 101)))
 colnames(flow.df) <- c("dts", "flow.magnitude")
+flow.df$dts <- as.Date(flow.df$dts)
+rbind(discharge, flow.df)
 
-means <- vector()
-increase <- seq(0, 5, by = 0.5)
-for (inc in 1:length(increase)){
-temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] + increase[inc]
-out <- HYOSmodel(flow.data = flow.df$flow.magnitude ,temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+# Increase in summer temps
+# means <- vector()
+# increase <- seq(0, 5, by = 0.5)
+# for (inc in 1:length(increase)){
+#   temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] + increase[inc]
+#   out <- HYOSmodel(flow.data = flow.df$flow.magnitude ,temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+#   HYOS.df <- mean.data.frame(out, 250, 9)
+#   means[inc] <- mean(HYOS.df$mean.abund)
+#   temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] - increase[inc]
+# }
+# 
+# 
+# summer.HYOS <- as.data.frame(cbind(increase, means))
+# 
+# 
+# ggplot(data = summer.HYOS, aes(x = increase, y = means))+
+#   geom_point()+
+#   geom_line()+
+#   xlab("")
+
+# sensitivity to hydropeaking
+# 
+# hydropeak <- seq(0, 0.5, by = 0.025)
+# means <- vector()
+# for (hydr in 1:length(hydropeak)){
+#   out <- HYOSmodel(flow.data = flow.df$flow.magnitude, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = hydropeak[hydr], peakeach = length(temps$Temperature))
+#   HYOS.df <- mean.data.frame(out, 250, 9)
+#   means[hydr] <- mean(HYOS.df$mean.abund)
+# }
+# 
+# 
+# hydropeak <- as.data.frame(cbind(hydropeak, means))
+# 
+# ggplot(data = hydropeak, aes(x = hydropeak, y = means))+
+#   geom_point()+
+#   geom_line()+
+#   theme_bw()+
+#   labs(x = "Hydropeaking Index", y = "Average Annual Abundance")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
+
+
+
+#BAU scenario
+# regular temps and regular flows - we will look at year 2024 thru year 
+bauflow <- flow.df
+bauflow[which(month(bauflow$dts) == 11 & day(bauflow$dts) == 9),] <- 0.18
+#bauflow$flow.magnitude[which(bauflow$dts == "2024-11-09" | bauflow$dts == "2025-11-09" | bauflow$dts == "2026-11-09" | bauflow$dts == "2027-11-09")] <- 0.28
+out <- HYOSmodel(flow.data = bauflow$flow.magnitude, temp.data = temperature, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temperature$Temperature))
 HYOS.df <- mean.data.frame(out, 250, 9)
-means[inc] <- mean(HYOS.df$mean.abund)
-temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] <- temps$Temperature[which(month(temps$dts) == 6 | month(temps$dts) == 7 | month(temps$dts) == 8)] - increase[inc]
-}
+HYOS.df <- as.data.frame(cbind(temperature$dts[249:length(temperature$dts)], HYOS.df$mean.abund))
+colnames(HYOS.df) <- c("Date", "Abundance")
+HYOS.df$Date <- as.Date(as.POSIXct(HYOS.df$Date))
+# 2024 - 2027
+
+# HFE of around 37000 cfs allowed Oct 1 through Nov 30. Will split the difference with 11-09 HFE day
+# assume 7 days at high cfs and 7 days at baseline, so magnitude = 0.28 
+
+bau <- HYOS.df[which(HYOS.df$Date >= "2024-01-01" & HYOS.df$Date < "2028-01-01"),]
+plot(bau$Date, bau$Abundance, type = "both")
+lines(temps$dts, temps$Temperature, col = "red")
+lines(bauflow$dts, bauflow$flow.magnitude*100)
+# cool mix scenario
+coolmix <- temps
+# all temperatures are supposed to be 15.5 or below - this won't affect Lees Ferry because we don't really have super warm average temps (BUT we did in 2023)
+coolmix[coolmix$Temperature > value15.5,] <- value15.5
+
+# will use bauflow, since HFE still allowed
+out <- HYOSmodel(flow.data = bauflow$flow.magnitude, temp.data = coolmix, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+HYOS.df <- mean.data.frame(out, 250, 9)
+HYOS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], HYOS.df$mean.abund))
+colnames(HYOS.df) <- c("Date", "Abundance")
+HYOS.df$Date <- as.Date(HYOS.df$Date)
+
+cool <- HYOS.df[which(HYOS.df$Date >= "2024-01-01" & HYOS.df$Date < "2028-01-01"),]
+cool2 <- HYOS.df[which(HYOS.df$Date >= "2010-01-01" & HYOS.df$Date < "2014-01-01"),]
+
+# cool mix + flow spike (suggested is 32000) in Late May Early June
+# average daily flow is around 11000 cfs per fortnight, based on proposed hydrograph, with a 3 day increase to 32000 (this average flow would be 12500)... not such a large jump. Could 
+# so we have tw0 options
+# a) one time increase using mean (0.1823529) on 5-25-2024, 2 in 2025, 2 in 2025, 0 in 2027 (pg 3-10)
+# b) one time increase using max (0.3764706) on 5-25-2025,2 in 2025, 2 in 2025, 0 in 2027 (pg 3-10)
 
 
-summer.HYOS <- as.data.frame(cbind(increase, means))
+# will do scenario based on suggested # of flow spikes, HFEs, and proposed hydrograph
+coolflow <- bauflow
+# add in flow spikes
+coolflow$flow.magnitude[which(coolflow$dts == "2024-05-25")] <- 0.18
+coolflow$flow.magnitude[which(coolflow$dts == "2025-05-25" | coolflow$dts == "2025-06-08")] <- 0.18
+coolflow$flow.magnitude[which(coolflow$dts == "2026-05-25" | coolflow$dts == "2026-06-08")] <- 0.18
 
 
-ggplot(data = summer.HYOS, aes(x = increase, y = means))+
-  geom_point()+
-  geom_line()+
-  xlab("")
+out <- HYOSmodel(flow.data = coolflow$flow.magnitude, temp.data = coolmix, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+HYOS.df <- mean.data.frame(out, 250, 9)
+HYOS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], HYOS.df$mean.abund))
+colnames(HYOS.df) <- c("Date", "Abundance")
+HYOS.df$Date <- as.Date(HYOS.df$Date)
+
+coolspike <- HYOS.df[which(HYOS.df$Date >= "2024-01-01" & HYOS.df$Date < "2028-01-01"),]
+plot(coolspike$Date, coolspike$Abundance, type = "l" )
+
+# cold schock alternative
+# keep water below 13 C
+coldtemps <- temps
+coldtemps$Temperature[which(coldtemps$Temperature > value13)] <-value13
+# use bauflows
+
+out <- HYOSmodel(flow.data = bauflow$flow.magnitude, temp.data = coldtemps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+HYOS.df <- mean.data.frame(out, 250, 9)
+HYOS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], HYOS.df$mean.abund))
+colnames(HYOS.df) <- c("Date", "Abundance")
+HYOS.df$Date <- as.Date(HYOS.df$Date)
+
+coldshock <- HYOS.df[which(HYOS.df$Date >= "2024-01-01" & HYOS.df$Date < "2028-01-01"),]
+plot(coldshock$Date, coldshock$Abundance, type = "l" )
+
+
+# scenario 2
+# coolflow$flow.magnitude[which(coolflow$dts == "2024-05-25")] <- 0.376
+# coolflow$flow.magnitude[which(coolflow$dts == "2025-05-25" | coolflow$dts == "2025-06-08")] <- 0.376
+# coolflow$flow.magnitude[which(coolflow$dts == "2026-05-25" | coolflow$dts == "2026-06-08")] <- 0.376
+# 
+# 
+# out <- HYOSmodel(flow.data = coolflow$flow.magnitude, temp.data = coolmix, disturbanceK = 40000, baselineK = 5000, Qmin = 0.1, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+# HYOS.df <- mean.data.frame(out, 250, 9)
+# HYOS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], HYOS.df$mean.abund))
+# colnames(HYOS.df) <- c("Date", "Abundance")
+# HYOS.df$Date <- as.Date(HYOS.df$Date)
+# 
+# coolspike <- HYOS.df[which(HYOS.df$Date >= "2024-01-01" & HYOS.df$Date < "2028-01-01"),]
+# plot(coolspike$Date, coolspike$Abundance, type = "l" )
+
+# cold schock alternative
+# keep water below 13 C
+coldtemps <- temps
+coldtemps$Temperature[which(coldtemps$Temperature > 13)] <- 13
+# use bauflows
+
+out <- HYOSmodel(flow.data = bauflow$flow.magnitude, temp.data = coldtemps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+HYOS.df <- mean.data.frame(out, 250, 9)
+HYOS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], HYOS.df$mean.abund))
+colnames(HYOS.df) <- c("Date", "Abundance")
+HYOS.df$Date <- as.Date(HYOS.df$Date)
+
+coldshock <- HYOS.df[which(HYOS.df$Date >= "2024-01-01" & HYOS.df$Date < "2028-01-01"),]
+plot(coldshock$Date, coldshock$Abundance, type = "l" )
+
+# cold schock with flow spike
+# we will add flow spikes on same dates as for cool spike alt
+# magnitude will be either a) mean given hydrograph or b) max
+# mean = (9*11000)+(3*14000)+(2*32000)/14/85000 = 0.1722689
+# max = 0.376
+coldflow <- bauflow
+# add in flow spikes
+coldflow$flow.magnitude[which(coldflow$dts == "2024-05-25")] <- 0.17
+coldflow$flow.magnitude[which(coldflow$dts == "2025-05-25" | coldflow$dts == "2025-06-08")] <- 0.17
+coldflow$flow.magnitude[which(coldflow$dts == "2026-05-25" | coldflow$dts == "2026-06-08")] <- 0.17
+
+out <- HYOSmodel(flow.data = coldflow$flow.magnitude, temp.data = coldtemps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+HYOS.df <- mean.data.frame(out, 250, 9)
+HYOS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], HYOS.df$mean.abund))
+colnames(HYOS.df) <- c("Date", "Abundance")
+HYOS.df$Date <- as.Date(HYOS.df$Date)
+
+coldspike <- HYOS.df[which(HYOS.df$Date >= "2024-01-01" & HYOS.df$Date < "2028-01-01"),]
+plot(coldspike$Date, coldspike$Abundance, type = "l" )
+
+# scenario 2
+# coldflow$flow.magnitude[which(coldflow$dts == "2024-05-25")] <- 0.376
+# coldflow$flow.magnitude[which(coldflow$dts == "2025-05-25" | coldflow$dts == "2025-06-08")] <- 0.376
+# coldflow$flow.magnitude[which(coldflow$dts == "2026-05-25" | coldflow$dts == "2026-06-08")] <- 0.376
+# 
+# out <- HYOSmodel(flow.data = coldflow$flow.magnitude, temp.data = coldtemps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.1, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+# HYOS.df <- mean.data.frame(out, 250, 9)
+# HYOS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], HYOS.df$mean.abund))
+# colnames(HYOS.df) <- c("Date", "Abundance")
+# HYOS.df$Date <- as.Date(HYOS.df$Date)
+# 
+# coldshock <- HYOS.df[which(HYOS.df$Date >= "2024-01-01" & HYOS.df$Date < "2028-01-01"),]
+# plot(coldshock$Date, coldshock$Abundance, type = "l" )
+
+# nonbypass drop
+# this one is a little tricky
+# mean would be 0.1416807
+# but we can divide up that is split so that one fortnight has 3 (2000s) and next has 3 (27300)
+# so one timestep 0.12
+# and the next is 0.16
+# other option is to just do max 0.32
+# seems like June would be the time for this
+
+
+nonbypass <- bauflow
+nonbypass$flow.magnitude[which(nonbypass$dts == "2024-06-08" )] <- 0.12
+nonbypass$flow.magnitude[which(nonbypass$dts == "2025-06-08" )] <- 0.12
+nonbypass$flow.magnitude[which(nonbypass$dts == "2026-06-08" )] <- 0.12
+nonbypass$flow.magnitude[which(nonbypass$dts == "2027-06-08" )] <- 0.12
+nonbypass$flow.magnitude[which(nonbypass$dts == "2024-06-22" )] <- 0.16
+nonbypass$flow.magnitude[which(nonbypass$dts == "2025-06-22" )] <- 0.16
+nonbypass$flow.magnitude[which(nonbypass$dts == "2026-06-22" )] <- 0.16
+nonbypass$flow.magnitude[which(nonbypass$dts == "2027-06-22" )] <- 0.16
+
+out <- HYOSmodel(flow.data = nonbypass$flow.magnitude, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+HYOS.df <- mean.data.frame(out, 250, 9)
+HYOS.df <- as.data.frame(cbind(temps$dts[249:length(temps$dts)], HYOS.df$mean.abund))
+colnames(HYOS.df) <- c("Date", "Abundance")
+HYOS.df$Date <- as.Date(HYOS.df$Date)
+
+nbypass <- HYOS.df[which(HYOS.df$Date >= "2024-01-01" & HYOS.df$Date < "2028-01-01"),]
+plot(nbypass$Date, nbypass$Abundance, type = "l" )
+
+HYOS.scenarios <- as.data.frame(cbind(bau, cool$Abundance, coolspike$Abundance, coldshock$Abundance, coldspike$Abundance, nbypass$Abundance))
+
+
+colors <- c("No Action" = "#FF7F00", "Cool Mix" = "#A6CEE3", "Cool Mix with Flow Spike" = "#1F78B4")
+ggplot(data = HYOS.scenarios, aes(x = Date, y = Abundance))+
+  geom_line(aes(color = "No Action" ), alpha = 0.8, size = 1)+  
+  geom_line(aes(y = cool$Abundance,  color = "Cool Mix"),linetype = "dashed", alpha = 0.8, size = 1)+
+  geom_line(aes(y = coolspike$Abundance, color = "Cool Mix with Flow Spike"), size = 1, linetype = "dashed", alpha = 0.8)+
+  scale_color_manual(values = colors)+
+  theme_bw()+
+  labs(x = "Year", y = "Abundance", color = "Scenario")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
+
+colors <- c("No Action" = "#FF7F00", "Cold Shock" = "#CAB2D6", "Cold Shock with Flow Spike" = "#6A3D9A")
+ggplot(data = HYOS.scenarios, aes(x = Date, y = Abundance))+
+  geom_line(aes(color = "No Action" ), alpha = 0.8, size = 1)+  
+  geom_line(aes(y = coldshock$Abundance, color = "Cold Shock"), size = 1, linetype = "dotdash",alpha = 0.8)+
+  geom_line(aes(y = coldspike$Abundance, color = "Cold Shock with Flow Spike"), size = 1, linetype = "longdash", alpha = 0.8)+
+  scale_color_manual(values = colors)+
+  theme_bw()+
+  labs(x = "Year", y = "Abundance", color = "Scenario")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
+
+colors <- c("No Action" = "#FF7F00", "NonBypass" = "#33A02C")
+ggplot(data = HYOS.scenarios, aes(x = Date, y = Abundance))+
+  geom_line(aes(color = "No Action" ), alpha = 0.8, size = 1)+ 
+  geom_line(aes(y = nbypass$Abundance, color = "NonBypass"), linetype = "dashed", size = 1, alpha = 0.8)+
+  scale_color_manual(values = colors)+
+  theme_bw()+
+  labs(x = "Year", y = "Abundance", color = "Scenario")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
+
 
 
 # what about down by Diamond Creek
@@ -387,7 +643,7 @@ ggplot(data = data, aes(x = timestep, y = Stage1, color = "Stage1"))+
 #         col=c("Black", "Blue"), lty=1, cex=0.8)
 #  plot(timestep[10:37], temps$Temperature[10:37], type = "l", col = "red")
 # 
-#  plot(timestep[200:210], Total.N[201:211], type= "l", ylab = "Baetis spp. Total N", xlab = "Timestep (1 fortnight")
+#  plot(timestep[200:210], Total.N[201:211], type= "l", ylab = "HYOSis spp. Total N", xlab = "Timestep (1 fortnight")
 #  par(new=TRUE)
 #  lines(timestep[200:210],temps$Temperature[201:211],col="green")
 # 
