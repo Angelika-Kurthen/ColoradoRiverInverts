@@ -33,3 +33,4 @@ shell.growth(0.994, 0.029, 0.5)
 # on day 164, length ~ 3.2 (maturity) - so on week 24, maturity reached [stage 1 = 0.5mm - 3.2 mm] in about 24 weeks or 12 timesteps
 # on day 266, length ~ 3.9538776 - [stage 2 = 3.2 - 3.9538776] in about 14 weeks or 7 timesteps
 # that means [stage 3 = 3.9538776+] for about 14 weeks or 7 timesteps
+# growth is related to temperature
