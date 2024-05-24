@@ -101,7 +101,8 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
   output.N.list <- reparray
   
   Qmin <- Qmin
-  
+  a <- 0.001
+  g <- 1
   h <- surv.fit.NZMS$m$getPars()[2]  
   k <- surv.fit.NZMS$m$getPars()[1] 
   
@@ -149,10 +150,10 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # optimal temp between 16 and 19 C, but we don't really have parameterization for that
       # F2 <- -0.209*(temps$Temperature[t-1])^2 + 7.32*temps$Temperature[t-1] - 48.936
       # F3 <- -0.563*(temps$Temperature[t-1])^2 + 19.708*temps$Temperature[t-1] -131.764
-      # 
-      F2 <- 15.1096 * (-0.0001427 *  (temps$Temperature[t-1] - 17.5)^4 + 1)
       
-      F3 <- 40.6837 * (-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1)
+      F2 <- 17.1096 * (-0.0001427 *(temps$Temperature[t-1] - 17.5)^4 + 1)* hydropeaking.mortality(lower = 0.8, upper = 1, h = hp[t-1])
+      
+      F3 <- 40.6837 * (-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1) * hydropeaking.mortality(lower = 0.8, upper = 1, h = hp[t-1])
       # # #   
       if (F2 < 0){
         F2 <- 0
@@ -167,21 +168,21 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       #---------------------------------------------------
       # Calculate the disturbance magnitude-K relationship
       # Sets to 0 if below the Qmin
-      #Qf <- Qf.Function(Q[t-1], Qmin, a)
+      Qf <- Qf.Function(Q[t-1], Qmin, a)
       
       #-------------------------------------------------------------------
       # Calculate K arrying capacity immediately following the disturbance
-      #K0 <- K + ((Kd-K)*Qf)
+      K0 <- K + ((Kd-K)*Qf)
       
       # Calculate final K for timestep, including relationship between K and time since disturbance
-      #K <- post.dist.K(K0, Kb, g, t, Q, Qmin)
-      #Klist <- append(Klist, K)
+      K <- post.dist.K(K0, Kb, g, t, Q, Qmin)
+      Klist <- append(Klist, K)
       #---------------------------------------------
       # Calculate effect of density dependnce on fecundity 
       
       # Logistic Density Dependence on Fecundity via Rogosch et al. Fish Model
-      F2 <- Logistic.Dens.Dependence(F2, K, Total.N[t-1, iter])  *hydropeaking.mortality(lower = 1, upper = 1, h = hp[t-1])
-      F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter])  *hydropeaking.mortality(lower = 1, upper = 1, h = hp[t-1])
+      F2 <- Logistic.Dens.Dependence(F2, K, Total.N[t-1, iter])  
+      F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter]) 
       
       if (F2 < 0){
         F2 <- 0
