@@ -156,7 +156,7 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       
       # we start by pulling fecundities from normal distribution
       # assuming 50 50 sex ration
-      F3 = 600 *0.5* hydropeaking.mortality(0.8, 1, h = hp[t-1])
+      F3 = 600 * hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
       #CHIR egg # and % mortality from Charles et al 2004
       # we can also relate fecundities to body size which is between 6 and 15 mm (also from Charles et al 2004)
       # we can "convert" emergetime to size by multiplying to get size between 6 and 15 mm and then convert to fecunity
@@ -164,7 +164,7 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       if (t > 19) {
         size <- 3*emergetime[t-1]-6
         sizelist <- append(sizelist, size)
-        F3 <- (13.33*size)+460 *0.5* hydropeaking.mortality(0.8, 1, h = hp[t-1])
+        F3 <- (13.33*size)+460 *0.92* hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
       }
       # #--------------------------------------------------
       # Calculate the disturbance magnitude-K relationship
@@ -198,29 +198,29 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # in this function, we assume that if below the min temp threshold (9) slow maturation
       # if above the max temp threshold (30), no one remains more than 1 timestep in each stage (fast maturation, small growth)
 
-  if (9 > temps$Temperature[t-1]) {
-    P1 <- (1-(1/4)) * TempSurvival[t-1]
+  if (8 > temps$Temperature[t-1]) {
+    P1 <- (1-(1/20)) * TempSurvival[t-1]
     P2 <- P1 
-    G1 <- 0 * TempSurvival[t-1]
-    G2 <- 0 * TempSurvival[t-1]
+    G1 <- 0.92/20 * TempSurvival[t-1]
+    G2 <- 0.92/20 * TempSurvival[t-1]
   }
 if (temps$Temperature[t-1] > 30){
     P1 <- 0
     P2 <- 0
-    G1 <- 0.35 * TempSurvival[t-1]
-    G2 <- 0.775 * TempSurvival[t-1]
+    G1 <- 0.92 * TempSurvival[t-1]
+    G2 <- 0.92 * TempSurvival[t-1]
   }
 
-      if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == F)){
-        G1 <- (0.35/((emergetime[t-1])/2)) * TempSurvival[t-1]
-        G2 <- (0.775/((emergetime[t-1])/2)) * TempSurvival[t-1]
+      if (8 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == F)){
+        G1 <- (0.92/((emergetime[t-1])/2)) * TempSurvival[t-1]
+        G2 <- (0.92/((emergetime[t-1])/2)) * TempSurvival[t-1]
         P1 <- (1-(1/((emergetime[t-1])/2))) * TempSurvival[t-1]
         P2 <- P1
       }
-      if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == T)) {
-        G1 <- (0.35*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
+      if (8 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == T)) {
+        G1 <- (0.92*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
         P1 <- (1-(1/((-0.136 * temps$Temperature[t-1]) + 5.088))) * TempSurvival[t-1]
-        G2 <- (0.775*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
+        G2 <- (0.92*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
         P2 <- P1
       }
       
