@@ -94,23 +94,23 @@ pulse <- subset(pulse, Date >= "2035-01-01" & Date <= "2035-12-31")
 # 
 # max(B_pulse$Abundance[(which(B_pulse$Date == selected_date)):(which(B_pulse$Date == selected_date) + 6)])
 # 
-# ggplot(data = pulse, aes(x = Date, y  =Abundance/10000, color = Taxa))+
-#   geom_point(size = 1, alpha = 0.5)+
-#   geom_line(size = 1)+
-#   ylim(c(0,60))+
-#   #stat_smooth(size= 1, span = 0.4, se =F)+
-#   xlab("Month")+
-#   ylab("Relativized Abundance")+
-#   geom_vline(xintercept = as.numeric(as.Date("2035-03-13")), 
-#              color = "black", 
-#              lwd = 1,
-#              linetype = "dotted") +
-#   scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
-#   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
-#   theme_bw()+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-# 
+ggplot(data = pulse, aes(x = Date, y  =Abundance/10000, color = Taxa))+
+  geom_point(size = 1, alpha = 0.5)+
+  geom_line(size = 1)+
+  ylim(c(0,60))+
+  #stat_smooth(size= 1, span = 0.4, se =F)+
+  xlab("Month")+
+  ylab("Relativized Abundance")+
+  geom_vline(xintercept = as.numeric(as.Date("2035-03-13")),
+             color = "black",
+             lwd = 1,
+             linetype = "dotted") +
+  scale_color_manual(name = "Taxa", values=c("#66CCEE", "#228833", "#EE6677", "#AA3377"))+
+  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
 # 
 # 
 # 
