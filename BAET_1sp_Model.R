@@ -162,7 +162,7 @@ for (iter in c(1:iterations)) {
     
     # we start by pulling fecundities from normal distribution
     # assuming 50 50 sex ration, 0.22 of egg masses 'dissapearred', and 0.2 desiccation because of rock drying
-    F3 = (1104.4 *0.5)* hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) #* 0.78 * 0.65
+    F3 = (1104.4 * hydropeaking.mortality(0.0, 0.15, h = hp[t-1])) #* 0.78 * 0.65
     #F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
     
     # we can also relate fecundities to body mass.
@@ -175,7 +175,7 @@ for (iter in c(1:iterations)) {
     if (t > 19) {
       size <- emergetime[t-1]
       sizelist <- append(sizelist, size)
-      F3 <- ((200*size)+200 *0.5)* hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) #* 0.78 * 0.65
+      F3 <- ((200*size)+200) * hydropeaking.mortality(0.0, 0.15, h = hp[t-1]) #* 0.78 * 0.65
       #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
     }
     # size <- delta[t-1]
@@ -235,7 +235,7 @@ for (iter in c(1:iterations)) {
     #   P1 <-0.32(1-(1/((emergetime[t-1])/2)))
     #   P2 <- P1
     # }
-    if (7 > temps$Temperature[t-1]) {
+    if (9 > temps$Temperature[t-1]) {
       P1 <- (1-(1/9)) 
       P2 <- P1
       G1 <- 0.3/9 
@@ -248,13 +248,13 @@ for (iter in c(1:iterations)) {
       G2 <- G1
     }
     
-    if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
+    if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == F)){
       G1 <- 0.3/((emergetime[t-1])/2) 
       G2 <- G1
       P1 <- (1-(1/((emergetime[t-1])/2))) 
       P2 <- P1
     }
-    if (7 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == T)) {
+    if (9 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t-1] == T)) {
       G1 <- 0.3*((-0.786 * temps$Temperature[t-1]) + 18) 
       P1 <- (1-(1/((-0.786 * temps$Temperature[t-1]) + 18))) 
       G2 <- G1
