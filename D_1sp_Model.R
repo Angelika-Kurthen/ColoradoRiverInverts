@@ -205,7 +205,7 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       if (t > 19) { # will be erased in burn
         size <- emergetime[t-1]
         sizelist <- append(sizelist, size)
-        F3 <- ((size*mod$coefficients[2])+mod$coefficients[1]) * hydropeaking.mortality(0.8, 1, h = hp[t-1])
+          F3 <- ((size*mod$coefficients[2])+mod$coefficients[1]) * hydropeaking.mortality(0.8, 1, h = hp[t-1])
         #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
       }
       # size <- delta[t-1]
