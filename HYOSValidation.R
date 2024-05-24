@@ -15,7 +15,7 @@ library(devtools)
 #install_github(repo = "jmuehlbauer-usgs/R-packages", subdir = "foodbase")
 library(foodbase)
 
-source("1spFunctions_CR.R")
+source("1spFunctions.R")
 source("HYOS_1sp.R")
 # load Water Temperature data from above Diamond Creek Confluence (RM226)
 temp <- read.delim("CRaboveDC_Temp.tsv", header=T)
@@ -83,24 +83,33 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
 
 cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
-ggplot(data = means.list.HYOS, aes(x = Date,
-                                                        y = mean.abund*10, group = 1, color = "Model")) +
+
+hist(cor.df$V2, xlab = "Hydropsychidae Adults (#/hour)", col = "#CADBD7")
+colors <- c("black", "#FF7F00")
+ggplot(data = means.list.HYOS[100:571,], aes(x = Date, y = mean.abund, group = 1, color = "Model")) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
               # alpha = .15,
               # show.legend = T) +
-  geom_line(show.legend = T, linewidth = 0.7) +
-  geom_line(data =HYOS.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = V2, color = "Empirical"), show.legend = T)+
-  #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,2000000)) +
-  ylab('Hydropsyichidae S3 Density inds/(m2)') +
-  xlab("")+
+  geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
+  geom_line(data =HYOS.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = V2/10, color = "USGS Light Trap Data"), linewidth = 1, alpha = 0.8,show.legend = T)+
+  # geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = Discharge), color = "blue") +
+  # geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*0.1), color = "green")+
+  # #coord_cartesian(ylim = c(0,2000000)) +
+  ylab('Hydropsychidae Adults (#/m2)') +
+  scale_y_continuous(
+    # Features of the first axis
+    # Add a second axis and specify its features
+    sec.axis = sec_axis(~./10, name="Hydropsychidae Adults (#/hour)")
+  ) + 
+  xlab("Year")+
   labs(colour=" ")+
+  theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
-  scale_x_date(date_labels="%B", date_breaks  ="6 months")
+  scale_x_date(date_labels="%Y")+
+  scale_color_manual(values = colors)
 
 # plot(means.list.HYOS$Date, means.list.HYOS$mean.abund, type = "l")
 # lines(as.Date(temps$dts), temps$Temperature * 5, col = "red")
