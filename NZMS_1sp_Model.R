@@ -24,6 +24,7 @@ library(dataRetrieval)
 # library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 source("1spFunctions.R")
+source("NZMS_shell_length_fecundity.R")
 # #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 # temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
 # temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
@@ -151,9 +152,9 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # F2 <- -0.209*(temps$Temperature[t-1])^2 + 7.32*temps$Temperature[t-1] - 48.936
       # F3 <- -0.563*(temps$Temperature[t-1])^2 + 19.708*temps$Temperature[t-1] -131.764
       
-      F2 <- 17.1096 * (-0.0001427 *(temps$Temperature[t-1] - 17.5)^4 + 1)* hydropeaking.mortality(lower = 0.8, upper = 1, h = hp[t-1])
+      F2 <- 8.87473 * (-0.0001427 *(temps$Temperature[t-1] - 17.5)^4 + 1) *  hydropeaking.mortality(lower = 0, upper = 1, h = hp[t-1])
       
-      F3 <- 40.6837 * (-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1) * hydropeaking.mortality(lower = 0.8, upper = 1, h = hp[t-1])
+      F3 <-  27.89665 *(-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1) * hydropeaking.mortality(lower = 0, upper = 1, h = hp[t-1])
       # # #   
       if (F2 < 0){
         F2 <- 0
@@ -161,10 +162,10 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       if (F3 < 0){
         F3 <- 0
       }
-      #       F2 <- 8.87473
-      #       F3 <- 27.89665
-      
-      
+      #       F2 <- *
+      #       F3 <- 
+      # other fecundity options (0.35, 3.78, 14.6, 22.1)
+      #
       #---------------------------------------------------
       # Calculate the disturbance magnitude-K relationship
       # Sets to 0 if below the Qmin
@@ -203,11 +204,14 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # stage 2 P2 (prob remaining in stage 2)
       # stage 3 P3 (prob remaining in stage 3) 
       
-      G1 = (0.89/14) *TempSurvival[t-1]
-      G2 = (0.89/7)*TempSurvival[t-1]
-      P1 = (13/14) *TempSurvival[t-1]
-      P2 = (6/7) *TempSurvival[t-1]
-      P3 = (6/7)  *TempSurvival[t-1]
+      stageduration1 <- timestep_to_mat(temps$Temperature[t-1])[[1]]
+      stageduration2 <- timestep_to_mat(temps$Temperature[t-1])[[2]]
+      
+      G1 = (0.9/stageduration1) *TempSurvival[t-1]
+      G2 = (0.9/stageduration2)*TempSurvival[t-1]
+      P1 = (1-(1/stageduration1)) *TempSurvival[t-1]
+      P2 = (1-(1/stageduration2)) *TempSurvival[t-1]
+      P3 = (1-(1/7))*TempSurvival[t-1]
       
       
       
@@ -256,6 +260,8 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
     #----------------------
   }
   return(output.N.list)
+  #return(Flist)
+  #return(Klist)
 }
 
 # out <- NZMSmodel(flow.data = discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
