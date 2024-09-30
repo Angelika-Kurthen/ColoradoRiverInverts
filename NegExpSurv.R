@@ -51,13 +51,13 @@ low.df <- as.data.frame(cbind(low.df, rep("Low Response", times = length(low.df$
 colnames(low.df) <- c("Q", "Survival", "Response")
 
 df <- as.data.frame(rbind(high.df, med.df, low.df))
-ggplot(df, aes(x = Q, y = Survival, col = Response))+
-  geom_line()+
-  #geom_point(data = HYOSVitalRates, aes(x = `Max Event Discharge/Bankfull Discharge` , y = 1-(Mortality), color = Citation))+
-  #coord_cartesian(ylim = c(0,1)) +
-  ylab('Immediate Post-Disturbance Survival') +
-  theme_bw()+
-  xlab('`Max Event Discharge/Bankfull Discharge`')
+# ggplot(df, aes(x = Q, y = Survival, col = Response))+
+#   geom_line()+
+#   #geom_point(data = HYOSVitalRates, aes(x = `Max Event Discharge/Bankfull Discharge` , y = 1-(Mortality), color = Citation))+
+#   #coord_cartesian(ylim = c(0,1)) +
+#   ylab('Immediate Post-Disturbance Survival') +
+#   theme_bw()+
+#   xlab('`Max Event Discharge/Bankfull Discharge`')
 
 
 #we know crit max and min of Temperate 
