@@ -78,8 +78,8 @@ for (mts in 1:length(magnitudes)){ # iterate over each magnitude
       m <- mean.data.frame(data = out, burnin = 250, iteration = 2)
       m <- cbind.data.frame(temp$dts[250:last(m$timesteps)], m)  
       colnames(m) <- c("time", 'timestep', "abund", "sd", "se")
-      imm_array[i,j] <- m$abund[which(m$time == last(random_date))+1]
-      short_array[i,j] <- max(m$abund[(which(m$time == last(random_date))):(which(m$time == last(random_date)) + 6)])
+      imm_array[i,j] <- m$abund[which(m$time == max(random_date))+1]
+      short_array[i,j] <- max(m$abund[(which(m$time == max(random_date))):(which(m$time == max(random_date)) + 6)])
       
       steps<-steps+1
       setTxtProgressBar(pb, steps)
