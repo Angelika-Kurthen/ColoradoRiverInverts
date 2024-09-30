@@ -65,8 +65,8 @@ ggplot(data = annual, aes(x = Date, y  =Abundance/10000, color = Taxa))+
 
 
   
-selected_date <- temp$dts[temp$dts >= as.Date("2035-05-01") & temp$dts <= as.Date("2035-07-15")]
-discharge[match(selected_date, temp$dts)] <- 0.5
+selected_date <- temp$dts[temp$dts >= as.Date("2035-05-01") & temp$dts <= as.Date("2035-06-15")]
+discharge[match(selected_date, temp$dts)] <- 0.27
 
 A_pout <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
 A_pout <- mean.data.frame(A_pout, burnin = 250, iteration = 2)
@@ -88,7 +88,7 @@ colnames(D_pulse) <- c("Date", "timesteps", "Abundance", "sd", "se", "Taxa")
 pulse <- rbind(A_pulse, B_pulse, C_pulse, D_pulse)
 pulse$Date <- as.Date(pulse$Date)
 
-threeyear <- subset(pulse, Date >= "2034-01-01" & Date <= "2037-12-31")
+threeyear <- subset(pulse, Date >= "2030-01-01" & Date <= "2033-12-31")
 
 pulse <- subset(pulse, Date >= "2035-01-01" & Date <= "2035-12-31")
 # 
