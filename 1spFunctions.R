@@ -344,13 +344,8 @@ hydropeaking.mortality <- function(lower, upper, hp){
 #df <- as.data.frame(cbind(c(0.00001,0.99999), c(0.11, 0.17)))
 #fi <- nlsLM(formula = (V2 ~ 2/(1 + exp(-b * V1))), data = df, start = c(b = 01))
 
-hydropeaking.mortality.BAET <- function(lower, upper, hp){
-  int <- integrate(hydrofunction, lower = lower, upper = upper)
-  H <- (1-int$value) * (-20.00 *hp + 3.40)
-  if (H > 1) H = 1
-  if (H < 0) H = 0
-  return(H)
-}
+
+
 
 
 #Baetis spp preferentially oviposited between the rivers edge (r1 = 0) and 16% (r2 = 0.16) in from the edge (standardizing 4m/25m, Miller et al, Fig 6). Hydropsyche occidentalis preferentially oviposited 90% (r1 = 0.9)in towards the river’s thalweg (22.5 m/25m, Miller et al. Fig 6) and the thalweg (r2 = 1). No specific oviposition/oviviopositon strategy has been described fro NZMS so we assume they can reproduce in any section r1 = 0, r2 = 1. 
