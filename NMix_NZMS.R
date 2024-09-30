@@ -19,7 +19,7 @@ temps <- TimestepTemperature(temp)
 discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
 
 # pull drift data from DB
-drift.data.total <- readDB(gear = "Drift", type = "Sample", updater = TRUE)
+drift.data.total <- readDB(gear = "Drift", type = "Sample", updater = F)
 # get drift data from between Lees Ferry and RM -6
 drift.LF <- drift.data.total[which(drift.data.total$RiverMile >= -6 & drift.data.total$RiverMile <= 0),]
 #specify NZMS
@@ -34,7 +34,8 @@ NZMS.samp <- merge(NZMS.samp, discharge[, 3:4], by = "Date")
 # for densities, apply equation to adjust for flow
 #NZMS.samp$Density <- (NZMS.samp$Density/(9e-15 *(NZMS.samp$X_00060_00003 * 0.02831683)^4.1))
 #write.csv(NZMS.samp, "NZMSsamp.csv")
-
+NZMS.samp <- read.csv("~/ColoradoRiverInverts/NZMSsamp.csv")
+NZMS.samp <- merge(NZMS.samp, temp, by = "Date")
 # need to fit our data to an unmarked frame
 
 # observations need to be in RxJ matrix, where R is # of sites and J is max number of obs per site
@@ -110,7 +111,7 @@ volumes <- list(volumes)
 names(volumes) <- c("vol")
 
 # convert organized data into unmarked dataframe format, with flow as site covariate and volume of sample as observation covariate
-dat <- unmarkedFramePCount(y = site_mat, siteCovs = data.frame(flows), obsCovs = c(volumes, region, reach, rivermile, time))
+dat <- unmarkedFramePCount(y = site_mat, siteCovs = data.frame(flows, rivermile), obsCovs = c(volumes, time))
 
 # pcount is N-mixture model to estimate counts at each site
 # we are doing space-time approximation
@@ -118,11 +119,11 @@ dat <- unmarkedFramePCount(y = site_mat, siteCovs = data.frame(flows), obsCovs =
 # we want adjust our count data by volume (since volumes vary by each sample)
 # these are basically our three different hypotheses
 #Poisson mixture
-mod_um_vol_P <- pcount(~ 1 + vol + region + reach + rivermile + time ~1 + flows..nodata., dat, K = 11000, mixture = "P")
+mod_um_vol_P <- pcount(~ 1 + vol  ~1 + flows..nodata. + rivermile, dat, K = 11000, mixture = "P")
 # Neg Binom mixture
-mod_um_vol_NB <- pcount(~ 1 + vol + region + reach + rivermile + time ~1 + flows..nodata., dat, K = 11000, mixture = "NB")
+mod_um_vol_NB <- pcount(~ 1 + vol  ~1 + flows..nodata. + rivermile, dat, K = 11000, mixture = "NB")
 # Zero Inflated Poisson mixture
-mod_um_vol_ZIP <- pcount(~ 1 + vol + region + reach + rivermile + time ~1 + flows..nodata., dat, K =11000, mixture = "ZIP")
+mod_um_vol_ZIP <- pcount(~ 1 + vol ~1 + flows..nodata. + rivermile, dat, K =11000, mixture = "ZIP")
 
 # now we want to compare the models
 fm <- fitList(mod_um_vol_P, mod_um_vol_NB, mod_um_vol_ZIP)
