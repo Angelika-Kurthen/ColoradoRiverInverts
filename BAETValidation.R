@@ -61,9 +61,11 @@ BAET.samp.sum$V1 <- as.Date(BAET.samp.sum$V1, origin = "1970-01-01")
 cor.df <- left_join(BAET.samp.sum, means.list.BAET, by=c('V1'="temps$dts"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+hist(cor.df$V2, xlab = "Baetidae Larvae (#/m2)", col = "#CADBD7")
 
 
 summary(cor.lm)
+colors <- c("black", "#FF7F00")
 ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
   geom_point()+
   stat_smooth(method = "lm",
@@ -72,23 +74,27 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
   geom_text(x = 1000, y = 3250, label = "y = 0.00021x, R^2 = 0.37")+
   labs(y = "Baetidae Model Output", x = "Baetidae Emprical Data")
 
-abund.trends.BAET <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,
-                                                        y = mean.abund, group = 1, color = "Model")) +
+ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = mean.abund, group = 1, color = "Model")) +
   geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
                   ymax = mean.abund + 1.96 * se.abund),
               colour = 'transparent',
               alpha = .15,
               show.legend = T) +
-  geom_line(show.legend = T, linewidth = 0.7) +
-  geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = V2, color = "Empirical"), show.legend = T)+
+  geom_line(show.legend = T, linewidth = 1) +
+  geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = V2*10, color = "Empirical"), linewidth = 1,  show.legend = T)+
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
   #coord_cartesian(ylim = c(0,6000)) +
   ylab('Baetidae S1 and S2 Density inds/(m2)') +
   xlab("")+
   labs(colour=" ")+
+  theme_bw()+
+  scale_color_manual(values = colors)+
+  scale_y_continuous(
+    sec.axis = sec_axis(~./10, name="Baetidae Larvae (inds/m2)"
+  ))+
 theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
       axis.text.y = element_text(size = 13), )+
-  scale_x_date(date_labels="%B", date_breaks  ="6 months")
+  scale_x_date(date_labels="%Y")
 
 
