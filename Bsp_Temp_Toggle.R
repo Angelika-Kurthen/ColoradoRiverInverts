@@ -75,4 +75,43 @@ b_size_df$size_means <- as.numeric(b_size_df$size_means)
 #   xlab("Degree C Change")+
 #   ylab("B sp Abundance Relative to K")+
 #   theme_bw()
-# 
+
+# Disturbance by temp
+
+temp_regime <- vector()
+temp_means <- vector()
+temp_seq <- seq(-10, 10, by = 1)
+short <- vector()
+discharge <- rep(0.1, time = length(temp$dts))
+discharge[259] <- 1
+for (te in 1:length(temp_seq)){
+  temp$Temperature <- temp$Temperature + temp_seq[te]
+  temp_regime[te] <- mean(temp$Temperature)
+  out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  temp$Temperature <- temp$Temperature - temp_seq[te]
+  means.list.B<- mean.data.frame(out, burnin = 250, iteration = 2)
+  short[te] <- mean(means.list.B$mean.abund[10:16])
+}
+plot(temp_regime, short)
+winter <- as.data.frame(cbind(temp_regime, short))
+
+temp_regime <- vector()
+temp_means <- vector()
+temp_seq <- seq(-10, 10, by = 1)
+short <- vector()
+discharge <- rep(0.1, time = length(temp$dts))
+discharge[272] <- 1
+for (te in 1:length(temp_seq)){
+  temp$Temperature <- temp$Temperature + temp_seq[te]
+  temp_regime[te] <- mean(temp$Temperature)
+  out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  temp$Temperature <- temp$Temperature - temp_seq[te]
+  means.list.B<- mean.data.frame(out, burnin = 250, iteration = 2)
+  short[te] <- mean(means.list.B$mean.abund[23:39])
+}
+summer <- as.data.frame(cbind(temp_regime, short))
+
+# bind together, 1 = winter 2 = summer
+temp_dist_b <- bind_rows(winter, summer, .id = "season")
+
+
