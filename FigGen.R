@@ -57,6 +57,27 @@ ggarrange(abund, biomass, totbiomass,
           ncol = 1, nrow = 3, common.legend = T)
 
 
+temp_dist <- bind_rows(temp_dist_a, temp_dist_b, temp_dist_c, temp_dist_d, .id = "taxa")
+
+supp.labs <- c("Winter Disturbance", "Summer Disturbance")
+names(supp.labs) <- c("1", "2")
+
+d <- ggplot(data = temp_dist, aes(x = temp_regime, y = log(short), color = taxa))+
+  geom_line(linewidth = 1, alpha = 0.8)+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+  geom_point()+
+  theme_bw()+
+  xlab("Mean Annual Water Temperature in C")+
+  ylab("Log Abundance")+
+  facet_grid(.~season, labeller = labeller(season = supp.labs))+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
+
+
+
+
+
+
 # code for fecundity sensitivity analysis
 source("A_sp_Fecundity_Toggle.R")
 source("B_sp_fecundity_Toggle.R")
@@ -235,7 +256,7 @@ ggplot(data = long_df, aes(x = V2, y = long/10000, color = V3))+
 # code for temperature regime used in most runs where temp isn't adjusted
 source("SpA_PulseMagnitude.R")
 temp$dts <- as.Date(temp$dts, origin = "1970-01-01")
-temp <- ggplot(data = temp[1:27,], aes(dts, Temperature))+
+tempgraph <- ggplot(data = temp[1:27,], aes(dts, Temperature))+
   geom_line(size = 1)+
   xlab("Month")+
   ylab("Temperature C")+
@@ -245,14 +266,15 @@ temp <- ggplot(data = temp[1:27,], aes(dts, Temperature))+
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 
-yr4temp <- ggplot(data = temp[1:108,], aes(dts, Temperature))+
-  geom_line(size = 1)+
+yr4temp <- ggplot(data = subset(temp, dts >= "2034-01-01" & dts <= "2037-12-31"), aes(as.Date(dts), Temperature))+
+  geom_line(size = 0.8)+
   xlab("Month")+
   ylab("Temperature C")+
   theme_bw()+
-  scale_x_date(date_labels="%B", date_breaks  ="12 months")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
+  scale_x_date(date_labels="%B", date_breaks  ="3 months")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5, angle = 45), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+#,  plot.background = element_rect(colour = "black", fill="white", size=0.5))
 
 
 # code for Temperature-Mortality relationship  
@@ -274,93 +296,142 @@ ggplot(df, aes(x = Q, y = Survival, col = Response))+
   ylab('Immediate Post-Disturbance Survival') +
   scale_color_manual(name = " ", labels=c("High Survival", "Low Survival"), values=c("#feb078","#2c115f"))+
   theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
+  theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5, angle = 45), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
   xlab('Max Event Discharge/Bankfull Discharge')
 
 
 # annual 
-source("Annual.R")
-ggplot(data = annual, aes(x = Date, y  = 
-                            log(Abundance), color = Taxa))+
-  #geom_point(size = 1, alpha = 0.5)+
-  geom_line(size = 1, alpha = 0.8)+
-  #stat_smooth(size= 1, span = 0.4, se =F)+
-  xlab("Month")+
-  ylab("Log Abundance")+
-  ylim(c(5, 18))+
-  #ylim(c(0, 5000000))+
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
-  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
-  theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
+# source("Annual.R")
+# ggplot(data = annual, aes(x = Date, y  = 
+#                             log(Abundance), color = Taxa))+
+#   #geom_point(size = 1, alpha = 0.5)+
+#   geom_line(size = 1, alpha = 0.8)+
+#   #stat_smooth(size= 1, span = 0.4, se =F)+
+#   xlab("Month")+
+#   ylab("Log Abundance")+
+#   ylim(c(5, 18))+
+#   #ylim(c(0, 5000000))+
+#   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+#   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+#   theme_bw()+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
 # disturbance
 source("Annual.R")
-threeyear
-ggplot(data = threeyear, aes(x = Date, y  =
-                           (Abundance)/100000, color = Taxa))+
+# 
+# threeyearplot <- ggplot(data = threeyear, aes(x = Date, y  =
+#                            (Abundance)/100000, color = Taxa))+
+#   #geom_point(size = 1, alpha = 0.5)+
+#   geom_line(size = 0.8, alpha = 0.7)+
+#  # stat_smooth(size= 1, span = 0.4, se =F)+
+#   #ylim(c(5, 18))+
+#   ylim(c(0, 10))+
+#   xlab("Month")+
+#   ylab("Relative Abundance")+
+#   geom_vline(xintercept = as.numeric(as.Date("2035-05-08")), 
+#              color = "black", 
+#              lwd = 1,
+#              linetype = "dotted") +
+#   geom_vline(xintercept = as.numeric(as.Date("2035-05-22")), 
+#              color = "black", 
+#              lwd = 1,
+#              linetype = "dotted") +
+#   geom_vline(xintercept = as.numeric(as.Date("2035-06-05")), 
+#              color = "black", 
+#              lwd = 1,
+#              linetype = "dotted") +
+#   geom_vline(xintercept = as.numeric(as.Date("2035-06-19")), 
+#              color = "black", 
+#              lwd = 1,
+#              linetype = "dotted") +  
+#   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+#   scale_x_date(date_labels="%B", date_breaks  ="3 month")+
+#   theme_bw()+
+#   theme(text = element_text(size = 13.54), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+#   #inset_element(yr4temp, 0.45, 0.55, 1, 1)+
+#   #plot_annotation(tag_levels = 'a')
+# 
+# 
+logthreeyearplot <- ggplot(data = threeyear, aes(x = Date, y  =
+                                                log(Abundance), color = Taxa))+
   #geom_point(size = 1, alpha = 0.5)+
   geom_line(size = 0.8, alpha = 0.7)+
- # stat_smooth(size= 1, span = 0.4, se =F)+
+  # stat_smooth(size= 1, span = 0.4, se =F)+
   #ylim(c(5, 18))+
-  #ylim(c(0, 5000000))+
+  #ylim(c(0, 10))+
   xlab("Month")+
-  ylab("Relativized Abundance")+
-  geom_vline(xintercept = as.numeric(as.Date("2035-05-08")), 
-             color = "black", 
-             lwd = 1,
-             linetype = "dotted") +
-  geom_vline(xintercept = as.numeric(as.Date("2035-05-22")), 
-             color = "black", 
-             lwd = 1,
-             linetype = "dotted") +
-  geom_vline(xintercept = as.numeric(as.Date("2035-06-05")), 
-             color = "black", 
-             lwd = 1,
-             linetype = "dotted") +
-  geom_vline(xintercept = as.numeric(as.Date("2035-06-19")), 
-             color = "black", 
-             lwd = 1,
-             linetype = "dotted") +
-  geom_vline(xintercept = as.numeric(as.Date("2035-07-03")), 
-             color = "black", 
-             lwd = 1,
-             linetype = "dotted") +
+  ylab("Log Abundance")+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   scale_x_date(date_labels="%B", date_breaks  ="3 month")+
   theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-  inset_element(temp, 0.6, 0.6, 1, 1)+
-  plot_annotation(tag_levels = '1')
+  theme(text = element_text(size = 13.5), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 
-threeyear[which(threeyear$Date == "2034-05-09"),]
-threeyear[which(threeyear$Date == "2036-05-07"),]
-threeyear[which(threeyear$Date == "2037-05-06"),]
-
-source("Annual.R")
-
-ggplot(data = pulse, aes(x = Date, y  =
-                           log(Abundance), color = Taxa))+
-  #geom_point(size = 1, alpha = 0.5)+
-  geom_line(size = 1, alpha = 0.8)+
-  # stat_smooth(size= 1, span = 0.4, se =F)+
-  ylim(c(5, 18))+
-  #ylim(c(0, 5000000))+
+source("DensIndependence.R")
+DensInd <- ggplot(data = dens.ind, aes(x = Date, y  =log(Abundance), color = Taxa))+
+  geom_point(size = 1, alpha = 0.5)+
+  geom_line(size = 1)+
+  #stat_smooth(size= 1, span = 0.4, se =F)+
   xlab("Month")+
   ylab("Log Abundance")+
-  geom_vline(xintercept = as.numeric(as.Date("2035-05-08")), 
-             color = "black", 
-             lwd = 1,
-             linetype = "dotted") +
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
-  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"),  values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+  scale_x_date(date_labels="%B", date_breaks  ="3 month")+
   theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+source("DensityDependence.R")
+
+DensDep <- ggplot(data = dens.dep, aes(x = Date, y  =log(Abundance), color = Taxa))+
+  geom_point(size = 1, alpha = 0.5)+
+  geom_line(size = 1)+
+  #stat_smooth(size= 1, span = 0.4, se =F)+
+  xlab("Month")+
+  ylab("Log Abundance")+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"),  values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+  scale_x_date(date_labels="%B", date_breaks  ="3 month")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+
+x11()
+
+ggarrange(DensInd, DensDep, logthreeyearplot,
+          labels = c("a", "b", "c"), hjust = 0, vjust = 0.5,
+          ncol = 1, nrow = 3, common.legend = T)
+
+# 
+# 
+# 
+# threeyear[which(threeyear$Date == "2034-05-09"),]
+# threeyear[which(threeyear$Date == "2036-05-07"),]
+# threeyear[which(threeyear$Date == "2037-05-06"),]
+
+# source("Annual.R")
+# 
+# ggplot(data = pulse, aes(x = Date, y  =
+#                            log(Abundance), color = Taxa))+
+#   #geom_point(size = 1, alpha = 0.5)+
+#   geom_line(size = 1, alpha = 0.8)+
+#   # stat_smooth(size= 1, span = 0.4, se =F)+
+#   ylim(c(5, 18))+
+#   #ylim(c(0, 5000000))+
+#   xlab("Month")+
+#   ylab("Log Abundance")+
+#   geom_vline(xintercept = as.numeric(as.Date("2035-05-08")), 
+#              color = "black", 
+#              lwd = 1,
+#              linetype = "dotted") +
+#   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+#   scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+#   theme_bw()+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 
 
@@ -557,7 +628,67 @@ ggplot(data = freq_mag, aes(x = frequency, y = magnitude))+
   theme(legend.margin = margin(-1,0,0,0, unit="cm"))
 
 # multivoltinism
-source(SpA_Multivolt.R)
-source(SpB_Multivolt.R)
-source(SpC_Multivolt.R)
-source(SpD_Multivolt.R)
+source("SpA_Multivolt.R")
+source("SpB_Multivolt.R")
+source("SpC_Multivolt.R")
+source("SpD_Multivolt.R")
+
+# chaos plots
+source("HilbertMetric.R")
+
+chaostestplot <- ggplot(data = chaostestdf, aes(x = fecs, y = chaos1))+
+  geom_point(alpha = 0.8)+
+  xlab("Stage 3 Mayfly Fecundity")+
+  ylab("Chaos 0 - 1 Test Index")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  theme_bw()
+
+chaosts<- ggplot(data = outchaos2[250:500,], aes(x = as.numeric(timesteps), y = log(mean.abund), group = 1))+
+  geom_line(linewidth = 1, col = "#4477AA")+
+  xlab("Timestep")+
+  ylab("Log Abundance")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  scale_x_continuous(breaks = seq(250, 2600, by = 250))+ 
+  theme_bw()
+
+chaosn <- ggplot(data = chaosdf, aes(x = V1, y = V2))+
+  geom_point(col = "#4477AA", alpha = 0.8)+
+  geom_line(linewidth = 1, col = "#4477AA")+
+  geom_path(col = "#4477AA")+
+  xlab(bquote(N[mayfly](t)))+ 
+  ylab(bquote(N[mayfly](t+1)))+
+  annotate("text", x= 1000000, y= 1270409, label = "F3 = 5200")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  theme_bw()
+
+stablets <- ggplot(data = outstable2[250:500,], aes(x = as.numeric(timesteps), y = log(mean.abund), group = 1))+
+  geom_line(linewidth = 1, col = "#EE6677")+
+  xlab("Timestep")+
+  ylab("Log Abundance")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  scale_x_continuous(breaks = seq(250, 2600, by = 250))+ 
+  theme_bw()
+
+stablen <- ggplot(data = stabledf, aes(x =(V1), y = (V2)))+
+  geom_point(alpha = 0.8, col = "#EE6677")+
+  geom_line(linewidth = 1,col = "#EE6677")+
+  geom_path(linewidth = 1, col = "#EE6677")+
+  xlab(bquote(N[mayfly](t)))+ 
+  ylab(bquote(N[mayfly](t+1)))+
+  annotate("text", x= 200000, y= 245000, label = "F3 = 1200")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  theme_bw()
+
+x11()
+ggarrange(chaostestplot,
+          ggarrange(chaosn, chaosts, stablen, stablets, ncol = 2, nrow = 2, vjust = 0.5, labels = c("b", "c", "d", "e")),
+          labels = "a",
+          nrow = 2, common.legend = T)
+
+
+
