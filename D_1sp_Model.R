@@ -68,7 +68,7 @@ source("1spFunctions.R")
 # fecundity <- 300
 # dds <- 1500
 
-Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 300, dds = 1500, stage_output = "all"){
+Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 300, dds = 1500, stage_output = "all", dens.dep = T){
   
   # set up model
   source("NegExpSurv.R")
@@ -190,7 +190,7 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       
       # we start by pulling fecundities from normal distribution
       # assuming 50 50 sex ration, 0.22 of egg masses 'dissapearred', and 0.2 desiccation because of rock drying
-      F3 = fecundity  * hydropeaking.mortality(0.8, 1, h = hp[t-1])
+      F3 = fecundity  * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
       #F3 = rnorm(1, mean = 1104.5, sd = 42.75) * 0.5  #Baetidae egg minima and maxima from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
       
       
@@ -205,7 +205,7 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       if (t > 19) { # will be erased in burn
         size <- emergetime[t-1]
         sizelist <- append(sizelist, size)
-          F3 <- ((size*mod$coefficients[2])+mod$coefficients[1]) * hydropeaking.mortality(0.8, 1, h = hp[t-1])
+          F3 <- ((size*mod$coefficients[2])+mod$coefficients[1]) * hydropeaking.mortality(0.0, 0.2, h = hp[t-1])
         #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
       }
       # size <- delta[t-1]
@@ -227,13 +227,16 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       Klist <- append(Klist, K)
       #---------------------------------------------
       # Calculate effect of density dependence on fecundity 
-      
+      if (dens.dep == T){
       # Logistic via Rogosch et al. Fish Model
       # no immediate egg mortality incorporated
       F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter])
       # 
       # add F_BAET to list
-      Flist <- append(Flist, F3)
+      Flist <- append(Flist, F3)}
+      if (dens.dep == F){
+        F3 <- F3
+      }
       #-----------------------------------------------
       # Calculate new transition probabilities based on temperature
       # This is the growth v development tradeoff
@@ -291,12 +294,18 @@ Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
       
       #------------------------------------------------------
-      # check extinction threshold and if below set to 0
-      Total.N[t,iter] <- sum(output.N.list[t,,iter])
-      if (Total.N[t, iter] < extinction){
-        output.N.list[t,,iter] <- 0
-        Total.N[t, iter] <- 0}
-      
+      # if any values infinity, turn to highest integer, since model breaks and considered Inf non numeric 
+      if( any(is.infinite(output.N.list[t,,iter]))== T){
+        output.N.list[t, 1:3, iter] <- 5.6e+307 # max value div by 3
+        Total.N[t, iter] <- 1.7e+308 ## max integer value in R, if we allow it to be INF, causes errors
+      }
+      else {
+        # check extinction threshold and if below set to 0
+        Total.N[t,iter] <- sum(output.N.list[t,,iter])
+        if (Total.N[t, iter] < extinction){
+          output.N.list[t,,iter] <- 0
+          Total.N[t, iter] <- 0}
+      }
     } #-------------------------
     # End Inner Loop  
     #------------------------- 

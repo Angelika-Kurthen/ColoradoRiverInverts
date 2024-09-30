@@ -71,7 +71,7 @@ source("1spFunctions.R")
  #  fecundity <- 1200
  # dds <- 500
 
-Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 1200, dds = 500, stage_output = "all"){
+Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 1200, dds = 500, stage_output = "all", dens.dep = T){
   
   # set up model
   source("NegExpSurv.R")
@@ -233,13 +233,17 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       Klist <- append(Klist, K)
       #---------------------------------------------
       # Calculate effect of density dependence on fecundity 
-      
+      if (dens.dep == T){
       # Logistic via Rogosch et al. Fish Model
       # no immediate egg mortality incorporated
       F3 <- Logistic.Dens.Dependence(F3, K, Total.N[t-1, iter])
       # 
       # add F_BAET to list
-      Flist <- append(Flist, F3)
+      Flist <- append(Flist, F3)}
+      
+      if (dens.dep == F){
+        F3 <- F3
+      }
       #-----------------------------------------------
       # Calculate new transition probabilities based on temperature
       # This is the growth v development tradeoff
@@ -297,12 +301,18 @@ Bmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       #flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
       # 
       #------------------------------------------------------
-      # check extinction threshold and if below set to 0
-      Total.N[t,iter] <- sum(output.N.list[t,,iter])
-      if (Total.N[t, iter] < extinction){
-        output.N.list[t,,iter] <- 0
-        Total.N[t, iter] <- 0}
-      
+      # if any values infinity, turn to highest integer, since model breaks and considered Inf non numeric 
+      if( any(is.infinite(output.N.list[t,,iter]))== T){
+        output.N.list[t, 1:3, iter] <- 5.6e+307 # max value div by 3
+        Total.N[t, iter] <- 1.7e+308 ## max integer value in R, if we allow it to be INF, causes errors
+      }
+      else {
+        # check extinction threshold and if below set to 0
+        Total.N[t,iter] <- sum(output.N.list[t,,iter])
+        if (Total.N[t, iter] < extinction){
+          output.N.list[t,,iter] <- 0
+          Total.N[t, iter] <- 0}
+      }
     } #-------------------------
     # End Inner Loop  
     #------------------------- 
