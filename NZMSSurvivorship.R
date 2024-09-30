@@ -67,17 +67,20 @@ TempSurv <- function(x){
 #   mod <- dnbinom(as.integer(-NZMSSurvRates$Temperature + 34), size = par[2], prob = par[1])
 #   a <- sum(NZMSSurvRates$Survival - (mod*(max(NZMSSurvRates$Survival)/max(mod))))^2
 # }
-# params <- optim(par = c(0.2, 2), fn = min.RSS, method = "BFGS")
-# 
+#  params <- optim(par = c(0.2, 2), fn = min.RSS, method = "BFGS")
+# # 
 # TempSurv <- function(x){
 #   a <-  dnbinom(-x + 34, size = params$par[2] , prob = params$par[1])*(max(NZMSSurvRates$Survival)/max(dnbinom(as.integer(-NZMSSurvRates$Temperature + 34), size =params$par[2], prob = params$par[1])))
+#   if (x <= 0){
+#     a <- 0
+#   }
 #   return((a))
 # }
 # 
-# # TempSurv <- function(x){
-# #   a <-  dnbinom(-x + 32, size = 3, prob = 0.2)
-# #   return((a))
-# # }
+# TempSurv <- function(x){
+#   a <-  dnbinom(-x + 32, size = 3, prob = 0.2)
+#   return((a))
+# }
 # 
 # tem <- seq(0, 40, by = 1)
 # plot(NZMSSurvRates$Temperature, NZMSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
