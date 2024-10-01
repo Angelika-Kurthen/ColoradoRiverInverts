@@ -19,6 +19,7 @@ abund <- ggplot(data = temp_df, aes(temp_regime, temp_means/10000, color = V3))+
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
   xlab(" ")+
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.1))+
   ylab("Relativized Abundance")+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
@@ -34,22 +35,22 @@ biomass <- ggplot(data = size_df, aes(temp_regime, size_means, size_means, color
              size=1)+
   xlab(" ")+
   ylab("Body Mass (mg)")+
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.1))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 
 size_df$totbiomass <- temp_df$temp_means * size_df$size_means
-totbiomass <- ggplot(data = size_df, aes(temp_regime, totbiomass, size_means, color = V3))+
+totbiomass <- ggplot(data = size_df, aes(temp_regime, totbiomass/1000000, color = V3))+
   geom_line(size = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   theme_bw()+
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
   xlab("Mean Annual Water Temperature in C")+
-  ylab("Total Biomass (mg)")+
-  scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
+  ylab("Total Biomass (kg)")+
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.01))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
-
 x11()
 
 ggarrange(abund, biomass, totbiomass, 
@@ -59,25 +60,56 @@ ggarrange(abund, biomass, totbiomass,
 
 temp_dist <- bind_rows(temp_dist_a, temp_dist_b, temp_dist_c, temp_dist_d, .id = "taxa")
 
-supp.labs <- c("Winter Disturbance", "Summer Disturbance")
-names(supp.labs) <- c("1", "2")
+#deltatemp <- subset(temp_dist, season == 3)
+#temp_dist <- subset(temp_dist, season < 3)
 
-d <- ggplot(data = temp_dist, aes(x = temp_regime, y = log(short), color = taxa))+
+supp.labs <- c("Winter Disturbance", "Summer Disturbance", "\u0394 Abundance")
+names(supp.labs) <- c("1", "2", "3")
+
+d <- ggplot(data = temp_dist, aes(x = temp_regime, y = (short), color = taxa))+
   geom_line(linewidth = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   geom_point()+
   theme_bw()+
   xlab("Mean Annual Water Temperature in C")+
-  ylab("Log Abundance")+
-  facet_grid(.~season, labeller = labeller(season = supp.labs))+
+  ylab("Abundance")+
+  facet_grid(.~season, scales = "free_y", labeller = labeller(season = supp.labs))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 
+# supp.labs <- c("\u0394 Abundance")
+# names(supp.labs) <- c("3")
+# 
+# es <- ggplot(data = deltatemp, aes(x = temp_regime, y = short, color = taxa))+
+#   geom_line(linewidth = 1, alpha = 0.8)+
+#   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+#   geom_point()+
+#   theme_bw()+
+#   xlab("Mean Annual Water Temperature in C")+
+#   ylab("Abundance")+
+#   facet_grid(.~season, scales = "free_y", labeller = labeller(season = supp.labs))+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 
+temp_size <- bind_rows(temp_size_a, temp_size_b, temp_size_c, temp_size_d, .id = "taxa")
 
+supp.labs <- c("Winter Disturbance", "Summer Disturbance", "\u0394 Biomass")
+names(supp.labs) <- c("1", "2", "3")
 
+es <- ggplot(data = temp_size, aes(x = temp_regime, y = size_means/1000000, color = taxa))+
+  geom_line(linewidth = 1, alpha = 0.8)+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+  geom_point()+
+  theme_bw()+
+  xlab("Mean Annual Water Temperature in C")+
+  ylab("Total Biomass (kg)")+
+  facet_grid(.~season, scales = "free_y", labeller = labeller(season = supp.labs))+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 
+ggarrange(d, es, nrow  = 2)
 
+# s
 # code for fecundity sensitivity analysis
 source("A_sp_Fecundity_Toggle.R")
 source("B_sp_fecundity_Toggle.R")

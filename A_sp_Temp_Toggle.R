@@ -94,6 +94,19 @@ for (te in 1:length(temp_seq)){
 
 winter <- as.data.frame(cbind(temp_regime, short))
 
+size_means <- vector()
+for (te in 1:length(temp_seq)){
+  temp$Temperature <- temp$Temperature + temp_seq[te]
+  temp_regime[te] <- mean(temp$Temperature)
+  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "size")
+  temp$Temperature <- temp$Temperature - temp_seq[te]
+  size_means[te] <- mean(out)
+}
+
+size_means <- 0.0094*(size_means)^2.754  # multiply relative size (which is also biologically plausible) by Benke et al 1999 Table 2 a and b params (M(mg) = aL^b) 
+winter_size_means <- as.data.frame(cbind(temp_regime, size_means))
+
+
 temp_regime <- vector()
 temp_means <- vector()
 temp_seq <- seq(-10, 10, by = 1)
@@ -109,5 +122,26 @@ for (te in 1:length(temp_seq)){
 }
 summer <- as.data.frame(cbind(temp_regime, short))
 
+size_means <- vector()
+for (te in 1:length(temp_seq)){
+  temp$Temperature <- temp$Temperature + temp_seq[te]
+  temp_regime[te] <- mean(temp$Temperature)
+  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "size")
+  temp$Temperature <- temp$Temperature - temp_seq[te]
+  size_means[te] <- mean(out)
+}
+size_means <- 0.0094*(size_means)^2.754  # multiply relative size (which is also biologically plausible) by Benke et al 1999 Table 2 a and b params (M(mg) = aL^b) 
+summer_size_means <- as.data.frame(cbind(temp_regime, size_means))
+
+# bind together, 1 = winter 2 = summer
 # bind together, 1 = winter 2 = summer
 temp_dist_a <- bind_rows(winter, summer, .id = "season")
+deltatemp_a <- as.data.frame(cbind(rep(3, times = length(temp_regime)),temp_regime, summer[,2]-winter[,2]))
+temp_size_a <- bind_rows(winter_size_means, summer_size_means, .id = "season")
+deltasize_a <- as.data.frame(cbind(rep(3, times = length(temp_regime)), temp_regime, (summer_size_means[,2]*summer[,2])-(winter_size_means[,2]*winter[2])))
+temp_size_a <- mutate(.data = temp_size_a, size_means = temp_dist_a$short * size_means )
+
+deltatemp_a <- setNames(deltatemp_a, names(temp_dist_a))
+temp_dist_a <- rbind(temp_dist_a, deltatemp_a)
+deltasize_a <- setNames(deltasize_a, names(temp_size_a))
+temp_size_a <- rbind(temp_size_a, deltasize_a)
