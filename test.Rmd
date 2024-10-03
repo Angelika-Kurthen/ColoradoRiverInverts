@@ -14,7 +14,8 @@ library(dataRetrieval)
 library(lubridate)
 require(rstan)
 library(rv)
-library(car)
+
+
 ```
 
 
@@ -107,6 +108,7 @@ plot(NZMSsamp$Date, NZMSsamp$CountTotal)
 
 We have a pretty uneven sampling distribution (you can see by the spacing of points above). Some days only have 1 data point, other have 10. Some months are more heavily sampled than others. Because of this, we might want to bin out dates, using 2 weeks (which happens to be the length of our mathematical model timestep). We can do this by indexing our count dates. We also will make a column for sample month, so we can use that as a predictor in our analysis. We can then continue to explore sample frequency. 
 ```{r}
+library()
 # read in temperature data - optional
 temp <- readNWISdv("09380000", "00010", "2007-10-01","2023-05-01")
 
@@ -115,7 +117,8 @@ temps <- TimestepTemperature(temp)
 
 # we have uneven sample distribution (some days, 11 samples taken, others only 1)
 # therefore, we use 2 week timesteps
-# we now will index each sample based on which timestep it falls into
+
+# we now will index each invert sample based on which timestep it falls into
 vals <- vector()
 for (i in 1:length(temps$dts)){
   d <- NZMSsamp[which(NZMSsamp$Date %within% interval(temps$dts[i], temps$dts[i+1]-1) == T),]
@@ -129,6 +132,9 @@ month <- month(NZMSsamp$Date)
 
 # add to data frame
 NZMSsamp <- cbind(NZMSsamp, vals, month)
+
+# now we need into include mean water temperature for each 
+NZMSsamp <- cbind(NZMSsamp, temps$Temperature[NZMSsamp$vals])
 ```
 
 Sample freqency is fairly similar, other than December (probably because people aren't sampling during the holidays at the end of the month)
@@ -290,35 +296,130 @@ keep_nb_sturg2 <- sampling(fit_nb_sturg2, data=input.to.stan$data,
 ```
 
 ```{r}
-model
-{
-  # Weakly informative priors
-  beta0 ~ dnorm(0, 1) 
-  beta1 ~ dnorm(0, 1) #TimeElapsed
-  beta2 ~ dnorm(0, 1) #Flow
-  beta3 ~ dnorm(0, 1) #Month
-  r ~ dunif(0, 5)
-  
-  # N is the sample size --> how can we add a time heirachy since multiple samples per timestep?
-  
-  for(i in 1:N)
-  {
-    # Y is the response variable (as a count)
-    Y[i] ~ dnegbin(p[i], r)
+sink("N-mixturePoisNZMS.jags")
+cat("
+model{
+    # Priors
+    for(i in 1:nAlpha){ # nAlpha is the number of site predictor variables
+      alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
+    }
+
+    for(i in 1:nBeta){ # nBeta is number of site x observation predictors
+      beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
+    }
+
+    # Likelihood
+    for(r in 1:R){
+     N[r] ~ dpois(lambda[r]) #start with pulling from Poisson
+     log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
+
+     for(j in 1:J){
+      y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
+      logit(p[r, j]) <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
+     }
+    }
     
-    # X is the exposure variable, and offset.variable is the offset for Y
-    # Using a log-link function for the count data
-    log(mu[i]) <- beta0 + 
-      beta1 * b1[i] + beta1 * b2[i] + beta3 * b3[i] +           log(offset.variable[i])
-    
-    # Transforms mu into p, which is used by the negative binomial distribution
-    p[i] <- r/(r + mu[i])
-  } 
-}
+    } # End model
+", fill = TRUE)
+sink()
 ```
 
+```{r}
+# observations need to be in RxJ matrix, where R is # of sites and J is max number of obs per site
+# we measured over temps$dts (those are our timesteps)
+                   
+max_visits <- vector() # vector to put max obs per site
+means <- vector()
+for (i in 1:length(temps$dts)){  # cycle through all the 14 day timesteps that we have model output for
+  # pull abundances between each each timestep
+  d <- NZMSsamp[which(NZMSsamp$Date >= temps$dts[i] & NZMSsamp$Date < temps$dts[i+1]), ]
+  max_visits[i] <- length(d$Date) # number of observations
+  means[i] <- mean(d$CountTotal) # means - this is just for checking NAs
+}
+
+# make data frame with the timestep, the mean
+df <- cbind.data.frame(temps$dts, means)
+# remove anythig where there are NA values of Density (means that volume or count is missing)
+df <- df[!is.na(df$means), ]
+
+# define our RxJ matrix
+R <- length(temps$dts)
+J <- max(max_visits)
+site_mat <- matrix(data = NA, nrow = R, ncol = J)
+dens_mat <- matrix(data = NA, nrow = R, ncol = J)
+obs_intercept <- matrix(data = 1, nrow = R, ncol = J)
+# make vector for flows at each timestep
+# make RxJ matrix full of densities
+# make RxJ matrix full of raw counts
+# make RxJ matrix full of volumes sampled for each abundance
+flows <- vector()
+temperature <- vector()
+volumes <- matrix(data = NA, nrow = R, ncol = J)
+time <- matrix(data = NA, nrow = R, ncol = J)
+for (i in 1:length(temps$dts)){
+  d <- NZMSsamp[which(NZMSsamp$Date >= temps$dts[i] & NZMSsamp$Date < temps$dts[i+1]), ]
+  flows[i] <- mean(d$X_00060_00003)
+  temperature[i] <- mean(d$`temps$Temperature[NZMSsamp$vals]`)
+  time[i,] <- c(d$TimeElapsed, rep(NA, times = (J- length(d$CountTotal))))
+  site_mat[i, ] <- c(d$CountTotal, rep(NA, times = (J- length(d$CountTotal))))
+  dens_mat[i, ] <- c(as.integer(d$Density), rep (NA, times = (J - length(d$Density))))
+  volumes[i, ] <- c((d$Volume),rep(NA, times = (J- length(d$CountTotal))))
+}
+
+# we need to remove all timesteps that are just NAs
+nodata <- which(is.na(site_mat[,1]))
+# first identify all the timsteps that don't have data (so we can match them up later)
+site_mat <- as.matrix(site_mat[-nodata,]) # count data
+dens_mat <- as.matrix(dens_mat[-nodata, ]) # density data
+obs_intercept <- as.matrix(obs_intercept[-nodata,]) # intercept for obs cov
+time <- as.matrix(scale(time[-nodata,])) # duration in H20 obs cov
+time[is.na(time)] <- mean(time, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors
+flows <- as.data.frame(scale(flows[-nodata])) # site cov flow 
+temperature <- as.data.frame(scale(temperature[-nodata])) # site cov temp
+# dimnames(time) <- list(temps$dts[-nodata], seq(1:48))
+# time <- list(time)
+# names(time) <- c("time")
+site_intercept <- rep(1, times = length(flows$V1))
+site_covs<- as.matrix(cbind(site_intercept, flows, temperature))
+obs_covs <- array(data= NA, dim = c(length(flows$V1),J,2))
+obs_covs[,,1] <- obs_intercept
+obs_covs[,,2] <- time
+#offset
+offset <- as.matrix(log(volumes[-nodata, ]))
+offset[is.na(offset)] <- mean(offset, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
+# dimnames(volumes) <- list(temps$dts[-nodata], seq(1:48))
+# volumes <- list(volumes)
+# names(volumes) <- c("vol")
 
 
+jags_data <- list(y = (site_mat),
+                  XN = site_covs,
+                  Xp = (obs_covs),
+                  J = dim(site_mat)[2], #visits
+                  R = dim(site_mat)[1], #sites
+                  off = (offset), #obs offset
+                  nAlpha = dim(site_covs)[2],
+                  nBeta = dim(obs_covs)[3])
+
+jags_inits <- function(){
+  list(
+  N = apply(jags_data$y, 1, max, na.rm=TRUE),
+  alpha=runif(nAlpha,-1,1),
+	beta=runif(nBeta,-1,1))}
+
+parameters <- c("alpha", "beta", "lambda", "p", "N")
+
+nc <- 3
+ni <- 10000
+nb <- 2500
+nt <- 1
+
+Nmix_fit <- jagsUI::jags(data = jags_data, inits = jags_inits,
+                    parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",
+                    n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = T)
+
+print(Nmix_fit)
+```
 
 
 
