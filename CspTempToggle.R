@@ -130,16 +130,16 @@ summer_size_means <- as.data.frame(cbind(temp_regime, size_means))
 
 # bind together, 1 = winter 2 = summer
 temp_dist_c <- bind_rows(winter, summer, .id = "season")
-deltatemp_c <- as.data.frame(cbind(rep(3, times = length(temp_regime)),temp_regime, summer[,2]-winter[,2]))
+sizes <- rbind(winter_size_means, summer_size_means)
+#deltatemp_c <- as.data.frame(cbind(rep(3, times = length(temp_regime)),temp_regime, summer[,2]-winter[,2]))
 temp_size_c <- bind_rows(winter_size_means, summer_size_means, .id = "season")
-deltasize_c <- as.data.frame(cbind(rep(3, times = length(temp_regime)), temp_regime, (summer_size_means[,2]*summer[,2])-(winter_size_means[,2]*winter[2])))
-temp_size_c <- mutate(.data = temp_size_c, size_means = temp_dist_c$short * size_means )
+#deltasize_c <- as.data.frame(cbind(rep(3, times = length(temp_regime)), temp_regime, (summer_size_means[,2]*summer[,2])-(winter_size_means[,2]*winter[2])))
+temp_size_c <- mutate(.data = temp_size_c, size_means = temp_dist_c$short * sizes$size_means )
 
-deltatemp_c <- setNames(deltatemp_c, names(temp_dist_c))
-temp_dist_c <- rbind(temp_dist_c, deltatemp_c)
-deltasize_c <- setNames(deltasize_c, names(temp_size_c))
-temp_size_c <- rbind(temp_size_c, deltasize_c)
-
+#deltatemp_d <- setNames(deltatemp_d, names(temp_dist_d))
+#temp_dist_d <- rbind(temp_dist_d, deltatemp_d)
+#deltasize_d <- setNames(deltasize_d, names(temp_size_d))
+#temp_size_d <- rbind(temp_size_d, deltasize_d)
 
 # ggplot(data = temp_dist_c, aes(x = temp_regime, y = short))+
 #   geom_line()+
