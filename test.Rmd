@@ -108,7 +108,6 @@ plot(NZMSsamp$Date, NZMSsamp$CountTotal)
 
 We have a pretty uneven sampling distribution (you can see by the spacing of points above). Some days only have 1 data point, other have 10. Some months are more heavily sampled than others. Because of this, we might want to bin out dates, using 2 weeks (which happens to be the length of our mathematical model timestep). We can do this by indexing our count dates. We also will make a column for sample month, so we can use that as a predictor in our analysis. We can then continue to explore sample frequency. 
 ```{r}
-library()
 # read in temperature data - optional
 temp <- readNWISdv("09380000", "00010", "2007-10-01","2023-05-01")
 
@@ -316,15 +315,33 @@ model{
      for(j in 1:J){
       y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
       logit(p[r, j]) <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
+      
+        ## Expected count at site r, sample j
+        exp[r,j] <- N[r] * p[r, j] 
+    
+        ## Discrepancy 
+        ## (note small value added to denominator to avoid potential divide by zero)
+        ## This is the X2 + descrepancy
+        E[r, j] <- pow((y[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+
+        ## Simulate new count from model
+        y.rep[r, j] ~ dbinom(p[r, j], N[r])
+
+        ## X2 
+        E.rep[r, j] <- pow((y.rep[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
      }
     }
-    
+     # chi-squared test statistics
+    fit <- sum(E[,])
+    fit.rep <- sum(E.rep[,])
     } # End model
 ", fill = TRUE)
 sink()
 ```
 
 ```{r}
+library(rjags)
+library(MCMCvis)
 # observations need to be in RxJ matrix, where R is # of sites and J is max number of obs per site
 # we measured over temps$dts (those are our timesteps)
                    
@@ -401,6 +418,8 @@ jags_data <- list(y = (site_mat),
                   nAlpha = dim(site_covs)[2],
                   nBeta = dim(obs_covs)[3])
 
+nAlpha <- dim(site_covs)[2]
+nBeta <- dim(obs_covs)[3]
 jags_inits <- function(){
   list(
   N = apply(jags_data$y, 1, max, na.rm=TRUE),
@@ -414,15 +433,155 @@ ni <- 10000
 nb <- 2500
 nt <- 1
 
-Nmix_fit <- jagsUI::jags(data = jags_data, inits = jags_inits,
-                    parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",
-                    n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = T)
+Nmix_fit <- jags.model("N-mixturePoisNZMS.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
 
-print(Nmix_fit)
+update(Nmix_fit, n.iter = 1000)
+
+Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+
+print(Nmix_fit_UI)
+
+zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+
+
+lam <- MCMCchains(zm, "lambda")
+N <- MCMCchains(zm, "N")
+
+y.rep <- MCMCpstr(zm, "y.rep")
+exp <- MCMCpstr(zm, "exp")
+
+
+plot(unlist(y.rep), unlist(site_mat))
+abline(0, 1)
+
+fit <- MCMCchains(zm, "fit")
+fit.rep <- MCMCchains(zm, "fit.rep")
+mean(fit > fit.rep) # close to 1 so bad fit?
+plot(fit.rep ~ fit)
+abline(0, 1) # 1 to 1 line not even there
+
+
+fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
+library(ggplot2)
+ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() # not getting all the 0s and missing the really high #s
+```
+Summary of my runs
+
+When running the Poison N-mix Model with $\alpha$ ~ Norm(0, 0.1) and $\beta$ ~ Norm(0, 0.1) and initial values for N = maximum value at each site, $\alpha$ from a Uniform(-1, 1), and $\beta$ from a Uniform(-1, 1), DIC = 19346231, and mean $\chi^2$ for the observed and expected is 200000. 
+
+When running the Poison N-mix Model with $\alpha$ ~ Norm(0, 1) and $\beta$ ~ Norm(0, 1) and initial values for N = maximum value at each site, $\alpha$ from a Uniform(-1, 1), and $\beta$ from a Uniform(-1, 1), DIC = 23081874, and mean $\chi^2$ for the observed and expected is 206378.8. Previous one was better
+
+
+
+```{r}
+sink("N-mixtureZIPNZMS.jags")
+cat("
+model{
+    # Priors
+    omega ~ dbeta(1,1)
+    
+    for(i in 1:nAlpha){ # nAlpha is the number of site predictor         variables
+      alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
+    }
+
+    for(i in 1:nBeta){ # nBeta is number of site x observation predictors
+      beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
+    }
+
+    # Likelihood
+    for(r in 1:R){
+     z[r] ~ dbern(omega) # either there or not
+     N[r] ~ dpois(lambda[r] * z[r]) #start with pulling from Poisson with z variable
+     log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
+
+     for(j in 1:J){
+      y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
+      logit(p[r, j]) <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
+      
+        ## Expected count at site r, sample j
+        exp[r,j] <- N[r] * p[r, j] 
+    
+        ## Discrepancy 
+        ## (note small value added to denominator to avoid potential divide by zero)
+        ## This is the X2 + descrepancy
+        E[r, j] <- pow((y[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+
+        ## Simulate new count from model
+        y.rep[r, j] ~ dbinom(p[r, j], N[r])
+
+        ## X2 
+        E.rep[r, j] <- pow((y.rep[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+     }
+    }
+     # chi-squared test statistics
+    fit <- sum(E[,])
+    fit.rep <- sum(E.rep[,])
+    } # End model
+", fill = TRUE)
+sink()
 ```
 
 
+```{r}
+jags_data <- list(y = (site_mat),
+                  XN = site_covs,
+                  Xp = (obs_covs),
+                  J = dim(site_mat)[2], #visits
+                  R = dim(site_mat)[1], #sites
+                  off = (offset), #obs offset
+                  nAlpha = dim(site_covs)[2],
+                  nBeta = dim(obs_covs)[3])
 
+nAlpha <- dim(site_covs)[2]
+nBeta <- dim(obs_covs)[3]
+jags_inits <- function(){
+  list(
+  omega = runif(1, 0.4, 0.8),
+  N = apply(jags_data$y, 1, max, na.rm=TRUE),
+  alpha=runif(nAlpha,-1,1),
+	beta=runif(nBeta,-1,1))}
+
+parameters <- c("omega", "alpha", "beta", "lambda", "p", "N")
+
+nc <- 3
+ni <- 10000
+nb <- 2500
+nt <- 1
+
+Nmix_fit <- jags.model("N-mixtureZIPNZMS.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
+
+update(Nmix_fit, n.iter = 1000)
+
+Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+
+print(Nmix_fit_UI)
+
+zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+
+
+lam <- MCMCchains(zm, "lambda")
+N <- MCMCchains(zm, "N")
+
+y.rep <- MCMCpstr(zm, "y.rep")
+exp <- MCMCpstr(zm, "exp")
+
+
+plot(unlist(y.rep), unlist(site_mat))
+abline(0, 1)
+
+fit <- MCMCchains(zm, "fit")
+fit.rep <- MCMCchains(zm, "fit.rep")
+mean(fit > fit.rep) # close to 1 so bad fit?
+plot(fit.rep ~ fit)
+abline(0, 1) # 1 to 1 line not even there
+
+
+fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
+library(ggplot2)
+ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() # not getting all the 0s and missing the really high #s
+```
 ```{r}
 library(rstanarm)
 nb_mod <- stan_glmer(CountTotal ~ month + TimeElapsed + X_00060_00003 + (1|vals),
