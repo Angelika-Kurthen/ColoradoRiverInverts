@@ -60,19 +60,20 @@ ggarrange(abund, biomass, totbiomass,
 
 temp_dist <- bind_rows(temp_dist_a, temp_dist_b, temp_dist_c, temp_dist_d, .id = "taxa")
 
-#deltatemp <- subset(temp_dist, season == 3)
-#temp_dist <- subset(temp_dist, season < 3)
+deltatemp <- subset(temp_dist, season == 3)
+temp_dist <- subset(temp_dist, season < 3)
 
 supp.labs <- c("Winter Disturbance", "Summer Disturbance", "\u0394 Abundance")
 names(supp.labs) <- c("1", "2", "3")
 
-d <- ggplot(data = temp_dist, aes(x = temp_regime, y = (short), color = taxa))+
+d <- ggplot(data = temp_dist, aes(x = temp_regime, y = log(short), color = taxa))+
   geom_line(linewidth = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   geom_point()+
   theme_bw()+
   xlab("Mean Annual Water Temperature in C")+
-  ylab("Abundance")+
+  ylab("Log Abundance")+
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.01))+
   facet_grid(.~season, scales = "free_y", labeller = labeller(season = supp.labs))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
@@ -93,6 +94,8 @@ d <- ggplot(data = temp_dist, aes(x = temp_regime, y = (short), color = taxa))+
 
 temp_size <- bind_rows(temp_size_a, temp_size_b, temp_size_c, temp_size_d, .id = "taxa")
 
+deltasize <- subset(temp_size, season == 3)
+temp_size <- subset(temp_size, season < 3)
 supp.labs <- c("Winter Disturbance", "Summer Disturbance", "\u0394 Biomass")
 names(supp.labs) <- c("1", "2", "3")
 
@@ -106,8 +109,10 @@ es <- ggplot(data = temp_size, aes(x = temp_regime, y = size_means/1000000, colo
   facet_grid(.~season, scales = "free_y", labeller = labeller(season = supp.labs))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
+x11()
+ggarrange(d, es, nrow  = 2, labels = c("a","b"))
 
-ggarrange(d, es, nrow  = 2)
+
 
 # s
 # code for fecundity sensitivity analysis
