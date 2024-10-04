@@ -76,7 +76,7 @@ We have some empirical NZ Mudsnail Data from the Colorado River below Glen Canyo
 
 ```{r NZMS samp}
 NZMSsamp <- read.csv("~/ColoradoRiverInverts/NZMSsamp.csv")
-View(NZMSsamp)
+#View(NZMSsamp)
 ```
 
 
@@ -537,7 +537,7 @@ nAlpha <- dim(site_covs)[2]
 nBeta <- dim(obs_covs)[3]
 jags_inits <- function(){
   list(
-  omega = runif(1, 0.4, 0.8),
+  omega = runif(1, 0.5, 0.7),
   N = apply(jags_data$y, 1, max, na.rm=TRUE),
   alpha=runif(nAlpha,-1,1),
 	beta=runif(nBeta,-1,1))}
@@ -553,9 +553,9 @@ Nmix_fit <- jags.model("N-mixtureZIPNZMS.jags",data = jags_data, inits = jags_in
 
 update(Nmix_fit, n.iter = 1000)
 
-Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
-
-print(Nmix_fit_UI)
+# Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+# 
+# print(Nmix_fit_UI)
 
 zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
 
@@ -580,7 +580,7 @@ abline(0, 1) # 1 to 1 line not even there
 fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
                      data = rep(c("Observed", "Simulated"), each = length(site_mat)))
 library(ggplot2)
-ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() # not getting all the 0s and missing the really high #s
+ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() #still not getting all the 0s and missing the really high #s
 ```
 ```{r}
 library(rstanarm)
