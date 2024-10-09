@@ -408,7 +408,9 @@ offset[is.na(offset)] <- mean(offset, na.rm = TRUE) # replace NAs with mean dura
 # volumes <- list(volumes)
 # names(volumes) <- c("vol")
 
+```
 
+```{r}
 jags_data <- list(y = (site_mat),
                   XN = site_covs,
                   Xp = (obs_covs),
@@ -462,7 +464,7 @@ abline(0, 1) # 1 to 1 line not even there
 
 
 fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
-                     data = rep(c("Observed", "Simulated")a, each = length(site_mat)))
+                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
 library(ggplot2)
 ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)# not getting all the 0s and missing the really high #s
 ```
@@ -797,16 +799,16 @@ print(Nmix_fit_UI)
 
 zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
 
-
 lam <- MCMCchains(zm, "lambda")
 N <- MCMCchains(zm, "N")
 
 y.rep <- MCMCpstr(zm, "y.rep")
 exp <- MCMCpstr(zm, "exp")
 
-
 plot(unlist(y.rep), unlist(site_mat))
 abline(0, 1)
+
+plot(unlist(site_mat), unlist(exp))
 
 fit <- MCMCchains(zm, "fit")
 fit.rep <- MCMCchains(zm, "fit.rep")
@@ -820,9 +822,139 @@ fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
 library(ggplot2)
 ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
 ```
+Ok, fit is about the same as the ZIP with overdispersion. Now we can try with Neg Binomial instead of Poisson in the N mix model. 
+
+```{r}
+sink("N-mixtureNBNZMS.jags")
+cat("
+model{
+
+# State model
+for (r in 1:R){
+  N[r] ~ dnegbin(s[r], th)
+  s[r] <- th / (th + lambda[r])
+  #N[r] ~ dpois(lambda[r])
+  log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
+}
+
+th ~ dunif(0, 50)
+phi <- 1/th
+theta <- th
+
+  for(i in 1:nAlpha){ # nAlpha is the number of site predictor variables
+      alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
+    }
+
+
+# Detection model
+for (r in 1:R){
+  for (j in 1:J){
+    logit(p[r,j]) <- sum(off[r, j] + beta * Xp[r,j,])
+    y[r,j] ~ dbinom(p[r,j], N[r])
+  }
+}
+ 
+ for(i in 1:nBeta){ # nBeta is number of site x observation predictors
+      beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
+    }
+    
+
+# Fit statistic for real data
+for (r in 1:R){
+  for (j in 1:J){
+    yhat[r,j] <- N[r] * p[r,j] + 0.001 # add small value to avoid divide by zero
+    chi2[r,j] <- (y[r,j] - yhat[r,j])^2 / yhat[r,j]
+  }
+}
+fit <- sum(chi2)
+
+# Fit statistic for simulated data
+for (r in 1:R){
+  for (j in 1:J){
+    y_new[r,j] ~ dbinom(p[r,j], N[r]) # simulate new datapoint
+    chi2_new[r,j] <- (y_new[r,j] - yhat[r,j])^2 / yhat[r,j]
+  }
+}
+fit_new <- sum(chi2_new)
+
+sumN <- sum(N[])
+
+}
+", fill = TRUE)
+sink()
+
+```
+
+
+```{r}
+library(rjags)
+library(MCMCvis)
+jags_data <- list(y = (site_mat),
+                  XN = site_covs,
+                  Xp = (obs_covs),
+                  J = dim(site_mat)[2], #visits
+                  R = dim(site_mat)[1], #sites
+                  off = (offset), #obs offset
+                  nAlpha = dim(site_covs)[2],
+                  nBeta = dim(obs_covs)[3])
+
+nAlpha <- dim(site_covs)[2]
+nBeta <- dim(obs_covs)[3]
+jags_inits <- function(){
+  list(
+  N = apply(jags_data$y, 1, max, na.rm=TRUE),
+  alpha=runif(nAlpha,-1,1),
+	beta=runif(nBeta,-1,1))}
+
+parameters <- c("alpha", "beta", "lambda", "p", "N", "theta", "phi", "fit", "fit_new")
+
+nc <- 3
+ni <- 10000
+nb <- 2500
+nt <- 1
+
+Nmix_fit <- jags.model("N-mixtureNBNZMS.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
+
+update(Nmix_fit, n.iter = 1000)
 
 
 
+zm = coda.samples(Nmix_fit, variable.names = c("lambda", "N", "theta","s"), n.iter = ni, n.thin = nt)
+
+lam <- MCMCchains(zm, "lambda")
+N <- MCMCchains(zm, "N")
+th <- MCMCchains(zm, "theta")
+s <- MCMCchains(zm, "s")
+dim(lam)
+dim(th)
+is.nan(rnbinom(30000, prob = th / (th + lam[,1]), size = th ))
+
+y.rep <- MCMCpstr(zm, "y.rep")
+exp <- MCMCpstr(zm, "exp")
+
+
+plot(unlist(y.rep), unlist(site_mat))
+abline(0, 1)
+
+plot(unlist(site_mat), unlist(exp))
+
+fit <- MCMCchains(zm, "fit")
+fit.rep <- MCMCchains(zm, "fit.rep")
+mean(fit > fit.rep) # close to 1 so bad fit?
+plot(fit.rep ~ fit)
+abline(0, 1) # 1 to 1 line not even there
+
+
+fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
+library(ggplot2)
+ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
+
+
+Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureNBNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+
+print(Nmix_fit_UI)
+```
 ```{r}
 library(rstanarm)
 nb_mod <- stan_glmer(CountTotal ~ month + TimeElapsed + X_00060_00003 + (1|vals),
