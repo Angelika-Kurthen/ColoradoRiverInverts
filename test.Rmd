@@ -439,16 +439,23 @@ Nmix_fit <- jags.model("N-mixturePoisNZMS.jags",data = jags_data, inits = jags_i
 
 update(Nmix_fit, n.iter = 1000)
 
-Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
-
-print(Nmix_fit_UI)
+# Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+# 
+# print(Nmix_fit_UI)
 
 zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
 
 
-lam <- MCMCchains(zm, "lambda")
-N <- MCMCchains(zm, "N")
+lam <- MCMCpstr(zm, "lambda")
+N <- MCMCpstr(zm, "N")
+N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+N$V1 <- as.Date(N$V1, origin = "1970-01-01")
 
+
+lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
+lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
+
+plot(unlist(y.rep), unlist(site_mat))
 y.rep <- MCMCpstr(zm, "y.rep")
 exp <- MCMCpstr(zm, "exp")
 
@@ -564,8 +571,15 @@ update(Nmix_fit, n.iter = 1000)
 zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
 
 
-lam <- MCMCchains(zm, "lambda")
-N <- MCMCchains(zm, "N")
+lam <- MCMCpstr(zm, "lambda")
+N <- MCMCpstr(zm, "N")
+N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+
+
+lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
+lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
+
 
 y.rep <- MCMCpstr(zm, "y.rep")
 exp <- MCMCpstr(zm, "exp")
@@ -682,22 +696,23 @@ update(Nmix_fit, n.iter = 1000)
 
 # print(Nmix_fit_UI)
 
-zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "p"), n.iter = ni, n.thin = nt)
 
 
-lam <- MCMCchains(zm, "lambda")
-N <- MCMCchains(zm, "N")
+lam <- MCMCpstr(zm, "lambda")
+p <- MCMCpstr(zm, "p")
 N <- MCMCpstr(zm, "N")
+N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+N$V1 <- as.Date(N$V1, origin = "1970-01-01")
 
-y.rep <- MCMCpstr(zm, "y.rep")
-exp <- MCMCpstr(zm, "exp")
 
+lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
+lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
 
 plot(unlist(y.rep), unlist(site_mat))
 abline(0, 1)
 
-fit <- MCMCchains(zm, "fit")
-fit.rep <- MCMCchains(zm, "fit.rep")
+
 mean(fit > fit.rep) # close to 1 so bad fit?
 plot(fit.rep ~ fit)
 abline(0, 1) # 1 to 1 line not even there
@@ -798,17 +813,17 @@ Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.
 
 print(Nmix_fit_UI)
 
-zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "p", "lambda", "N"), n.iter = ni, n.thin = nt)
 
-lam <- MCMCchains(zm, "lambda")
-N <- MCMCchains(zm, "N")
+lam <- MCMCpstr(zm, "lambda")
+p <- MCMCpstr(zm, "p")
 N <- MCMCpstr(zm, "N")
-y.rep <- MCMCpstr(zm, "y.rep")
-exp <- MCMCpstr(zm, "exp")
-
 N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1)
+N$V1 <- as.Date(N$V1, origin = "1970-01-01")
 
+
+lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
+lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
 
 plot(unlist(y.rep), unlist(site_mat))
 abline(0, 1)
@@ -991,8 +1006,18 @@ update(Nmix_fit, n.iter = 1000)
 
 zm = coda.samples(Nmix_fit, variable.names = c("lambda", "N", "theta","s", "fit", "fit_new", "yhat", "y_new"), n.iter = ni, n.thin = nt)
 
-lam <- MCMCchains(zm, "lambda")
-N <- MCMCchains(zm, "N")
+
+lam <- MCMCpstr(zm, "lambda")
+N <- MCMCpstr(zm, "N")
+N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+
+
+lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
+lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
+
+
+
 th <- MCMCchains(zm, "theta")
 s <- MCMCchains(zm, "s")
 fit <- MCMCchains(zm, "fit")
