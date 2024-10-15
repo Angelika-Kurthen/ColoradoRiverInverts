@@ -18,10 +18,13 @@ library(foodbase)
 #("NZMS_1sp_Model.R")
 source("NZMS_1sp_Model.R")
 
+# read in environmental variables
 discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 temps <- TimestepTemperature(temp)
+
+# run through model
 out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 1000000, baselineK = 10000, Qmin = 0.3, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 
@@ -29,29 +32,34 @@ out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, distur
 # colnames(adults) <- c("Time","Adult")
 # adults$Time <- as.Date(adults$Time, origin = "1970-01-01")
 
+# clean up output into a two column dataframe with data and abundance
 means.list.NZMS <- mean.data.frame(out,burnin = 50, iteration= 9)
 means.list.NZMS <- cbind(means.list.NZMS, temps$dts[1:length(means.list.NZMS$timesteps)])
 means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
 
 
-
-
-
-
 # CURRENTLY NOT WORKING
-# drift.data.total <- readDB2(gear = "Drift", type = "Sample", updater = T)
+# drift.data.total <- readDB(gear = "Drift", type = "Sample", updater = T)
 # 
 # drift.LF <- drift.data.total[which(drift.data.total$RiverMile >= -6 & drift.data.total$RiverMile <= 0),]
 # 
 # NZMS.samp.LF <- sampspec(samp = drift.LF, species = "NZMS", stats = T)
 # NZMS.samp <- merge(NZMS.samp.LF$Statistics, NZMS.samp.LF$Samples, by = "BarcodeID", all = T)
-# NZMS.samp <- NZMS.samp[which(NZMS.samp$GearID == 4),] 
+# NZMS.samp <- NZMS.samp[which(NZMS.samp$GearID == 4),]
 # NZMS.samp$Density <- NZMS.samp$CountTotal/NZMS.samp$Volume
-# C ~ aBQ^g
-#
+# #C ~ aBQ^g
 # NZMS.samp <- merge(NZMS.samp, discharge[, 3:4], by = "Date")
 # NZMS.samp$Density <- (NZMS.samp$Density)/(0.74*(NZMS.samp$X_00060_00003 * 0.02831683)^4.1)
+# 
 
+# read in saved data
+NZMSsamp <- read.csv("~/ColoradoRiverInverts/NZMSsamp.csv")
+# makes sure dates are in date form
+NZMSsamp$Date <- as.Date(NZMSsamp$Date)
+# remove any samples that are flagged as "strange"
+NZMSsamp <- NZMSsamp[which(NZMSsamp$FlagStrange == F),]
+# convert total counts to densities
+NZMSsamp$Density <- NZMSsamp$CountTotal/NZMSsamp$Volume
 
 
 #NZMS.samp <- aggregate(NZMS.samp$Density, list(NZMS.samp$Date), FUN = mean)
