@@ -7,6 +7,7 @@ library(lubridate)
 library(plyr)
 library(dplyr)
 library(ggplot2)
+library(readxl)
 # data retrieval tool from USGS
 library(dataRetrieval)
 
