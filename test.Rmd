@@ -462,7 +462,7 @@ abline(0, 1) # 1 to 1 line not even there
 
 
 fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
-                     data = rep(c("Observed", "Simulated")a, each = length(site_mat)))
+                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
 library(ggplot2)
 ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)# not getting all the 0s and missing the really high #s
 ```
