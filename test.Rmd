@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dataRetrieval)
 library(lubridate)
 require(rstan)
-library(rv)
+#library(rv)
 
 
 ```
@@ -108,6 +108,7 @@ plot(NZMSsamp$Date, NZMSsamp$CountTotal)
 
 We have a pretty uneven sampling distribution (you can see by the spacing of points above). Some days only have 1 data point, other have 10. Some months are more heavily sampled than others. Because of this, we might want to bin out dates, using 2 weeks (which happens to be the length of our mathematical model timestep). We can do this by indexing our count dates. We also will make a column for sample month, so we can use that as a predictor in our analysis. We can then continue to explore sample frequency. 
 ```{r}
+library(REdaS) 
 # read in temperature data - optional
 temp <- readNWISdv("09380000", "00010", "2007-10-01","2023-05-01")
 
@@ -126,8 +127,6 @@ for (i in 1:length(temps$dts)){
     vals <- append(vals, s)}
 }
 
-# phenology may also play into dynamics, so include month column as well
-month <- month(NZMSsamp$Date)
 
 # add to data frame
 NZMSsamp <- cbind(NZMSsamp, vals, month)
@@ -358,6 +357,11 @@ for (i in 1:length(temps$dts)){  # cycle through all the 14 day timesteps that w
 df <- cbind.data.frame(temps$dts, means)
 # remove anythig where there are NA values of Density (means that volume or count is missing)
 df <- df[!is.na(df$means), ]
+# phenology may also play into dynamics, so include month column as well
+#month <- month(NZMSsamp$Date)
+install.packages("aspace")
+library(aspace)
+df$circdate <- sin(as_radians((lubridate::yday(df$`temps$dts`)/365)*360))
 
 # define our RxJ matrix
 R <- length(temps$dts)
@@ -376,6 +380,7 @@ time <- matrix(data = NA, nrow = R, ncol = J)
 for (i in 1:length(temps$dts)){
   d <- NZMSsamp[which(NZMSsamp$Date >= temps$dts[i] & NZMSsamp$Date < temps$dts[i+1]), ]
   flows[i] <- mean(d$X_00060_00003)
+  #date <- df[]
   temperature[i] <- mean(d$`temps$Temperature[NZMSsamp$vals]`)
   time[i,] <- c(d$TimeElapsed, rep(NA, times = (J- length(d$CountTotal))))
   site_mat[i, ] <- c(d$CountTotal, rep(NA, times = (J- length(d$CountTotal))))
@@ -387,17 +392,18 @@ for (i in 1:length(temps$dts)){
 nodata <- which(is.na(site_mat[,1]))
 # first identify all the timsteps that don't have data (so we can match them up later)
 site_mat <- as.matrix(site_mat[-nodata,]) # count data
-dens_mat <- as.matrix(dens_mat[-nodata, ]) # density data
+#dens_mat <- as.matrix(dens_mat[-nodata, ]) # density data
 obs_intercept <- as.matrix(obs_intercept[-nodata,]) # intercept for obs cov
 time <- as.matrix(scale(time[-nodata,])) # duration in H20 obs cov
 time[is.na(time)] <- mean(time, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors
+
 flows <- as.data.frame(scale(flows[-nodata])) # site cov flow 
 temperature <- as.data.frame(scale(temperature[-nodata])) # site cov temp
 # dimnames(time) <- list(temps$dts[-nodata], seq(1:48))
 # time <- list(time)
 # names(time) <- c("time")
 site_intercept <- rep(1, times = length(flows$V1))
-site_covs<- as.matrix(cbind(site_intercept, flows, temperature))
+site_covs<- as.matrix(cbind(site_intercept, temperature))
 obs_covs <- array(data= NA, dim = c(length(flows$V1),J,2))
 obs_covs[,,1] <- obs_intercept
 obs_covs[,,2] <- time
@@ -439,11 +445,11 @@ Nmix_fit <- jags.model("N-mixturePoisNZMS.jags",data = jags_data, inits = jags_i
 
 update(Nmix_fit, n.iter = 1000)
 
-# Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 # 
-# print(Nmix_fit_UI)
+print(Nmix_fit_UI)
 
-zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N" ), n.iter = ni, n.thin = nt)
 
 
 lam <- MCMCpstr(zm, "lambda")
@@ -564,9 +570,9 @@ Nmix_fit <- jags.model("N-mixtureZIPNZMS.jags",data = jags_data, inits = jags_in
 
 update(Nmix_fit, n.iter = 1000)
 
-# Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 # 
-# print(Nmix_fit_UI)
+print(Nmix_fit_UI)
 
 zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
 
@@ -692,9 +698,9 @@ Nmix_fit <- jags.model("N-mixtureZIPoverdispNZMS.jags",data = jags_data, inits =
 
 update(Nmix_fit, n.iter = 1000)
 
-# Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureZIPoverdispNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureZIPoverdispNZMS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 
-# print(Nmix_fit_UI)
+print(Nmix_fit_UI)
 
 zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "p"), n.iter = ni, n.thin = nt)
 
@@ -798,7 +804,7 @@ jags_inits <- function(){
   alpha=runif(nAlpha,-1,1),
 	beta=runif(nBeta,-1,1))}
 
-parameters <- c("alpha", "beta", "lambda", "p", "N")
+parameters <- c("omega", "alpha", "beta", "lambda", "p", "N")
 
 nc <- 3
 ni <- 10000
