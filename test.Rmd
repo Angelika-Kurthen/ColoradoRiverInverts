@@ -399,11 +399,12 @@ time[is.na(time)] <- mean(time, na.rm = TRUE) # replace NAs with mean duration t
 
 flows <- as.data.frame(scale(flows[-nodata])) # site cov flow 
 temperature <- as.data.frame(scale(temperature[-nodata])) # site cov temp
+circdate <- as.data.frame(df$circdate)
 # dimnames(time) <- list(temps$dts[-nodata], seq(1:48))
 # time <- list(time)
 # names(time) <- c("time")
 site_intercept <- rep(1, times = length(flows$V1))
-site_covs<- as.matrix(cbind(site_intercept, temperature))
+site_covs<- as.matrix(cbind(site_intercept, temperature, circdate))
 obs_covs <- array(data= NA, dim = c(length(flows$V1),J,2))
 obs_covs[,,1] <- obs_intercept
 obs_covs[,,2] <- time
