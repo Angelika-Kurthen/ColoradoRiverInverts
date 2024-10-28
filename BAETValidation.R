@@ -14,16 +14,52 @@ library(dataRetrieval)
 # load Baet model
 source("BAET_1sp_Model.R")
 # pull discharge and temps from below flaming gorge dam
-discharge <- readNWISdv("09234500", "00060", "1986-10-01", "1999-10-06")
+# we have discharge from 1956 on
+discharge <- readNWISdv("09234500", "00060", "1957-10-01", "1999-10-21", statCd = "00003")
 # Bankfull discharge for Green River from https://digitalcommons.usu.edu/cgi/viewcontent.cgi?article=7604&context=etd
 flow.magnitude <- TimestepDischarge(discharge, 22424.813)
-temp <- readNWISdv("09234500", "00010", "2004-02-05", "2023-05-01")
-temps <- average.yearly.temp(temp, "X_00010_00003","Date")
-temps <- rep.avg.year(temps, 15, change.in.temp = 0, years.at.temp = 15)
-# align dates
-temps <- temps[20:359,2:3]
-temps$dts <- flow.magnitude$dts
+flow.magnitude$dts <- as.Date(flow.magnitude$dts)
+# missing a big chunk of temperature data between the 60s and mid-80s 
+# and all throughout so we need to start in the mid 80s
+# we do this by adding in all dates and just subbing in NAs where missing data is
+temp <- readNWISdv("09234500", "00010", "1957-10-01", "1988-04-01", statCd = "00011")
+temp$Date <- as.Date(temp$Date)
+# all dates
+all_dates <- as.data.frame(seq.Date(from = as.Date("1957-10-01"), to = as.Date("1988-04-01"), by = "days"))
+names(all_dates) <- "Date"
+# join them
+temp <- full_join(temp, all_dates)
+# organize by date
+temp <- temp[order(as.Date(temp$Date)),]
+# get biweekly avgs - we still have some NAs left over and we can't have NAs in predictors 
+temps <- TimestepTemperature(temp)
+temps$dts <- as.Date(temps$dts)
 
+
+temp1988 <- readNWISdv("09234500", "00010", "1988-04-04", "1999-10-21", statCd = "00003")
+temp1988$Date <- as.Date(temp1988$Date)
+# all dates
+all_dates <- as.data.frame(seq.Date(from = as.Date("1988-04-04"), to = as.Date("1999-10-21"), by = "days"))
+names(all_dates) <- "Date"
+# join them
+temp1988 <- full_join(temp1988, all_dates)
+# organize by date
+temp1988 <- temp1988[order(as.Date(temp1988$Date)),]
+# get biweekly avgs - we still have some NAs left over and we can't have NAs in predictors 
+temps1988 <- TimestepTemperature(temp1988)
+temps1988$dts <- as.Date(temps1988$dts)
+
+
+# now combine the two via rowbind
+temps <- rbind(temps, temps1988)
+
+# now for the issues of NAs, need to add in averages 
+simtemp <- readNWISdv("09234500", "00010", "1957-10-01", "1999-10-21")
+simtemps <- average.yearly.temp(simtemp, "X_00010_00003","Date")
+#temps <- rep.avg.year(temps, 15, change.in.temp = 0, years.at.temp = 15)
+# align dates
+#temps <- temps[20:359,2:3]
+#temps$dts <- flow.magnitude$dts
 out <- BAETmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.1, extinct = 50, iteration = 9, peaklist = 0.13, peakeach = length(temps$Temperature))
 
 # upload larval baet data from Flaming Gorge Dam 
@@ -33,9 +69,31 @@ names(bugdata) <- c("Sample", "Location", "Date", "Citation", "Method", "Area", 
 bugdata <- bugdata[which(bugdata$Location == "0.8KDD" | bugdata$Location == "6KDD" | bugdata$Location == "12KDD"),]
 bugdata$Date <- as.Date(bugdata$Date, "%m/%d/%Y")
 bugdata$Density <- as.numeric(bugdata$Density)
-BAETdata <- bugdata[which(bugdata$Date >= "1986-10-01" & bugdata$Family == "Baetidae"), ]
+BAETdata <- bugdata[which(bugdata$Date >= "1957-10-01" & bugdata$Family == "Baetidae"), ]
+# remove non-numeric data
+BAETdata <- BAETdata[!is.na(as.numeric(BAETdata$Density)), ]
+BAETdata$Area <- as.numeric(BAETdata$Area)
+# in theory, Density is # per sq meter and area is area sampled, so multiplying density * area will give original count. 
+BAETdata$Count <- round(BAETdata$Density*BAETdata$Area)
+BAETdata$Date <- as.Date(BAETdata$Date)
+vals <- vector()
+for (i in 1:length(temps$dts)){
+  d <- BAETdata[which(BAETdata$Date %within% interval(temps$dts[i], temps$dts[i+1]-1) == T),]
+  if (length(d$Count) > 0) {
+    s<- rep(i, times = length(d$Count))
+    vals <- append(vals, s)}
+}
 
-BAET.samp <- aggregate(BAETdata$Density, list(BAETdata$Date), FUN = sum)
+
+
+
+
+
+
+
+
+
+
 
 means <- vector()
 for (i in 1:length(temps$dts)){
