@@ -50,7 +50,7 @@ TimestepTemperature <- function(temp){
   # aggregate over ID and TYPE for all numeric data.
   outs <- aggregate(temp[sapply(temp,is.numeric)],
                     by=list(ID),
-                    FUN=mean)
+                    FUN=mean, na.rm=TRUE)
   # format output
   names(outs)[1:2] <-c("dts","Temperature")
   # add the correct dates as the beginning of every period
