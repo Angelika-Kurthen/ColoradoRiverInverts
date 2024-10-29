@@ -150,9 +150,7 @@ ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = mean.abund, group = 1, 
   scale_color_manual(values = colors)+
   scale_y_continuous(
     sec.axis = sec_axis(~./10, name="Baetidae Larvae (inds/m2)"
-  ))+
-theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-      axis.text.y = element_text(size = 13), )+
+    ))+
+  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+        axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")
-
-
