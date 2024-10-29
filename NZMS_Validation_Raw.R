@@ -70,11 +70,8 @@ NZMS.samp.sum <- NZMS.samp.sum[NZMS.samp.sum$means >= 0, ]
 NZMS.samp.sum$V1 <- as.Date(NZMS.samp.sum$V1, origin = "1970-01-01")
  
 # culling data by lags - Temporal autocorrelation: a neglected factor in the study of behavioral repeatability and plasticity  
-ncor <- left_join(N, means.list.NZMS, by = c("V1" = "date"), copy = T) 
+ncor <- left_join(lam, means.list.NZMS, by = c("V1" = "date"), copy = T) 
 cor.test(ncor$V2, ncor$mean.abund, method = "spearman")
-
-
-
 
 cor.df <- left_join(NZMS.samp.sum, means.list.NZMS, by=c('V1'="date"), copy = T)
 cor.lm <- lm((cor.df$mean.abund) ~ (cor.df$means))
