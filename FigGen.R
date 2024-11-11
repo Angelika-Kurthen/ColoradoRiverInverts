@@ -594,8 +594,8 @@ ggsave("FigS1.png", plot = FigS1, width = 5, height = 5, device = "png", dpi = "
 
 #code to make heatmap for K in response to Disturbance and time post disturbance
 source("Kwireplot.R")
-ggplot(data = KQT, aes(x = t , y = Q))+
-  geom_raster(aes(fill = K), interpolate = F)+
+FigS4 <- ggplot(data = KQT, aes(x = t , y = Q))+
+  geom_raster(aes(fill = K), interpolate = T)+
   scale_fill_viridis_c(option = "magma") +
   scale_color_grey()+
   labs(shape = "") +
@@ -610,6 +610,7 @@ ggplot(data = KQT, aes(x = t , y = Q))+
           color="black", fill="white", linetype="solid"))+
   theme(legend.margin = margin(-1,0,0,0, unit="cm"))
 
+ggsave(filename = "FigS4.png", FigS4, height = 5, width = 5, device = "png", dpi = "retina")
 
 # code to make heatmaps for pulse Freq v Mag
 # 
@@ -670,67 +671,81 @@ ggplot(data = KQT, aes(x = t , y = Q))+
 #   theme(legend.margin = margin(-1,0,0,0, unit="cm"))
 
 # multivoltinism
-source("SpA_Multivolt.R")
-source("SpB_Multivolt.R")
+#source("SpA_Multivolt.R")
+#source("SpB_Multivolt.R")
 source("SpC_Multivolt.R")
-source("SpD_Multivolt.R")
+#source("SpD_Multivolt.R")
 
-# chaos plots
-source("HilbertMetric.R")
-
-chaostestplot <- ggplot(data = chaostestdf, aes(x = fecs, y = chaos1))+
-  geom_point(alpha = 0.8)+
-  xlab("Stage 3 Mayfly Fecundity")+
-  ylab("Chaos 0 - 1 Test Index")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-  theme_bw()
-
-chaosts<- ggplot(data = outchaos2[250:500,], aes(x = as.numeric(timesteps), y = log(mean.abund), group = 1))+
-  geom_line(linewidth = 1, col = "#4477AA")+
-  xlab("Timestep")+
-  ylab("Log Abundance")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-  scale_x_continuous(breaks = seq(250, 2600, by = 250))+ 
-  theme_bw()
-
-chaosn <- ggplot(data = chaosdf, aes(x = V1, y = V2))+
-  geom_point(col = "#4477AA", alpha = 0.8)+
-  geom_line(linewidth = 1, col = "#4477AA")+
-  geom_path(col = "#4477AA")+
-  xlab(bquote(N[mayfly](t)))+ 
-  ylab(bquote(N[mayfly](t+1)))+
-  annotate("text", x= 1000000, y= 1270409, label = "F3 = 5200")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-  theme_bw()
-
-stablets <- ggplot(data = outstable2[250:500,], aes(x = as.numeric(timesteps), y = log(mean.abund), group = 1))+
-  geom_line(linewidth = 1, col = "#EE6677")+
-  xlab("Timestep")+
-  ylab("Log Abundance")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-  scale_x_continuous(breaks = seq(250, 2600, by = 250))+ 
-  theme_bw()
-
-stablen <- ggplot(data = stabledf, aes(x =(V1), y = (V2)))+
-  geom_point(alpha = 0.8, col = "#EE6677")+
-  geom_line(linewidth = 1,col = "#EE6677")+
-  geom_path(linewidth = 1, col = "#EE6677")+
-  xlab(bquote(N[mayfly](t)))+ 
-  ylab(bquote(N[mayfly](t+1)))+
-  annotate("text", x= 200000, y= 245000, label = "F3 = 1200")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-  theme_bw()
-
-x11()
-ggarrange(chaostestplot,
-          ggarrange(chaosn, chaosts, stablen, stablets, ncol = 2, nrow = 2, vjust = 0.5, labels = c("b", "c", "d", "e")),
-          labels = "a",
-          nrow = 2, common.legend = T)
+Fig3 <- ggplot(data = oneyear, aes(x = Date, y = log(Abund), group = as.factor(MeanTemp), color = as.factor(MeanTemp)))+
+  geom_line(size = 1 )+
+  scale_color_manual(name = "Mean Temperature (C)", labels = c("10", "20"), values = c("#4477AA", "#EE6677"))+
+  annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2, color = arrowcols,
+           arrow = arrow(type = "closed", length = unit(0.02, "npc")))+
+  ylab("Log Adult Abundance") + 
+  theme_bw()+
+  scale_x_date(date_labels="%B", date_breaks  ="1 month")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+ggsave(filename = "Fig3.png", Fig3, height = 5, width = 5, device = "png", dpi = "retina")
 
 
 
+# # chaos plots
+# source("HilbertMetric.R")
+# 
+# chaostestplot <- ggplot(data = chaostestdf, aes(x = fecs, y = chaos1))+
+#   geom_point(alpha = 0.8)+
+#   xlab("Stage 3 Mayfly Fecundity")+
+#   ylab("Chaos 0 - 1 Test Index")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+#   theme_bw()
+# 
+# chaosts<- ggplot(data = outchaos2[250:500,], aes(x = as.numeric(timesteps), y = log(mean.abund), group = 1))+
+#   geom_line(linewidth = 1, col = "#4477AA")+
+#   xlab("Timestep")+
+#   ylab("Log Abundance")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+#   scale_x_continuous(breaks = seq(250, 2600, by = 250))+ 
+#   theme_bw()
+# 
+# chaosn <- ggplot(data = chaosdf, aes(x = V1, y = V2))+
+#   geom_point(col = "#4477AA", alpha = 0.8)+
+#   geom_line(linewidth = 1, col = "#4477AA")+
+#   geom_path(col = "#4477AA")+
+#   xlab(bquote(N[mayfly](t)))+ 
+#   ylab(bquote(N[mayfly](t+1)))+
+#   annotate("text", x= 1000000, y= 1270409, label = "F3 = 5200")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+#   theme_bw()
+# 
+# stablets <- ggplot(data = outstable2[250:500,], aes(x = as.numeric(timesteps), y = log(mean.abund), group = 1))+
+#   geom_line(linewidth = 1, col = "#EE6677")+
+#   xlab("Timestep")+
+#   ylab("Log Abundance")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+#   scale_x_continuous(breaks = seq(250, 2600, by = 250))+ 
+#   theme_bw()
+# 
+# stablen <- ggplot(data = stabledf, aes(x =(V1), y = (V2)))+
+#   geom_point(alpha = 0.8, col = "#EE6677")+
+#   geom_line(linewidth = 1,col = "#EE6677")+
+#   geom_path(linewidth = 1, col = "#EE6677")+
+#   xlab(bquote(N[mayfly](t)))+ 
+#   ylab(bquote(N[mayfly](t+1)))+
+#   annotate("text", x= 200000, y= 245000, label = "F3 = 1200")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+#   theme_bw()
+# 
+# 
+# ggarrange(chaostestplot,
+#           ggarrange(chaosn, chaosts, stablen, stablets, ncol = 2, nrow = 2, vjust = 0.5, labels = c("b", "c", "d", "e")),
+#           labels = "a",
+#           nrow = 2, common.legend = T)
+# 
+# 
+# 
