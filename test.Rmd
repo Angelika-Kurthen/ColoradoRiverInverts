@@ -103,7 +103,7 @@ hist(NZMSsamp$CountTotal, breaks = 200, col = "red", border = "darkred")
 There is also quite a bit of variation over time, but clearly some phenology with yearly pulses. This means that we might want to use sample month as a covariate.  
 ```{r}
 # plot count over time
-plot(NZMSsamp$Date, NZMSsamp$CountTotal)
+plot(NZMSsamp$Date, log(NZMSsamp$CountTotal), type = "l")
 ```
 
 We have a pretty uneven sampling distribution (you can see by the spacing of points above). Some days only have 1 data point, other have 10. Some months are more heavily sampled than others. Because of this, we might want to bin out dates, using 2 weeks (which happens to be the length of our mathematical model timestep). We can do this by indexing our count dates. We also will make a column for sample month, so we can use that as a predictor in our analysis. We can then continue to explore sample frequency. 
