@@ -48,13 +48,13 @@ discharge <- readNWISdv("09404200", "00060", "2004-05-22", "2024-08-23")
 discharge <- full_join(discharge, all_dates)
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 
-out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 20000, baselineK = 10000, Qmin = 0.2, extinct = 5, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.2, extinct = 5, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = F)
 
 drift.CR <- drift.data.total[which(drift.data.total$Region == "GrandCanyon" & drift.data.total$RiverMile >= 219 & drift.data.total$RiverMile <= 225),]
 
-specieslist <- c("CHEP","HYOS", "HYSP")
+specieslist <- c("HYOS")
 HYOS.samp.CR <- sampspec(samp = drift.CR, stats = T, species = specieslist)
 HYOS.samp <- merge(HYOS.samp.CR$Statistics, HYOS.samp.CR$Samples, by = "BarcodeID", all = T)
 HYOS.samp <- HYOS.samp[which(HYOS.samp$FlagStrange == F),]
@@ -138,7 +138,7 @@ drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = F)
 
 drift.CR <- drift.data.total[which(drift.data.total$Region == "GrandCanyon" & drift.data.total$RiverMile >= 219 & drift.data.total$RiverMile <= 225),]
 
-specieslist <- c("CHEP","HYOS", "HYSP")
+specieslist <- c("HYOS")
 HYOS.samp.CR <- sampspec(samp = drift.CR, stats = T, species = specieslist)
 HYOS.samp <- merge(HYOS.samp.CR$Statistics, HYOS.samp.CR$Samples, by = "BarcodeID", all = T)
 HYOS.samp <- HYOS.samp[which(HYOS.samp$FlagStrange == F),]
@@ -154,9 +154,10 @@ for (i in 1:length(temps$dts)){
 # add to data frame
 HYOS.samp <- cbind(HYOS.samp, vals)
 
-# now we need into include mean water temperature for each 
+# now we need into include mean water temperature and discharge for each 
 HYOS.samp <- cbind(HYOS.samp, temps$Temperature[HYOS.samp$vals])
-HYOS.samp <- left_join(HYOS.samp, discharge, by = c("Date", "Date"))
+HYOS.samp <- cbind(HYOS.samp, flow.magnitude$Discharge[HYOS.samp$vals])
+
 max_visits <- vector() # vector to put max obs per site
 means <- vector()
 for (i in 1:length(temps$dts)){  # cycle through all the 14 day timesteps that we have model output for
