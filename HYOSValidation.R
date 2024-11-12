@@ -14,6 +14,8 @@ library(dataRetrieval)
 library(devtools)
 #install_github(repo = "jmuehlbauer-usgs/R-packages", subdir = "foodbase")
 library(foodbase)
+library(rjags)
+library(MCMCvis)
 
 source("1spFunctions.R")
 source("HYOS_1sp.R")
@@ -188,17 +190,16 @@ obs_intercept <- matrix(data = 1, nrow = R, ncol = J)
 # make RxJ matrix full of volumes sampled for each abundance
 flows <- vector()
 temperature <- vector()
-volumes <- matrix(data = NA, nrow = R, ncol = J)
 time <- matrix(data = NA, nrow = R, ncol = J)
+windspeed <- matrix(data = NA, nrow = R, ncol = J)
 for (i in 1:length(temps$dts)){
   d <- HYOS.samp[which(HYOS.samp$Date >= temps$dts[i] & HYOS.samp$Date < temps$dts[i+1]), ]
-  flows[i] <- mean(d$X_00060_00003)
+  flows[i] <- mean(d$`flow.magnitude$Discharge[HYOS.samp$vals]`)
   #date <- df[]
   temperature[i] <- mean(d$`temps$Temperature[HYOS.samp$vals]`)
-  time[i,] <- c(d$TimeElapsed, rep(NA, times = (J- length(d$CountTotal))))
+  windspeed[i,] <- c(d$WindSpeed, rep(NA, times = (J- length(d$CountTotal))))
   site_mat[i, ] <- c(d$CountTotal, rep(NA, times = (J- length(d$CountTotal))))
-  dens_mat[i, ] <- c(as.integer(d$Density), rep (NA, times = (J - length(d$Density))))
-  volumes[i, ] <- c((d$Volume),rep(NA, times = (J- length(d$CountTotal))))
+  time[i, ] <- c((d$TimeElapsed),rep(NA, times = (J- length(d$CountTotal))))
 }
 
 # we need to remove all timesteps that are just NAs
@@ -207,26 +208,130 @@ nodata <- which(is.na(site_mat[,1]))
 site_mat <- as.matrix(site_mat[-nodata,]) # count data
 #dens_mat <- as.matrix(dens_mat[-nodata, ]) # density data
 obs_intercept <- as.matrix(obs_intercept[-nodata,]) # intercept for obs cov
-time <- as.matrix(scale(time[-nodata,])) # duration in H20 obs cov
-time[is.na(time)] <- mean(time, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors
 
 flows <- as.data.frame(scale(flows[-nodata])) # site cov flow 
 temperature <- as.data.frame(scale(temperature[-nodata])) # site cov temp
 circdate <- as.data.frame(df$circdate)
-# dimnames(time) <- list(temps$dts[-nodata], seq(1:48))
-# time <- list(time)
-# names(time) <- c("time")
-site_intercept <- rep(1, times = length(flows$V1)) 
-site_covs<- as.matrix(cbind(site_intercept, flows, circdate)) #flows,temperature, circdate)
-#obs_covs <- array(data= NA, dim = c(length(flows$V1),J,2))
-obs_covs <- array(data= NA, dim = c(length(flows$V1),J,1))
-obs_covs[,,1] <- obs_intercept                                  
-#obs_covs[,,2] <- time
-#offset
-offset <- as.matrix(scale(log(volumes[-nodata, ])))
-offset[is.na(offset)] <- mean(offset, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
-# dimnames(volumes) <- list(temps$dts[-nodata], seq(1:48))
-# volumes <- list(volumes)
-# names(volumes) <- c("vol")
+windspeed <- as.matrix((scale(windspeed[-nodata,])))
+windspeed[is.na(windspeed)] <- mean(windspeed, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
 
+site_intercept <- rep(1, times = length(flows$V1)) 
+site_covs<- as.matrix(cbind(site_intercept)) #flows,temperature, circdate)
+obs_covs <- array(data= NA, dim = c(length(flows$V1),J,2))
+obs_covs[,,1] <- obs_intercept                                  
+obs_covs[,,2] <- windspeed
+#offset
+offset <- as.matrix(scale(log(time[-nodata, ])))
+offset[is.na(offset)] <- mean(offset, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
+
+sink("N-mixturePoisHYOS.jags")
+cat("
+model{
+    # Priors
+    for(i in 1:nAlpha){ # nAlpha is the number of site predictor variables
+      alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
+    }
+
+    for(i in 1:nBeta){ # nBeta is number of site x observation predictors
+      beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
+    }
+
+    # Likelihood
+    for(r in 1:R){
+     N[r] ~ dpois(lambda[r]) #start with pulling from Poisson
+     log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
+
+     for(j in 1:J){
+      y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
+      logit(p[r, j]) <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
+
+        ## Expected count at site r, sample j
+        exp[r,j] <- N[r] * p[r, j]
+
+        ## Discrepancy
+        ## (note small value added to denominator to avoid potential divide by zero)
+        ## This is the X2 + descrepancy
+        E[r, j] <- pow((y[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+
+        ## Simulate new count from model
+        y.rep[r, j] ~ dbinom(p[r, j], N[r])
+
+        ## X2
+        E.rep[r, j] <- pow((y.rep[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+     }
+    }
+     # chi-squared test statistics
+    fit <- sum(E[,])
+    fit.rep <- sum(E.rep[ , ])
+    } # End model
+", fill = TRUE)
+sink()
+
+jags_data <- list(y = (site_mat),
+                  XN = site_covs,
+                  Xp = (obs_covs),
+                  J = dim(site_mat)[2], #visits
+                  R = dim(site_mat)[1], #sites
+                  off = (offset), #obs offset
+                  nAlpha = dim(site_covs)[2],
+                  nBeta = dim(obs_covs)[3])
+
+nAlpha <- dim(site_covs)[2]
+nBeta <- dim(obs_covs)[3]
+jags_inits <- function(){
+  list(
+  N = apply(jags_data$y, 1, max, na.rm=TRUE),
+  alpha=runif(nAlpha,-1,1),
+	beta=runif(nBeta,-1,1))}
+
+parameters <- c("alpha", "beta", "lambda", "p", "N")
+
+nc <- 3
+ni <- 10000
+nb <- 2500
+nt <- 1
+
+Nmix_fit <- jags.model("N-mixturePoisHYOS.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
+
+update(Nmix_fit, n.iter = 1000)
+
+Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+#
+print(Nmix_fit_UI)
+
+zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp" , "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+
+
+lam <- MCMCpstr(zm, "lambda")
+N <- MCMCpstr(zm, "N")
+N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+
+
+lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
+lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
+
+y.rep <- MCMCpstr(zm, "y.rep")
+exp <- MCMCpstr(zm, "exp")
+
+plot(unlist(y.rep), unlist(site_mat))
+
+plot(unlist(y.rep), unlist(site_mat))
+abline(0, 1)
+
+fit <- MCMCchains(zm, "fit")
+fit.rep <- MCMCchains(zm, "fit.rep")
+mean(fit > fit.rep) # close to 1 so bad fit?
+plot(fit.rep ~ fit)
+abline(0, 1) # 1 to 1 line not even there
+
+
+fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
+library(ggplot2)
+ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)# not getting all the 0s and missing the really high #s
+
+cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
