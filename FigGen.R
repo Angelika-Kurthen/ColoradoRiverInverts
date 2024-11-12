@@ -143,7 +143,7 @@ FigS2 <- ggplot(data = fec_df, aes(fec_seq, y= fec_means/10000, color = V3))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-ggsave(filename = "FigS2.png", plot = FigS2, device = "png", width = 5, height = 5, dpi = "retina")
+ggsave(filename = "FigS2.png", plot = FigS2, device = "png", width = 6, height = 5, dpi = "retina")
 
 
 
@@ -174,7 +174,7 @@ FigS3 <- ggplot(data = dd_df, aes(dd_seq, dd_means/10000, color = V3)) +
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-ggsave(filename = "FigS3.png", plot = FigS3, device = "png", width = 5, height = 5, dpi = "retina")
+ggsave(filename = "FigS3.png", plot = FigS3, device = "png", width = 6, height = 5, dpi = "retina")
 
 # code for julian date based timing
 # source("SpA_JulianPulse.R")
@@ -496,7 +496,7 @@ FigS1 <- ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000,
   theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-ggsave("FigS1.png", plot = FigS1, width = 5, height = 5, device = "png", dpi = "retina")
+ggsave("FigS1.png", plot = FigS1, width = 6, height = 5, device = "png", dpi = "retina")
 
 # Press v Pulse Magnitude
 # 
@@ -610,7 +610,7 @@ FigS4 <- ggplot(data = KQT, aes(x = t , y = Q))+
           color="black", fill="white", linetype="solid"))+
   theme(legend.margin = margin(-1,0,0,0, unit="cm"))
 
-ggsave(filename = "FigS4.png", FigS4, height = 5, width = 5, device = "png", dpi = "retina")
+ggsave(filename = "FigS4.png", FigS4, height = 6, width = 5, device = "png", dpi = "retina")
 
 # code to make heatmaps for pulse Freq v Mag
 # 
