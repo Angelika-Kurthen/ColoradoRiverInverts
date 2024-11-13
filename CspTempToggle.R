@@ -89,7 +89,7 @@ for (te in 1:length(temp_seq)){
   short[te] <- mean(means.list.C$mean.abund[10:16])
 }
 
-winter <- as.data.frame(cbind(temp_regime, short))
+winter <- as.data.frame(cbind(temp_regime, log(short)))
 
 size_means <- vector()
 for (te in 1:length(temp_seq)){
@@ -115,7 +115,7 @@ for (te in 1:length(temp_seq)){
   means.list.C<- mean.data.frame(out, burnin = 250, iteration = 2)
   short[te] <- mean(means.list.C$mean.abund[23:39])
 }
-summer <- as.data.frame(cbind(temp_regime, short))
+summer <- as.data.frame(cbind(temp_regime, log(short)))
 
 size_means <- vector()
 for (te in 1:length(temp_seq)){
@@ -131,15 +131,15 @@ summer_size_means <- as.data.frame(cbind(temp_regime, size_means))
 # bind together, 1 = winter 2 = summer
 temp_dist_c <- bind_rows(winter, summer, .id = "season")
 sizes <- rbind(winter_size_means, summer_size_means)
-#deltatemp_c <- as.data.frame(cbind(rep(3, times = length(temp_regime)),temp_regime, summer[,2]-winter[,2]))
+deltatemp_c <- as.data.frame(cbind(rep(3, times = length(temp_regime)),temp_regime, summer[,2]-winter[,2]))
 temp_size_c <- bind_rows(winter_size_means, summer_size_means, .id = "season")
-#deltasize_c <- as.data.frame(cbind(rep(3, times = length(temp_regime)), temp_regime, (summer_size_means[,2]*summer[,2])-(winter_size_means[,2]*winter[2])))
+deltasize_c <- as.data.frame(cbind(rep(3, times = length(temp_regime)), temp_regime, (summer_size_means[,2]*summer[,2])-(winter_size_means[,2]*winter[2])))
 temp_size_c <- mutate(.data = temp_size_c, size_means = temp_dist_c$short * sizes$size_means )
 
-#deltatemp_d <- setNames(deltatemp_d, names(temp_dist_d))
-#temp_dist_d <- rbind(temp_dist_d, deltatemp_d)
-#deltasize_d <- setNames(deltasize_d, names(temp_size_d))
-#temp_size_d <- rbind(temp_size_d, deltasize_d)
+deltatemp_d <- setNames(deltatemp_d, names(temp_dist_d))
+temp_dist_d <- rbind(temp_dist_d, deltatemp_d)
+deltasize_d <- setNames(deltasize_d, names(temp_size_d))
+temp_size_d <- rbind(temp_size_d, deltasize_d)
 
 # ggplot(data = temp_dist_c, aes(x = temp_regime, y = short))+
 #   geom_line()+

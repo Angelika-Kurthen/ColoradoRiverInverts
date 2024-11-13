@@ -68,11 +68,6 @@ size_means <- 0.0077*(size_means)^2.910  # multiply relative size (which is also
 d_size_df <- as.data.frame(cbind(temp_regime, size_means, rep("D", times = length(temp_means))))
 d_size_df$temp_regime <- as.numeric(d_size_df$temp_regime)
 d_size_df$size_means <- as.numeric(d_size_df$size_means)
-# ctemp <- ggplot(data = temp_adjust_df, mapping = aes(x = temp_seq, y = temp_means/10000))+
-#   geom_line(size = 1, col = "#EE6677")+
-# xlab("Degree C Change")+
-#   ylab("C sp Abundance Relative to K")+
-#   theme_bw()
 
 # Disturbance by temp
 
@@ -90,7 +85,7 @@ for (te in 1:length(temp_seq)){
   short[te] <- mean(means.list.D$mean.abund[10:16])
 }
 
-winter <- as.data.frame(cbind(temp_regime, short))
+winter <- as.data.frame(cbind(temp_regime, log(short)))
 
 size_means <- vector()
 for (te in 1:length(temp_seq)){
@@ -116,7 +111,7 @@ for (te in 1:length(temp_seq)){
   means.list.D<- mean.data.frame(out, burnin = 250, iteration = 2)
   short[te] <- mean(means.list.D$mean.abund[23:29])
 }
-summer <- as.data.frame(cbind(temp_regime, short))
+summer <- as.data.frame(cbind(temp_regime, log(short)))
 
 size_means <- vector()
 for (te in 1:length(temp_seq)){
@@ -132,15 +127,15 @@ summer_size_means <- as.data.frame(cbind(temp_regime, size_means))
 # bind together, 1 = winter 2 = summer
 temp_dist_d <- bind_rows(winter, summer, .id = "season")
 sizes <- rbind(winter_size_means, summer_size_means)
-#deltatemp_d <- as.data.frame(cbind(rep(3, times = length(temp_regime)),temp_regime, summer[,2]-winter[,2]))
+deltatemp_d <- as.data.frame(cbind(rep(3, times = length(temp_regime)),temp_regime, summer[,2]-winter[,2]))
 temp_size_d <- bind_rows(winter_size_means, summer_size_means, .id = "season")
-#deltasize_d <- as.data.frame(cbind(rep(3, times = length(temp_regime)), temp_regime, (summer_size_means[,2]*summer[,2])-(winter_size_means[,2]*winter[2])))
+deltasize_d <- as.data.frame(cbind(rep(3, times = length(temp_regime)), temp_regime, (summer_size_means[,2]*summer[,2])-(winter_size_means[,2]*winter[2])))
 temp_size_d <- mutate(.data = temp_size_d, size_means = temp_dist_d$short * sizes$size_means )
 
-#deltatemp_d <- setNames(deltatemp_d, names(temp_dist_d))
-#temp_dist_d <- rbind(temp_dist_d, deltatemp_d)
-#deltasize_d <- setNames(deltasize_d, names(temp_size_d))
-#temp_size_d <- rbind(temp_size_d, deltasize_d)
+deltatemp_d <- setNames(deltatemp_d, names(temp_dist_d))
+temp_dist_d <- rbind(temp_dist_d, deltatemp_d)
+deltasize_d <- setNames(deltasize_d, names(temp_size_d))
+temp_size_d <- rbind(temp_size_d, deltasize_d)
 
 # ggplot(data = temp_dist_d, aes(x = temp_regime, y = short))+
 #   geom_line()+
