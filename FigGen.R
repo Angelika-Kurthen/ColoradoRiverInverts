@@ -63,8 +63,8 @@ ggsave(filename = "Fig2.png", plot = Fig2, device = "png", width = 6.5, height =
 
 temp_dist <- bind_rows(temp_dist_a, temp_dist_b, temp_dist_c, temp_dist_d, .id = "taxa")
 
-deltatemp <- subset(temp_dist, season == 3)
-temp_dist <- subset(temp_dist, season < 3)
+# deltatemp <- subset(temp_dist, season == 3)
+# temp_dist <- subset(temp_dist, season < 3)
 
 supp.labs <- c("Winter Disturbance", "Summer Disturbance", "\u0394 Abundance")
 names(supp.labs) <- c("1", "2", "3")
@@ -97,8 +97,8 @@ d <- ggplot(data = temp_dist, aes(x = temp_regime, y = log(short), color = taxa)
 
 temp_size <- bind_rows(temp_size_a, temp_size_b, temp_size_c, temp_size_d, .id = "taxa")
 
-deltasize <- subset(temp_size, season == 3)
-temp_size <- subset(temp_size, season < 3)
+# deltasize <- subset(temp_size, season == 3)
+# temp_size <- subset(temp_size, season < 3)
 supp.labs <- c("Winter Disturbance", "Summer Disturbance", "\u0394 Biomass")
 names(supp.labs) <- c("1", "2", "3")
 
