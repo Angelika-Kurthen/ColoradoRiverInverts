@@ -93,7 +93,7 @@ for (te in 1:length(temp_seq)){
   short[te] <- mean(means.list.B$mean.abund[10:16])
 }
 plot(temp_regime, short)
-winter <- as.data.frame(cbind(temp_regime, log(short)))
+winter <- as.data.frame(cbind(temp_regime, short, log(short)))
 
 
 size_means <- vector()
@@ -121,7 +121,7 @@ for (te in 1:length(temp_seq)){
   means.list.B<- mean.data.frame(out, burnin = 250, iteration = 2)
   short[te] <- mean(means.list.B$mean.abund[23:39])
 }
-summer <- as.data.frame(cbind(temp_regime,log(short)))
+summer <- as.data.frame(cbind(temp_regime,short, log(short)))
 
 size_means <- vector()
 for (te in 1:length(temp_seq)){
@@ -137,13 +137,13 @@ summer_size_means <- as.data.frame(cbind(temp_regime, size_means))
 # bind together, 1 = winter 2 = summer
 temp_dist_b <- bind_rows(winter, summer, .id = "season")
 sizes <- rbind(winter_size_means, summer_size_means)
-deltatemp_b <- as.data.frame(cbind(rep(3, times = length(temp_regime)),temp_regime, summer[,2]-winter[,2]))
+deltatemp_b <- as.data.frame(cbind(rep(3, times = length(temp_regime)),temp_regime, summer[,3]-winter[,3]))
 temp_size_b <- bind_rows(winter_size_means, summer_size_means, .id = "season")
 deltasize_b <- as.data.frame(cbind(rep(3, times = length(temp_regime)), temp_regime, (summer_size_means[,2]*summer[,2])-(winter_size_means[,2]*winter[2])))
-temp_size_b <- mutate(.data = temp_size_b, size_means = temp_dist_b$V2 * sizes$size_means )
+temp_size_b <- mutate(.data = temp_size_b, size_means = temp_dist_b$short * sizes$size_means )
 
-deltatemp_b <- setNames(deltatemp_b, names(temp_dist_b))
-temp_dist_b <- rbind(temp_dist_b, deltatemp_b)
+deltatemp_b <- setNames(deltatemp_b, names(temp_dist_b[c(1,2,4)]))
+temp_dist_b <- rbind(temp_dist_b[c(1,2,4)], deltatemp_b)
 deltasize_b <- setNames(deltasize_b, names(temp_size_b))
 temp_size_b <- rbind(temp_size_b, deltasize_b)
 
