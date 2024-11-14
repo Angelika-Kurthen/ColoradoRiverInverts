@@ -69,7 +69,7 @@ temp_dist <- bind_rows(temp_dist_a, temp_dist_b, temp_dist_c, temp_dist_d, .id =
 supp.labs <- c("Winter Disturbance", "Summer Disturbance", "\u0394 Abundance")
 names(supp.labs) <- c("1", "2", "3")
 
-d <- ggplot(data = temp_dist, aes(x = temp_regime, y = V2, color = taxa))+
+d <- ggplot(data = temp_dist, aes(x = temp_regime, y = V3, color = taxa))+
   geom_line(linewidth = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   geom_point()+
@@ -610,7 +610,7 @@ FigS4 <- ggplot(data = KQT, aes(x = t , y = Q))+
           color="black", fill="white", linetype="solid"))+
   theme(legend.margin = margin(-1,0,0,0, unit="cm"))
 
-ggsave(filename = "FigS4.png", FigS4, height = 6, width = 5, device = "png", dpi = "retina")
+ggsave(filename = "FigS4.png", FigS4, height = 5, width = 6, device = "png", dpi = "retina")
 
 # code to make heatmaps for pulse Freq v Mag
 # 
