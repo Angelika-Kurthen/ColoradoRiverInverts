@@ -141,7 +141,7 @@ sizes <- rbind(winter_size_means, summer_size_means)
 deltatemp_a <- as.data.frame(cbind(rep(3, times = length(temp_regime)),temp_regime, summer[,2]-winter[,2]))
 temp_size_a <- bind_rows(winter_size_means, summer_size_means, .id = "season")
 deltasize_a <- as.data.frame(cbind(rep(3, times = length(temp_regime)), temp_regime, (summer_size_means[,2]*summer[,2])-(winter_size_means[,2]*winter[2])))
-temp_size_a <- mutate(.data = temp_size_a, size_means = temp_dist_a$short * sizes$size_means )
+temp_size_a <- mutate(.data = temp_size_a, size_means = temp_dist_a$V2 * sizes$size_means )
 
 deltatemp_a <- setNames(deltatemp_a, names(temp_dist_a))
 temp_dist_a <- rbind(temp_dist_a, deltatemp_a)
