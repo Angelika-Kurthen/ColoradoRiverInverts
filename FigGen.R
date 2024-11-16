@@ -68,7 +68,12 @@ temp_dist <- bind_rows(temp_dist_a, temp_dist_b, temp_dist_c, temp_dist_d, .id =
 
 supp.labs <- c("Winter Disturbance", "Summer Disturbance", "\u0394 Abundance")
 names(supp.labs) <- c("1", "2", "3")
+<<<<<<< HEAD
 temp_dist[which(is.na(temp_dist$V3)), ] <- -Inf
+=======
+temp_dist$V3[which(is.na(temp_dist$V3))] <- -Inf
+
+>>>>>>> f78d77285ff117c4a0de8f010d94930609de2902
 d <- ggplot(data = temp_dist, aes(x = temp_regime, y = V3, color = taxa))+
   geom_line(linewidth = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
@@ -114,7 +119,7 @@ es <- ggplot(data = temp_size, aes(x = temp_regime, y = size_means/1000000, colo
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 x11()
 Fig4 <- ggarrange(d, es, nrow  = 2, labels = c("a","b"))
-ggsave(filename = "Fig4.png", plot = Fig4, device = "png", width = 6.5, height = 8.5, dpi = "retina")
+ggsave(filename = "Fig4.png", plot = Fig4, device = "png", width = 7.5, height = 8.5, dpi = "retina")
 
 # code for fecundity sensitivity analysis
 source("A_sp_Fecundity_Toggle.R")
