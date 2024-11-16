@@ -234,11 +234,11 @@ for (iter in c(1:iterations)) {
     # Timesteps = -0.95(TEMP) + 24.75 
     
     #development measures# at cold temps
-    if (5 > temps$Temperature[t-1])  {
+    if (10 > temps$Temperature[t-1])  {
       G1 <- 0.05/20 *TempSurvival[t-1]
       P1 <- 1-(1/20)*TempSurvival[t-1]
     }
-    if (15 > temps$Temperature[t-1]){ # from Rhame + Stewart, 1967; threshold to emergence around 15 - 17 C. We choose 16 because lower.
+    if (17 > temps$Temperature[t-1]){ # from Rhame + Stewart, 1967; threshold to emergence around 15 - 17 C. We choose 16 because lower.
       G2 <- 0.11/20 * TempSurvival[t-1] # no emergence below 16 C
       P2 <- 1-(1/20) *TempSurvival[t-1]
     } else {
