@@ -50,7 +50,7 @@ discharge <- readNWISdv("09404200", "00060", "2004-05-22", "2024-08-23")
 discharge <- full_join(discharge, all_dates)
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 
-out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.2, extinct = 5, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.15, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = F)
 
@@ -106,7 +106,9 @@ cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 hist(cor.df$V2, xlab = "Hydropsychidae Adults (#/hour)", col = "#CADBD7")
 colors <- c("black", "#FF7F00")
-ggplot(data = means.list.HYOS[100:571,], aes(x = Date, y = mean.abund, group = 1, color = "Model")) +
+
+
+ggplot(data = means.list.HYOS[100:571,], aes(x = Date, y = mean.abund/(10^59), group = 1, color = "Model")) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
