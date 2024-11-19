@@ -39,14 +39,14 @@ flow.surv.fit <- function(magnitude, mortality, Qmin){
 
 flow.surv.rate <- function(h, k, max, min, interval, Qmin) {
   Q <- seq(min, max, by = interval)
-  surv <- k*(exp(-h*Q))
+  surv <- k*exp(-h*Q)
   surv.df <- as.data.frame(cbind(Q, surv))
   surv.df$surv[which(surv.df$Q <= Qmin)] <- 1
   return(surv.df)
 }
 
-surv.fit.HYOS <- flow.surv.fit(HYOSVitalRates$`Max Event Discharge/Bankfull Discharge`, HYOSVitalRates$Mortality, 0.25)
-surv.df.HYOS <- flow.surv.rate(surv.fit.HYOS$m$getPars()[2] , surv.fit.HYOS$m$getPars()[1], 2, 0.001, 0.001, 0.25)
+surv.fit.HYOS <- flow.surv.fit(HYOSVitalRates$`Max Event Discharge/Bankfull Discharge`, HYOSVitalRates$Mortality, 0.15)
+surv.df.HYOS <- flow.surv.rate(surv.fit.HYOS$m$getPars()[2] , surv.fit.HYOS$m$getPars()[1], 2, 0.001, 0.001, 0.2)
 
 ggplot(surv.df.HYOS, aes(x = Q, y = surv))+
   geom_line()+
