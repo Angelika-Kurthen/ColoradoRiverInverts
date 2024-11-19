@@ -235,7 +235,7 @@ for (iter in c(1:iterations)) {
     
     #development measures# at cold temps
     if (10 > temps$Temperature[t-1])  {
-      G1 <- 0.05/20 *TempSurvival[t-1]
+      G1 <- 0.36/20 *TempSurvival[t-1]
       P1 <- 1-(1/20)*TempSurvival[t-1]
     }
     if (17 > temps$Temperature[t-1]){ # from Rhame + Stewart, 1967; threshold to emergence around 15 - 17 C. We choose 16 because lower.
@@ -247,15 +247,15 @@ for (iter in c(1:iterations)) {
     }
 
     if (temps$Temperature[t-1] > 30){
-      G1 <- 0.05 *TempSurvival[t-1]
+      G1 <- 0.36 *TempSurvival[t-1]
       P1 <- 0
       }
     if (0 <= temps$Temperature[t-1] & temps$Temperature[t-1] <=30 & is.na(emergetime[t] == F)){
-      G1 <- 0.05/(emergetime[t-1] - 3) *TempSurvival[t-1]
+      G1 <- 0.36/(emergetime[t-1] - 3) *TempSurvival[t-1]
       P1 <- 1-(1/(emergetime[t-1] - 3)) *TempSurvival[t-1]
     }
     if (0 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime[t] == T)) {
-      G1 <- 0.05/((-0.95 * temps$Temperature[t-1]) + 24.75) *TempSurvival[t-1]
+      G1 <- 0.36/((-0.95 * temps$Temperature[t-1]) + 24.75) *TempSurvival[t-1]
       P1 <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))*TempSurvival[t-1]
     }
     
@@ -303,7 +303,7 @@ for (iter in c(1:iterations)) {
     #s2
     output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
     #3
-    #output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
+    output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
     
     flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
     #replist[[1]][,,1] <- output.N.list[[1]]
