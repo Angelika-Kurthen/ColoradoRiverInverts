@@ -219,7 +219,7 @@ windspeed <- as.matrix((scale(windspeed[-nodata,])))
 windspeed[is.na(windspeed)] <- mean(windspeed, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
 
 site_intercept <- rep(1, times = length(flows$V1)) 
-site_covs<- as.matrix(cbind(site_intercept, flows, temperature, circdate)) #flows,temperature, circdate)
+site_covs<- as.matrix(cbind(site_intercept, temperature, circdate)) #flows,temperature, circdate)
 obs_covs <- array(data= NA, dim = c(length(flows$V1),J,1))
 obs_covs[,,1] <- obs_intercept                                  
 #obs_covs[,,2] <- windspeed
@@ -334,7 +334,7 @@ fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
 library(ggplot2)
 ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)# not getting all the 0s and missing the really high #s
 
-cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
@@ -449,7 +449,7 @@ fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
 library(ggplot2)
 ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)#still not getting all the 0s and missing the really high #s
 
-cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
@@ -565,7 +565,7 @@ fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
 library(ggplot2)
 ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
 
-cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
@@ -673,7 +673,7 @@ mean(fit > fit.rep) # close to 1 so bad fit?
 plot(fit.rep ~ fit)
 abline(0, 1) # 1 to 1 line not even there
 
-cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
@@ -824,7 +824,7 @@ Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.
 
 print(Nmix_fit_UI)
 
-cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
