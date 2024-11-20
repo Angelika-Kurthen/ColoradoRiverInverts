@@ -50,7 +50,7 @@ discharge <- readNWISdv("09404200", "00060", "2004-05-22", "2024-08-23")
 discharge <- full_join(discharge, all_dates)
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 
-out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 100000, baselineK = 5000, Qmin = 0.3, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.3, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = F)
 
@@ -219,10 +219,10 @@ windspeed <- as.matrix((scale(windspeed[-nodata,])))
 windspeed[is.na(windspeed)] <- mean(windspeed, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
 
 site_intercept <- rep(1, times = length(flows$V1)) 
-site_covs<- as.matrix(cbind(site_intercept, temperature, circdate)) #flows,temperature, circdate)
-obs_covs <- array(data= NA, dim = c(length(flows$V1),J,1))
+site_covs<- as.matrix(cbind(site_intercept, temperature, flows)) #flows,temperature, circdate)
+obs_covs <- array(data= NA, dim = c(length(flows$V1),J,2))
 obs_covs[,,1] <- obs_intercept                                  
-#obs_covs[,,2] <- windspeed
+obs_covs[,,2] <- windspeed
 #offset
 offset <- as.matrix(scale(log(time[-nodata, ])))
 offset[is.na(offset)] <- mean(offset, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
@@ -298,9 +298,9 @@ Nmix_fit <- jags.model("N-mixturePoisHYOS.jags",data = jags_data, inits = jags_i
 
 update(Nmix_fit, n.iter = 1000)
 
-Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+Nmix_fit_UI1 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 #
-print(Nmix_fit_UI)
+print(Nmix_fit_UI1)
 
 zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp" , "fit", "fit.rep"), n.iter = ni, n.thin = nt)
 
@@ -336,7 +336,13 @@ ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)#
 
 cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+PoisN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+
+
+cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+Poislam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+
 
 sink("N-mixtureZIPHYOS.jags")
 cat("
@@ -413,9 +419,9 @@ Nmix_fit <- jags.model("N-mixtureZIPHYOS.jags",data = jags_data, inits = jags_in
 
 update(Nmix_fit, n.iter = 1000)
 
-Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureZIPHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+Nmix_fit_UI2 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureZIPHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 #
-print(Nmix_fit_UI)
+print(Nmix_fit_UI2)
 
 zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
 
@@ -449,9 +455,13 @@ fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
 library(ggplot2)
 ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)#still not getting all the 0s and missing the really high #s
 
+cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+ZipN <-  cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+
 cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+Ziplam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 sink("N-mixtureZIPoverdispHYOS.jags")
 cat("
@@ -534,9 +544,9 @@ Nmix_fit <- jags.model("N-mixtureZIPoverdispHYOS.jags",data = jags_data, inits =
 
 update(Nmix_fit, n.iter = 1000)
 
-Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureZIPoverdispHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+Nmix_fit_UI3 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureZIPoverdispHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 
-print(Nmix_fit_UI)
+print(Nmix_fit_UI3)
 
 zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "p", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
 
@@ -567,7 +577,11 @@ ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) 
 
 cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+Zip_ovdN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+
+cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+Zip_ovdlam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 sink("N-mixturePoisoverdispHYOS.jags")
 cat("
@@ -646,9 +660,9 @@ Nmix_fit <- jags.model("N-mixturePoisoverdispHYOS.jags",data = jags_data, inits 
 
 update(Nmix_fit, n.iter = 1000)
 
-Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisoverdispHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+Nmix_fit_UI4 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisoverdispHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 
-print(Nmix_fit_UI)
+print(Nmix_fit_UI4)
 
 zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "p", "lambda", "N", "y.rep", "fit", "fit.rep", "exp"), n.iter = ni, n.thin = nt)
 
@@ -675,7 +689,12 @@ abline(0, 1) # 1 to 1 line not even there
 
 cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+Pois_ovdN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+
+
+cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+Pois_ovdlam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
  fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
                      data = rep(c("Observed", "Simulated"), each = length(site_mat)))
@@ -820,12 +839,15 @@ library(ggplot2)
 ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
 
 
-Nmix_fit_UI <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureNBHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+Nmix_fit_UI5 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureNBHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 
-print(Nmix_fit_UI)
+print(Nmix_fit_UI5)
 
 cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+nblam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 
+cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+nbN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
