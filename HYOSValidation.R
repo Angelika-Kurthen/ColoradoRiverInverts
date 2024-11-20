@@ -219,7 +219,7 @@ windspeed <- as.matrix((scale(windspeed[-nodata,])))
 windspeed[is.na(windspeed)] <- mean(windspeed, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
 
 site_intercept <- rep(1, times = length(flows$V1)) 
-site_covs<- as.matrix(cbind(site_intercept, temperature, flows)) #flows,temperature, circdate)
+site_covs<- as.matrix(cbind(site_intercept, flows, temperature, circdate)) #flows,temperature, circdate)
 obs_covs <- array(data= NA, dim = c(length(flows$V1),J,2))
 obs_covs[,,1] <- obs_intercept                                  
 obs_covs[,,2] <- windspeed
