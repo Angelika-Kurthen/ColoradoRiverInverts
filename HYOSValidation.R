@@ -80,7 +80,7 @@ means[length(temps$dts)] <- HYOS.samp$x[length(HYOS.samp$x)]
 # means.list.HYOS <- cbind(means.list.HYOS, temps$dts[286:last(means.list.HYOS$timesteps)])
 # means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 
-means.list.HYOS <- rowSums(out[,3,])/9
+means.list.HYOS <- rowSums(out[,1:3,])/9
 means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[200:530], temps$dts[199:529]))
 colnames(means.list.HYOS) <- c("mean.abund", "Date")
 means.list.HYOS$Date <- as.Date(as.POSIXct(means.list.HYOS$Date, origin = "1970-01-01"))
@@ -219,7 +219,7 @@ windspeed <- as.matrix((scale(windspeed[-nodata,])))
 windspeed[is.na(windspeed)] <- mean(windspeed, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
 
 site_intercept <- rep(1, times = length(flows$V1)) 
-site_covs<- as.matrix(cbind(site_intercept, flows, temperature, circdate)) #flows,temperature, circdate)
+site_covs<- as.matrix(cbind(site_intercept, temperature)) #flows,temperature, circdate)
 obs_covs <- array(data= NA, dim = c(length(flows$V1),J,2))
 obs_covs[,,1] <- obs_intercept                                  
 obs_covs[,,2] <- windspeed
@@ -851,3 +851,6 @@ nblam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 nbN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+
+
+left_join()
