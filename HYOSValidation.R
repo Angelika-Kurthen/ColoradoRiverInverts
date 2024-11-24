@@ -62,8 +62,11 @@ HYOS.samp.CR <- sampspec(samp = drift.CR, stats = T, species = specieslist)
 HYOS.samp <- merge(HYOS.samp.CR$Statistics, HYOS.samp.CR$Samples, by = "BarcodeID", all = T)
 HYOS.samp <- HYOS.samp[which(HYOS.samp$FlagStrange == F),]
 HYOS.samp$Density <- HYOS.samp$CountTotal/HYOS.samp$TimeElapsed
-HYOS.samp <- aggregate(HYOS.samp$Density, list(HYOS.samp$Date), FUN = mean)
 
+#HYOS.samp <- HYOS.samp[-which(HYOS.samp$Habitat == "Rock"),]
+HYOS.samp <- HYOS.samp[-which(HYOS.samp$Weather == "Rain"),]
+HYOS.samp <- HYOS.samp[-which(HYOS.samp$Bats == T), ]
+HYOS.samp <- aggregate(HYOS.samp$Density, list(HYOS.samp$Date), FUN = mean)
 means <- vector()
 for (i in 1:length(temps$dts)){
   d <- HYOS.samp[which(HYOS.samp$Group.1 >= temps$dts[i] & HYOS.samp$Group.1 < temps$dts[i+1]),]
@@ -80,7 +83,7 @@ means[length(temps$dts)] <- HYOS.samp$x[length(HYOS.samp$x)]
 # means.list.HYOS <- cbind(means.list.HYOS, temps$dts[286:last(means.list.HYOS$timesteps)])
 # means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 
-means.list.HYOS <- rowSums(out[,1:3,])/9
+means.list.HYOS <- rowSums(out[,2:3,])/9
 means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[200:530], temps$dts[199:529]))
 colnames(means.list.HYOS) <- c("mean.abund", "Date")
 means.list.HYOS$Date <- as.Date(as.POSIXct(means.list.HYOS$Date, origin = "1970-01-01"))
@@ -113,8 +116,8 @@ ggplot(data = means.list.HYOS[100:571,], aes(x = Date, y = mean.abund, group = 1
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
-              # alpha = .15,
-              # show.legend = T) +
+  # alpha = .15,
+  # show.legend = T) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
   geom_line(data =HYOS.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = V2/10, color = "USGS Light Trap Data"), linewidth = 1, alpha = 0.8,show.legend = T)+
   # geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = Discharge), color = "blue") +
@@ -163,6 +166,19 @@ HYOS.samp <- cbind(HYOS.samp, vals)
 HYOS.samp <- cbind(HYOS.samp, temps$Temperature[HYOS.samp$vals])
 HYOS.samp <- cbind(HYOS.samp, flow.magnitude$Discharge[HYOS.samp$vals])
 
+HYOS.samp <- HYOS.samp[-which(HYOS.samp$Habitat == "Rock"), ]
+HYOS.samp$Habitat <- as.character(HYOS.samp$Habitat)
+HYOS.samp$Habitat[which(HYOS.samp$Habitat == "Sand")] <- 0
+HYOS.samp$Habitat[which(HYOS.samp$Habitat == "Vegetation")] <- 1
+HYOS.samp$Habitat <- as.numeric(HYOS.samp$Habitat)
+#HYOS.samp <- HYOS.samp[-which(HYOS.samp$Weather == "Rain"), ]
+
+HYOS.samp$Weather <- as.character(HYOS.samp$Weather)
+HYOS.samp$Weather[which(HYOS.samp$Weather == "Rain")] <- 1
+HYOS.samp$Weather[which(HYOS.samp$Weather == "NoRain")] <- 0
+HYOS.samp$Weather <- as.numeric(HYOS.samp$Weather)
+
+HYOS.samp <- HYOS.samp[-which(HYOS.samp$Bats == T), ]
 max_visits <- vector() # vector to put max obs per site
 means <- vector()
 for (i in 1:length(temps$dts)){  # cycle through all the 14 day timesteps that we have model output for
@@ -195,14 +211,18 @@ flows <- vector()
 temperature <- vector()
 time <- matrix(data = NA, nrow = R, ncol = J)
 windspeed <- matrix(data = NA, nrow = R, ncol = J)
+habitat <- matrix(data = NA, nrow = R, ncol = J)
+weather <- matrix(data = NA, nrow = R, ncol = J)
 for (i in 1:length(temps$dts)){
   d <- HYOS.samp[which(HYOS.samp$Date >= temps$dts[i] & HYOS.samp$Date < temps$dts[i+1]), ]
   flows[i] <- mean(d$`flow.magnitude$Discharge[HYOS.samp$vals]`)
   #date <- df[]
   temperature[i] <- mean(d$`temps$Temperature[HYOS.samp$vals]`)
-  windspeed[i,] <- c(d$WindSpeed, rep(NA, times = (J- length(d$CountTotal))))
+  windspeed[i, ] <- c(d$WindSpeed, rep(NA, times = (J- length(d$CountTotal))))
   site_mat[i, ] <- c(d$CountTotal, rep(NA, times = (J- length(d$CountTotal))))
-  time[i, ] <- c((d$TimeElapsed),rep(NA, times = (J- length(d$CountTotal))))
+  habitat[i, ] <- c(d$Habitat, rep(NA, times = (J- length(d$CountTotal))))
+  time[i, ] <- c(d$TimeElapsed,rep(NA, times = (J- length(d$CountTotal))))
+  weather[i, ] <- c(d$Weather, rep(NA, times = (J- length(d$CountTotal))))
 }
 
 # we need to remove all timesteps that are just NAs
@@ -217,12 +237,22 @@ temperature <- as.data.frame(scale(temperature[-nodata])) # site cov temp
 circdate <- as.data.frame(df$circdate)
 windspeed <- as.matrix((scale(windspeed[-nodata,])))
 windspeed[is.na(windspeed)] <- mean(windspeed, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
+habitat <- as.matrix(habitat[-nodata,])
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+habitat[is.na(habitat)] <- Mode(na.omit(habitat)) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
+weather <- as.matrix(weather[-nodata,])
+weather[is.na(weather)] <- Mode(na.omit(weather))
 
 site_intercept <- rep(1, times = length(flows$V1)) 
 site_covs<- as.matrix(cbind(site_intercept, temperature)) #flows,temperature, circdate)
 obs_covs <- array(data= NA, dim = c(length(flows$V1),J,2))
 obs_covs[,,1] <- obs_intercept                                  
 obs_covs[,,2] <- windspeed
+#obs_covs[,,3] <- windspeed
+#obs_covs[,,4] <- habitat
 #offset
 offset <- as.matrix(scale(log(time[-nodata, ])))
 offset[is.na(offset)] <- mean(offset, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
@@ -283,9 +313,9 @@ nAlpha <- dim(site_covs)[2]
 nBeta <- dim(obs_covs)[3]
 jags_inits <- function(){
   list(
-  N = apply(jags_data$y, 1, max, na.rm=TRUE),
-  alpha=runif(nAlpha,-1,1),
-	beta=runif(nBeta,-1,1))}
+    N = apply(jags_data$y, 1, max, na.rm=TRUE),
+    alpha=runif(nAlpha,-1,1),
+    beta=runif(nBeta,-1,1))}
 
 parameters <- c("alpha", "beta", "lambda", "p", "N")
 
@@ -527,11 +557,11 @@ nAlpha <- dim(site_covs)[2]
 nBeta <- dim(obs_covs)[3]
 jags_inits <- function(){
   list(
-  omega = runif(1, 0.5, 0.7),
-  sd.p = runif(1, 0.3, 0.7),
-  N = apply(jags_data$y, 1, max, na.rm=TRUE),
-  alpha=runif(nAlpha,-1,1),
-	beta=runif(nBeta,-1,1))}
+    omega = runif(1, 0.5, 0.7),
+    sd.p = runif(1, 0.3, 0.7),
+    N = apply(jags_data$y, 1, max, na.rm=TRUE),
+    alpha=runif(nAlpha,-1,1),
+    beta=runif(nBeta,-1,1))}
 
 parameters <- c("omega", "alpha", "beta", "lambda", "p", "N")
 
@@ -696,7 +726,7 @@ cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 Pois_ovdlam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
- fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
                      data = rep(c("Observed", "Simulated"), each = length(site_mat)))
 library(ggplot2)
 ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
@@ -853,4 +883,64 @@ cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 nbN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 
-left_join()
+#######################
+# Using Anya's Data
+#######################
+# 
+# Abundance.Data <- read.csv("~/ColoradoRiverInverts/Abundance Data.csv")
+# Abundance.Data <- Abundance.Data[which(Abundance.Data$Latitude >= 35.774119 & Abundance.Data$Latitude <= 35.846578 & Abundance.Data$Longitude <= -113.323281 & Abundance.Data$Longitude >= -113.361047),]
+# 
+# drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = F)
+# 
+# drift.CR <- drift.data.total[which(drift.data.total$Region == "GrandCanyon" & drift.data.total$RiverMile >= 219 & drift.data.total$RiverMile <= 225),]
+# 
+# 
+# specieslist <- c("HYOS")
+# HYOS.samp.CR <- sampspec(samp = drift.CR, stats = T, species = specieslist)
+# HYOS.samp <- merge(HYOS.samp.CR$Statistics, HYOS.samp.CR$Samples, by = "BarcodeID", all = T)
+# HYOS.samp <- HYOS.samp[which(HYOS.samp$FlagStrange == F),]
+# HYOS.samp$Density <- HYOS.samp$CountTotal/HYOS.samp$TimeElapsed
+# 
+# fullhyos <- merge(Abundance.Data, HYOS.samp, by.x = "SampleID", by.y ="BarcodeID")
+# 
+# HYOS.samp <- aggregate(fullhyos$Density, list(fullhyos$Date), FUN = mean)
+# 
+# means <- vector()
+# for (i in 1:length(temps$dts)){
+#   d <- HYOS.samp[which(HYOS.samp$Group.1 >= temps$dts[i] & HYOS.samp$Group.1 < temps$dts[i+1]),]
+#   if (any(is.nan(mean(d$x))) == T || any(is.na((d$x) == T))) {
+#     s = NA
+#   } else {
+#     s<- mean(d$x)}
+#   means <- append(means, s)
+#   # we know the last value doesn't fit into interval and needs to be manually added
+# }
+# means[length(temps$dts)] <- HYOS.samp$x[length(HYOS.samp$x)]
+# #
+# # means.list.HYOS <- mean.data.frame(out, burnin = 286, iteration= 9)
+# # means.list.HYOS <- cbind(means.list.HYOS, temps$dts[286:last(means.list.HYOS$timesteps)])
+# # means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
+# 
+# means.list.HYOS <- rowSums(out[,3,])/9
+# means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[200:530], temps$dts[199:529]))
+# colnames(means.list.HYOS) <- c("mean.abund", "Date")
+# means.list.HYOS$Date <- as.Date(as.POSIXct(means.list.HYOS$Date, origin = "1970-01-01"))
+# 
+# 
+# HYOS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.HYOS$Date), means[200:530])))
+# HYOS.samp.sum$V1 <- as.Date(HYOS.samp.sum$V1, origin = "1970-01-01")
+# cor.df <- left_join(HYOS.samp.sum, means.list.HYOS, by=c('V1'="Date"), copy = T)
+# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+# 
+# summary(cor.lm)
+# ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
+#   geom_point()+
+#   stat_smooth(method = "lm",
+#               formula = y ~ x,
+#               geom = "smooth")+
+#   geom_text(x = 3, y = 300, label = "y = 7.77e-11x, R^2 = 0.22")+
+#   labs(y = "Hydropsychidae Model Output", x = "Hydropsychidae Empirical Data")
+# 
+# cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+# 
+# 
