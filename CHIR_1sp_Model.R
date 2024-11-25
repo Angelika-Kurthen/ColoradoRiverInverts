@@ -33,20 +33,20 @@ source("1spFunctions.R")
 #-----------------------------------------------------------
 #if looking at ColRiver temps read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
 # #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
-discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
-flow.magnitude <- TimestepDischarge(discharge, 85000)
-temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
-temps <- TimestepTemperature(temp)
-
-flow.data = flow.magnitude$Discharge
-temp.data <- temps
-baselineK <- 10000
-disturbanceK <- 1000000
-Qmin <- 0.25
-extinct <- 50
-iteration <- 1
-peaklist <- 0.13
-peakeach<- length(temps$Temperature)
+# discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
+# flow.magnitude <- TimestepDischarge(discharge, 85000)
+# temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
+# temps <- TimestepTemperature(temp)
+# 
+# flow.data = flow.magnitude$Discharge
+# temp.data <- temps
+# baselineK <- 10000
+# disturbanceK <- 1000000
+# Qmin <- 0.25
+# extinct <- 50
+# iteration <- 1
+# peaklist <- 0.13
+# peakeach<- length(temps$Temperature)
 
 CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   
@@ -198,29 +198,29 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # in this function, we assume that if below the min temp threshold (9) slow maturation
       # if above the max temp threshold (30), no one remains more than 1 timestep in each stage (fast maturation, small growth)
 
-  if (8 > temps$Temperature[t-1]) {
+  if (6 > temps$Temperature[t-1]) {
     P1 <- (1-(1/20)) * TempSurvival[t-1]
     P2 <- P1 
-    G1 <- 0.92/20 * TempSurvival[t-1]
-    G2 <- 0.92/20 * TempSurvival[t-1]
+    G1 <- 0.89/20 * TempSurvival[t-1]
+    G2 <- 0.82/20 * TempSurvival[t-1]
   }
 if (temps$Temperature[t-1] > 30){
     P1 <- 0
     P2 <- 0
-    G1 <- 0.92 * TempSurvival[t-1]
-    G2 <- 0.92 * TempSurvival[t-1]
+    G1 <- 0.89 * TempSurvival[t-1]
+    G2 <- 0.82 * TempSurvival[t-1]
   }
 
-      if (8 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == F)){
-        G1 <- (0.92/((emergetime[t-1])/2)) * TempSurvival[t-1]
-        G2 <- (0.92/((emergetime[t-1])/2)) * TempSurvival[t-1]
+      if (6 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == F)){
+        G1 <- (0.89/((emergetime[t-1])/2)) * TempSurvival[t-1]
+        G2 <- (0.82/((emergetime[t-1])/2)) * TempSurvival[t-1]
         P1 <- (1-(1/((emergetime[t-1])/2))) * TempSurvival[t-1]
         P2 <- P1
       }
-      if (8 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == T)) {
-        G1 <- (0.92*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
+      if (6 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == T)) {
+        G1 <- (0.89*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
         P1 <- (1-(1/((-0.136 * temps$Temperature[t-1]) + 5.088))) * TempSurvival[t-1]
-        G2 <- (0.92*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
+        G2 <- (0.82*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
         P2 <- P1
       }
       
@@ -246,7 +246,7 @@ if (temps$Temperature[t-1] > 30){
       #s2Qt
       output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
       
-      output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
+      #output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
       
       flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
       
