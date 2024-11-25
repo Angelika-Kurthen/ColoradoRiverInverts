@@ -14,21 +14,22 @@ library(unmarked)
 library(ubms)
 
 source("1spFunctions.R")
-
+source("CHIR_1sp_Model.R")
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 temps <- TimestepTemperature(temp)
 discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 # pull drift data from DB
-drift.data.total <- readDB(gear = "Drift", type = "Sample", updater = TRUE)
+drift.data.total <- readDB(gear = "Drift", type = "Sample", updater = F)
 # get drift data from between Lees Ferry and RM -6
 drift.LF <- drift.data.total[which(drift.data.total$RiverMile >= -6 & drift.data.total$RiverMile <= 0),]
-#specify NZMS
+#specify
 CHIR.samp.LF <- sampspec(samp = drift.LF, species = "CHIL", stats = T)
 # pull stats and merge with sample info
 CHIR.samp <- merge(CHIR.samp.LF$Statistics, CHIR.samp.LF$Samples, by = "BarcodeID", all = T)
 # make sure we are using the same gear
 CHIR.samp <- CHIR.samp[which(CHIR.samp$GearID == 4),] 
+CHIR.samp <- CHIR.samp[which(CHIR.samp$FlagStrange == 0), ]
 # calculate density
 CHIR.samp$Density <- CHIR.samp$CountTotal/CHIR.samp$Volume
 CHIR.samp <- merge(CHIR.samp, discharge[, 3:4], by = "Date")
@@ -42,7 +43,7 @@ CHIR.samp$Density <- (CHIR.samp$Density)/(1.3 *(CHIR.samp$X_00060_00003 * 0.0283
 CHIR.samp <- aggregate(CHIR.samp$Density, list(CHIR.samp$Date), FUN = mean)
 
 source("CHIR_1sp_Model.R")
-out <- CHIRmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- CHIRmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 100000, baselineK = 10000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 
 means <- vector()
@@ -51,25 +52,21 @@ for (i in 1:length(temps$dts)){
   if (any(is.nan(mean(d$x))) == T || any(is.na((d$x) == T))) {
     s = NA
   } else {
-    s<- mean(d$x)}
+    s <- mean(d$x)}
   means <- append(means, s)
   # we know the last value doesn't fit into interval and needs to be manually added
 }
-means[length(temps$dts)] <- CHIR.samp$x[length(CHIR.samp$x)]
-
+means <- as.data.frame(cbind(means, as.Date(temps$dts)))
+means$V2 <- as.Date(means$V2, origin = "1970-01-01")
 
 means.list.CHIR <- rowSums(out[, 1:2, ])/9
-means.list.CHIR <- as.data.frame(cbind(means.list.CHIR[2:405], temps$dts))
+means.list.CHIR <- as.data.frame(cbind(means.list.CHIR[1:404], temps$dts))
 colnames(means.list.CHIR) <- c("mean.abund", "Date")
 means.list.CHIR$Date <- as.Date(as.POSIXct(means.list.CHIR$Date, origin = "1970-01-01"))
-means.list.CHIR <- means.list.CHIR[-(1:149), ] # use first 150 as burn in 
+means.list.CHIR <- as.data.frame(cbind(means.list.CHIR, means))
+means.list.CHIR <- means.list.CHIR[-(1:199), ] # use first 150 as burn in 
 means.list.CHIR <- means.list.CHIR[which(means.list.CHIR$Date < "2019-02-06"),] # we have some one off data points
-CHIR.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.CHIR$Date), means)))
-CHIR.samp.sum$V1 <- as.Date(CHIR.samp.sum$V1, origin = "1970-01-01")
-
-
-cor.df <- left_join(CHIR.samp.sum, means.list.CHIR, by=c('V1'="Date"), copy = T)
-
+cor.df <- na.omit(means.list.CHIR)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$means)
 
 # CHIR.tems <- left_join(CHIR.samp.sum, temps, by = c("V1" = "dts"), copy = T )
@@ -87,7 +84,7 @@ cor.lm <- lm(cor.df$mean.abund ~ cor.df$means)
 
 cor.test((cor.df$means), (cor.df$mean.abund), method = "spearman")
 
-ggplot(data = means.list.CHIR, aes(x = Date,
+ggplot(data = cor.df, aes(x = Date,
                                    y = mean.abund/10000, group = 1, color = "Model")) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
@@ -95,7 +92,7 @@ ggplot(data = means.list.CHIR, aes(x = Date,
   # alpha = .15,
   # show.legend = T) +
   geom_line(show.legend = T, linewidth = 0.7) +
-  geom_line(data =CHIR.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = means*10000000000, color = "Empirical"), show.legend = T)+
+  geom_line(data =cor.df, aes(x = Date, y = means*10000000000, color = "Empirical"), show.legend = T)+
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
   #coord_cartesian(ylim = c(0,2000000)) +
