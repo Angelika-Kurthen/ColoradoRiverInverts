@@ -41,10 +41,13 @@ temp_seq <- seq(-10, 10, by = 1)
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  means.list.A <- mean.data.frame(out, burnin = 250, iteration = 2) 
-  temp_means[te] <- mean(means.list.A$mean.abund)
+  means.list.A <- out[-c(1:250)]
+  #means.list.A <- mean.data.frame(out, burnin = 250, iteration = 2) 
+  #temp_means[te] <- mean(means.list.A$mean.abund)
+  temp_means[te] <- mean(means.list.A)
+  
 }
 
 
@@ -68,12 +71,12 @@ a_size_df <- as.data.frame(cbind(temp_regime, size_means, rep("A", times = lengt
 a_size_df$temp_regime <- as.numeric(a_size_df$temp_regime)
 a_size_df$size_means <- as.numeric(a_size_df$size_means)
 
-# atemp <- ggplot(data = temp_adjust_df, mapping = aes(x = temp_seq, y = temp_means/10000))+
-#   geom_line(size= 1, col = "#66CCEE")+
-#   xlab("Degree C Change")+
-#   ylab("Sp A Abundance Relative to K")+
-#   theme_bw()
-# 
+atemp <- ggplot(data = a_temp_adjust_df, mapping = aes(x = temp_seq, y = temp_means))+
+  geom_line(size= 1, col = "#66CCEE")+
+  xlab("Degree C Change")+
+  ylab("Sp A Abundance Relative to K")+
+  theme_bw()
+
 
 
 # Disturbance by temp
@@ -86,10 +89,11 @@ discharge[259] <- 1
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  means.list.A<- mean.data.frame(out, burnin = 250, iteration = 2)
-  short[te] <- mean(means.list.A$mean.abund[10:16])
+  means.list.A <- out[-c(1:250)]
+  #means.list.A<- mean.data.frame(out, burnin = 250, iteration = 2)
+  short[te] <- mean(means.list.A[10:16])
 }
 
 winter <- as.data.frame(cbind(temp_regime, short, log(short)))
@@ -115,10 +119,11 @@ discharge[272] <- 1
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  means.list.A<- mean.data.frame(out, burnin = 250, iteration = 2)
-  short[te] <- mean(means.list.A$mean.abund[23:29])
+  #means.list.A<- mean.data.frame(out, burnin = 250, iteration = 2)
+  means.list.A <- out[-c(1:250)]
+  short[te] <- mean(means.list.A[23:29])
 }
 summer <- as.data.frame(cbind(temp_regime,short,log(short)))
 

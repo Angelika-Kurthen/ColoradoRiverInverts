@@ -41,10 +41,11 @@ temp_seq <- seq(-10, 10, by = 1)
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  means.list.C <- mean.data.frame(out, burnin = 250, iteration = 2) 
-  temp_means[te] <- mean(means.list.C$mean.abund)
+  means.list.C <- out[-c(1:250)]
+  #means.list.C <- mean.data.frame(out, burnin = 250, iteration = 2) 
+  temp_means[te] <- mean(means.list.C)
   
 }
 
@@ -83,10 +84,11 @@ discharge[259] <- 1
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  means.list.C<- mean.data.frame(out, burnin = 250, iteration = 2)
-  short[te] <- mean(means.list.C$mean.abund[10:16])
+  means.list.C <- out[-c(1:250)]
+  #means.list.C<- mean.data.frame(out, burnin = 250, iteration = 2)
+  short[te] <- mean(means.list.C[10:16])
 }
 
 winter <- as.data.frame(cbind(temp_regime, short, log(short)))
@@ -110,10 +112,11 @@ discharge[272] <- 1
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Cmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  means.list.C<- mean.data.frame(out, burnin = 250, iteration = 2)
-  short[te] <- mean(means.list.C$mean.abund[23:39])
+  means.list.C <- out[-c(1:250)]
+  #means.list.C<- mean.data.frame(out, burnin = 250, iteration = 2)
+  short[te] <- mean(means.list.C[23:39])
 }
 summer <- as.data.frame(cbind(temp_regime, short, log(short)))
 

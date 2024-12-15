@@ -42,10 +42,11 @@ temp_seq <- seq(-10, 10, by = 1)
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  means.list.B <- mean.data.frame(out, burnin = 250, iteration = 2) 
-  temp_means[te] <- mean(means.list.B$mean.abund)
+  #means.list.B <- mean.data.frame(out, burnin = 250, iteration = 2) 
+  means.list.B <- out[-c(0, 250)]
+  temp_means[te] <- mean(means.list.B)
 }
 
 b_temp_adjust_df <- as.data.frame(cbind(temp_regime, temp_means, rep("B", times = length(temp_means))))
@@ -87,10 +88,11 @@ discharge[259] <- 1
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  means.list.B<- mean.data.frame(out, burnin = 250, iteration = 2)
-  short[te] <- mean(means.list.B$mean.abund[10:16])
+  #means.list.B<- mean.data.frame(out, burnin = 250, iteration = 2)
+  means.list.B <- out[-c(1:250)]
+  short[te] <- mean(means.list.B[10:16])
 }
 plot(temp_regime, short)
 winter <- as.data.frame(cbind(temp_regime, short, log(short)))
@@ -116,10 +118,11 @@ discharge[272] <- 1
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
+  out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  means.list.B<- mean.data.frame(out, burnin = 250, iteration = 2)
-  short[te] <- mean(means.list.B$mean.abund[23:39])
+  #means.list.B<- mean.data.frame(out, burnin = 250, iteration = 2)
+  means.list.B <- out[-c(1:250)]
+  short[te] <- mean(means.list.B[23:39])
 }
 summer <- as.data.frame(cbind(temp_regime,short, log(short)))
 
