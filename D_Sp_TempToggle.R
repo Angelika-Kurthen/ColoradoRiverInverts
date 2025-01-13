@@ -41,18 +41,20 @@ temp_seq <- seq(-10, 10, by = 1)
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Dmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
+  out <- Dmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  #means.list.D<- mean.data.frame(out, burnin = 250, iteration = 2) 
-  means.list.D <- out[-c(1:250)]
-  temp_means[te] <- mean(means.list.D)
-  
+  means.list.D<- mean.data.frame(out, burnin = 250, iteration = 2) 
+  #means.list.D <- out[-c(1:250)]
+  #temp_means[te] <- mean(means.list.D)
+  temp_means[te] <- mean(means.list.D$mean.abund)
 }
 
 d_temp_adjust_df <- as.data.frame(cbind(temp_regime, temp_means, rep("D", times = length(temp_means))))
 d_temp_adjust_df$temp_regime <- as.numeric(d_temp_adjust_df$temp_regime)
 d_temp_adjust_df$temp_means <- as.numeric(d_temp_adjust_df$temp_means)
 
+binary <- as.integer(d_temp_adjust_df$temp_means != 0)
+stage3s_means <- vector()
 
 
 size_means <- vector()
@@ -61,12 +63,18 @@ for (te in 1:length(temp_seq)){
   temp_regime[te] <- mean(temp$Temperature)
   out <- Dmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "size")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  size_means[te] <- mean(out)
+  size_means[te] <- colMeans(out)
+  size_means[te] <- sum(0.0077*(size_means[te])^2.910)
+  stage3s_means[te] <- mean(out[,3,1])
 }
 
-size_means <- 0.0077*(size_means)^2.910  # multiply relative size (which is also biologically plausible) by Benke et al 1999 Table 2 a and b params (M(mg) = aL^b) 
+stage3s_means <- 0.0077*(stage3s_means)^2.910  # multiply relative size (which is also biologically plausible) by Benke et al 1999 Table 2 a and b params (M(mg) = aL^b) 
 
-d_size_df <- as.data.frame(cbind(temp_regime, size_means, rep("D", times = length(temp_means))))
+stage3s_means <- stage3s_means * binary 
+stage3s_means[which(stage3s_means == 0)] <- NA
+
+d_size_df <- as.data.frame(cbind(temp_regime, size_means, stage3s_means, rep("D", times = length(temp_means))))
+d_size_df$stage3s_means <- as.numeric(d_size_df$stage3s_means)
 d_size_df$temp_regime <- as.numeric(d_size_df$temp_regime)
 d_size_df$size_means <- as.numeric(d_size_df$size_means)
 
@@ -80,11 +88,11 @@ discharge[259] <- 1
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Dmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
+  out <- Dmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  #means.list.D<- mean.data.frame(out, burnin = 250, iteration = 2)
-  means.list.D <- out[c(-c(1:250))]
-  short[te] <- mean(means.list.D[10:16])
+  means.list.D<- mean.data.frame(out, burnin = 250, iteration = 2)
+  #means.list.D <- out[c(-c(1:250))]
+  short[te] <- mean(means.list.D$mean.abund[10:16])
 }
 
 winter <- as.data.frame(cbind(temp_regime, short, log(short)))
@@ -95,9 +103,10 @@ for (te in 1:length(temp_seq)){
   temp_regime[te] <- mean(temp$Temperature)
   out <- Dmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "size")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  size_means[te] <- mean(out)
+  size_means[te] <- colMeans(out)
+  size_means[te] <- 0.0077*(size_means[te])^2.910
 }
-size_means <- 0.0077*(size_means)^2.910   # multiply relative size (which is also biologically plausible) by Benke et al 1999 Table 2 a and b params (M(mg) = aL^b) 
+#size_means <- 0.0077*(size_means)^2.910   # multiply relative size (which is also biologically plausible) by Benke et al 1999 Table 2 a and b params (M(mg) = aL^b) 
 winter_size_means <- as.data.frame(cbind(temp_regime, size_means))
 
 temp_regime <- vector()
@@ -108,11 +117,11 @@ discharge[272] <- 1
 for (te in 1:length(temp_seq)){
   temp$Temperature <- temp$Temperature + temp_seq[te]
   temp_regime[te] <- mean(temp$Temperature)
-  out <- Dmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
+  out <- Dmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature))
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  means.list.D <- out[-c(1:250)]
-  #means.list.D<- mean.data.frame(out, burnin = 250, iteration = 2)
-  short[te] <- mean(means.list.D[23:29])
+  #means.list.D <- out[-c(1:250)]
+  means.list.D<- mean.data.frame(out, burnin = 250, iteration = 2)
+  short[te] <- mean(means.list.D$mean.abund[23:29])
 }
 summer <- as.data.frame(cbind(temp_regime, short, log(short)))
 
@@ -122,9 +131,10 @@ for (te in 1:length(temp_seq)){
   temp_regime[te] <- mean(temp$Temperature)
   out <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 1, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "size")
   temp$Temperature <- temp$Temperature - temp_seq[te]
-  size_means[te] <- mean(out)
+  size_means[te] <- colMeans(out)
+  size_means[te] <- 0.0077*(size_means[te])^2.910
 }
-size_means <- 0.0077*(size_means)^2.910   # multiply relative size (which is also biologically plausible) by Benke et al 1999 Table 2 a and b params (M(mg) = aL^b) 
+#size_means <- 0.0077*(size_means)^2.910   # multiply relative size (which is also biologically plausible) by Benke et al 1999 Table 2 a and b params (M(mg) = aL^b) 
 summer_size_means <- as.data.frame(cbind(temp_regime, size_means))
 
 # bind together, 1 = winter 2 = summer
