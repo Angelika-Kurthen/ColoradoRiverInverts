@@ -313,6 +313,8 @@ cor.df <- left_join(lam, means.list.BAET, by=c('V1'="temps$dts"), copy = T)
 cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
+cor.df <- left_join(N, means.list.BAET, by = c("V1" = "temps$dts"), copy = T)
+cor.test(cor.df$V2, cor.df$mean.abund, method = "spearman")
 # sink("N-mixtureZIPBAET.jags")
 # cat("
 # model{
