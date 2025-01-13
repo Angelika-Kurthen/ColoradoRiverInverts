@@ -4,7 +4,7 @@
 
 library(ggpubr)
 library(patchwork)
-install.packages("svglite")
+#install.packages("svglite")
 library(svglite)
 # code for temperature regime shift 
 source("A_sp_Temp_Toggle.R")
@@ -20,7 +20,7 @@ abund <- ggplot(data = temp_df, aes(temp_regime, temp_means/10000, color = V3))+
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
   xlab(" ")+
-  scale_y_continuous(labels = scales::number_format(accuracy = 0.1))+
+  scale_y_continuous(labels = scales::number_format(accuracy = 1))+
   ylab("Relativized Abundance")+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
@@ -28,28 +28,28 @@ abund <- ggplot(data = temp_df, aes(temp_regime, temp_means/10000, color = V3))+
 
 size_df <- rbind(a_size_df, b_size_df, c_size_df, d_size_df)
 
-biomass <- ggplot(data = size_df, aes(temp_regime, size_means, size_means, color = V3))+
+biomass <- ggplot(data = size_df, aes(temp_regime, stage3s_means, color = V4))+
   geom_line(size = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   theme_bw()+
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
   xlab(" ")+
-  ylab("Body Mass (mg)")+
+  ylab("Final Body Mass (mg)")+
   scale_y_continuous(labels = scales::number_format(accuracy = 0.1))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 
 size_df$totbiomass <- temp_df$temp_means * size_df$size_means
-totbiomass <- ggplot(data = size_df, aes(temp_regime, totbiomass/1000000, color = V3))+
+totbiomass <- ggplot(data = size_df, aes(temp_regime, totbiomass/1000, color = V4))+
   geom_line(size = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
   theme_bw()+
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
   xlab("Mean Annual Water Temperature in C")+
-  ylab("Total Biomass (kg)")+
-  scale_y_continuous(labels = scales::number_format(accuracy = 0.01))+
+  ylab("Total Biomass (g)")+
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.1), n.breaks = 3)+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 x11()
@@ -57,6 +57,9 @@ x11()
 Fig2<- ggarrange(abund, biomass, totbiomass, 
           labels = c("a", "b", "c"),
           ncol = 1, nrow = 3, common.legend = T)
+
+ggsave(filename = "Fig2stage3.png", plot = Fig2, device = "png", width = 6.5, height = 8.5, dpi = "retina")
+ggsave(filename = "Fig2stagebiomass.png", plot = Fig2, device = "png", width = 6.5, height = 8.5, dpi = "retina")
 
 ggsave(filename = "Fig2.png", plot = Fig2, device = "png", width = 6.5, height = 8.5, dpi = "retina")
 
@@ -68,12 +71,10 @@ temp_dist <- bind_rows(temp_dist_a, temp_dist_b, temp_dist_c, temp_dist_d, .id =
 
 supp.labs <- c("Winter Disturbance", "Summer Disturbance", "\u0394 Abundance")
 names(supp.labs) <- c("1", "2", "3")
-<<<<<<< HEAD
-temp_dist[which(is.na(temp_dist$V3)), ] <- -Inf
-=======
+#temp_dist[which(is.na(temp_dist$V3)), ] <- -Inf
+
 temp_dist$V3[which(is.na(temp_dist$V3))] <- -Inf
 
->>>>>>> f78d77285ff117c4a0de8f010d94930609de2902
 d <- ggplot(data = temp_dist, aes(x = temp_regime, y = V3, color = taxa))+
   geom_line(linewidth = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
@@ -81,7 +82,7 @@ d <- ggplot(data = temp_dist, aes(x = temp_regime, y = V3, color = taxa))+
   theme_bw()+
   xlab("Mean Annual Water Temperature in C")+
   ylab("Log Abundance")+
-  scale_y_continuous(labels = scales::number_format(accuracy = 0.01))+
+  scale_y_continuous(labels = scales::number_format(accuracy = 1))+
   facet_grid(.~season, scales = "free_y", labeller = labeller(season = supp.labs))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
@@ -107,19 +108,20 @@ temp_size <- bind_rows(temp_size_a, temp_size_b, temp_size_c, temp_size_d, .id =
 supp.labs <- c("Winter Disturbance", "Summer Disturbance", "\u0394 Biomass")
 names(supp.labs) <- c("1", "2", "3")
 
-es <- ggplot(data = temp_size, aes(x = temp_regime, y = size_means/1000000, color = taxa))+
+es <- ggplot(data = temp_size, aes(x = temp_regime, y = size_means/1000, color = taxa))+
   geom_line(linewidth = 1, alpha = 0.8)+
-  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377"))+
+  scale_color_manual(name = "Strategy", labels=c("Stonefly", "Mayfly", "Caddisfly", "Beetle"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "black"))+
   geom_point()+
   theme_bw()+
   xlab("Mean Annual Water Temperature in C")+
-  ylab("Total Biomass (kg)")+
+  ylab("Total Biomass (g)")+
   facet_grid(.~season, scales = "free_y", labeller = labeller(season = supp.labs))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 x11()
 Fig4 <- ggarrange(d, es, nrow  = 2, labels = c("a","b"))
 ggsave(filename = "Fig4.png", plot = Fig4, device = "png", width = 7.5, height = 8.5, dpi = "retina")
+ggsave(filename = "Fig4stage3.png", plot = Fig4, device = "png", width = 7.5, height = 8.5, dpi = "retina")
 
 # code for fecundity sensitivity analysis
 source("A_sp_Fecundity_Toggle.R")
@@ -128,7 +130,7 @@ source("C_sp_FecundityToggle.R")
 source("D_sp_Fecundity_Toggle.R")
 
 fec_df <- rbind(a_fec_df, b_fec_df, c_fec_df, d_fec_df)
-FigS2 <- ggplot(data = fec_df, aes(fec_seq, y= fec_means/10000, color = V3))+
+FigS3 <- ggplot(data = fec_df, aes(fec_seq, y= fec_means/10000, color = V3))+
   geom_point(size = 1, alpha = 0.5)+
   stat_smooth(method = "lm",
               position = "identity", 
@@ -148,7 +150,7 @@ FigS2 <- ggplot(data = fec_df, aes(fec_seq, y= fec_means/10000, color = V3))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-ggsave(filename = "FigS2.png", plot = FigS2, device = "png", width = 6, height = 5, dpi = "retina")
+ggsave(filename = "FigS3.png", plot = FigS3, device = "png", width = 6, height = 5, dpi = "retina")
 
 
 
@@ -159,7 +161,7 @@ source("CspDDToggle.R")
 source("D_sp_DD_Toggle.R")
 
 dd_df <- rbind(add_df, bdd_df, cdd_df, ddd_df)
-FigS3 <- ggplot(data = dd_df, aes(dd_seq, dd_means/10000, color = V3)) + 
+FigS4 <- ggplot(data = dd_df, aes(dd_seq, dd_means/10000, color = V3)) + 
   geom_point(size = 1, alpha = 0.5)+
   stat_smooth(method = "lm", 
               position = "identity",
@@ -179,7 +181,7 @@ FigS3 <- ggplot(data = dd_df, aes(dd_seq, dd_means/10000, color = V3)) +
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-ggsave(filename = "FigS3.png", plot = FigS3, device = "png", width = 6, height = 5, dpi = "retina")
+ggsave(filename = "FigS4.png", plot = FigS4, device = "png", width = 6, height = 5, dpi = "retina")
 
 # code for julian date based timing
 # source("SpA_JulianPulse.R")
@@ -328,7 +330,7 @@ yr4temp <- ggplot(data = subset(temp, dts >= "2034-01-01" & dts <= "2037-12-31")
 
 # code for Temperature-Mortality relationship  
 source("NegExpSurv.R")
-FigS5 <- ggplot(data = tempsurvdf, aes(x = tem, y = temSurv))+
+FigS6 <- ggplot(data = tempsurvdf, aes(x = tem, y = temSurv))+
   geom_line(size = 1)+
   xlab("Temperature C")+
   ylab("Survival")+
@@ -336,7 +338,7 @@ FigS5 <- ggplot(data = tempsurvdf, aes(x = tem, y = temSurv))+
   theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-ggsave(filename = "FigS5.png", plot= FigS5, width = 5, height = 5, device= "png", dpi = "retina")
+ggsave(filename = "FigS6.png", plot= FigS6, width = 5, height = 5, device= "png", dpi = "retina")
 # code for flood pulse mortalty curves
 # df <- as.data.frame(rbind(med.df, low.df))
 # 
@@ -490,7 +492,7 @@ source("D_sp_press_mag.R")
 press_mag_df <- rbind(a_magnitude_df, b_magnitude_df, c_magnitude_df, d_magnitude_df)
 press_mag_df$magnitudes <- as.numeric(press_mag_df$magnitudes)
 press_mag_df$mag_response <- as.numeric(press_mag_df$mag_response)
-FigS1 <- ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000, color = V3))+
+FigS2 <- ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000, color = V3))+
   geom_point(size = 1, alpha = 0.5)+
   geom_line(linewidth = 1, alpha = 0.8)+
   #stat_smooth(size = 1, span = 0.3, se = F)+
@@ -501,7 +503,7 @@ FigS1 <- ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000,
   theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-ggsave("FigS1.png", plot = FigS1, width = 6, height = 5, device = "png", dpi = "retina")
+ggsave("FigS2.png", plot = FigS2, width = 6, height = 5, device = "png", dpi = "retina")
 
 # Press v Pulse Magnitude
 # 
@@ -599,7 +601,7 @@ ggsave("FigS1.png", plot = FigS1, width = 6, height = 5, device = "png", dpi = "
 
 #code to make heatmap for K in response to Disturbance and time post disturbance
 source("Kwireplot.R")
-FigS4 <- ggplot(data = KQT, aes(x = t , y = Q))+
+FigS5 <- ggplot(data = KQT, aes(x = t , y = Q))+
   geom_raster(aes(fill = K), interpolate = T)+
   scale_fill_viridis_c(option = "magma") +
   scale_color_grey()+
@@ -615,7 +617,7 @@ FigS4 <- ggplot(data = KQT, aes(x = t , y = Q))+
           color="black", fill="white", linetype="solid"))+
   theme(legend.margin = margin(-1,0,0,0, unit="cm"))
 
-ggsave(filename = "FigS4.png", FigS4, height = 5, width = 6, device = "png", dpi = "retina")
+ggsave(filename = "FigS5.png", FigS5, height = 5, width = 6, device = "png", dpi = "retina")
 
 # code to make heatmaps for pulse Freq v Mag
 # 
@@ -696,61 +698,62 @@ ggsave(filename = "Fig3.png", Fig3, height = 5, width = 5, device = "png", dpi =
 
 
 # # chaos plots
-# source("HilbertMetric.R")
-# 
-# chaostestplot <- ggplot(data = chaostestdf, aes(x = fecs, y = chaos1))+
-#   geom_point(alpha = 0.8)+
-#   xlab("Stage 3 Mayfly Fecundity")+
-#   ylab("Chaos 0 - 1 Test Index")+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-#   theme_bw()
-# 
-# chaosts<- ggplot(data = outchaos2[250:500,], aes(x = as.numeric(timesteps), y = log(mean.abund), group = 1))+
-#   geom_line(linewidth = 1, col = "#4477AA")+
-#   xlab("Timestep")+
-#   ylab("Log Abundance")+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-#   scale_x_continuous(breaks = seq(250, 2600, by = 250))+ 
-#   theme_bw()
-# 
-# chaosn <- ggplot(data = chaosdf, aes(x = V1, y = V2))+
-#   geom_point(col = "#4477AA", alpha = 0.8)+
-#   geom_line(linewidth = 1, col = "#4477AA")+
-#   geom_path(col = "#4477AA")+
-#   xlab(bquote(N[mayfly](t)))+ 
-#   ylab(bquote(N[mayfly](t+1)))+
-#   annotate("text", x= 1000000, y= 1270409, label = "F3 = 5200")+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-#   theme_bw()
-# 
-# stablets <- ggplot(data = outstable2[250:500,], aes(x = as.numeric(timesteps), y = log(mean.abund), group = 1))+
-#   geom_line(linewidth = 1, col = "#EE6677")+
-#   xlab("Timestep")+
-#   ylab("Log Abundance")+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-#   scale_x_continuous(breaks = seq(250, 2600, by = 250))+ 
-#   theme_bw()
-# 
-# stablen <- ggplot(data = stabledf, aes(x =(V1), y = (V2)))+
-#   geom_point(alpha = 0.8, col = "#EE6677")+
-#   geom_line(linewidth = 1,col = "#EE6677")+
-#   geom_path(linewidth = 1, col = "#EE6677")+
-#   xlab(bquote(N[mayfly](t)))+ 
-#   ylab(bquote(N[mayfly](t+1)))+
-#   annotate("text", x= 200000, y= 245000, label = "F3 = 1200")+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
-#   theme_bw()
-# 
-# 
-# ggarrange(chaostestplot,
-#           ggarrange(chaosn, chaosts, stablen, stablets, ncol = 2, nrow = 2, vjust = 0.5, labels = c("b", "c", "d", "e")),
-#           labels = "a",
-#           nrow = 2, common.legend = T)
-# 
-# 
+source("HilbertMetric.R")
+
+chaostestplot <- ggplot(data = chaostestdf, aes(x = fecs, y = chaos1))+
+  geom_point(alpha = 0.8)+
+  xlab("Stage 3 Mayfly Fecundity")+
+  ylab("Chaos 0 - 1 Test Index")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  theme_bw()
+
+chaosts<- ggplot(data = outchaos2[250:500,], aes(x = as.numeric(timesteps), y = log(mean.abund), group = 1))+
+  geom_line(linewidth = 1, col = "#4477AA")+
+  xlab("Timestep")+
+  ylab("Log Abundance")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  scale_x_continuous(breaks = seq(250, 2600, by = 250))+
+  theme_bw()
+
+chaosn <- ggplot(data = chaosdf, aes(x = log(V1), y = log(V2)))+
+  geom_point(col = "#4477AA", alpha = 0.8)+
+  geom_line(linewidth = 1, col = "#4477AA")+
+  geom_path(col = "#4477AA")+
+  xlab(bquote(log(N[mayfly](t))))+
+  ylab(bquote(log(N[mayfly](t+1))))+
+  annotate("text", x= 12, y= 14.05485, label = "F3 = 5200")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  theme_bw()
+
+stablets <- ggplot(data = outstable2[250:500,], aes(x = as.numeric(timesteps), y = log(mean.abund), group = 1))+
+  geom_line(linewidth = 1, col = "#EE6677")+
+  xlab("Timestep")+
+  ylab("Log Abundance")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  scale_x_continuous(breaks = seq(250, 2600, by = 250))+
+  theme_bw()
+
+stablen <- ggplot(data = stabledf, aes(x = log(V1), y = log(V2)))+
+  geom_point(alpha = 0.8, col = "#EE6677")+
+  geom_line(linewidth = 1,col = "#EE6677")+
+  geom_path(linewidth = 1, col = "#EE6677")+
+  xlab(bquote(log(N[mayfly](t)))  )+
+  ylab(bquote(log(N[mayfly](t+1)))  )+
+  annotate("text", x= 11, y= 12.40901, label = "F3 = 1200")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  theme_bw()
+
+x11()
+FigS1 <- ggarrange(chaostestplot,
+          ggarrange(chaosn, chaosts, stablen, stablets, ncol = 2, nrow = 2, vjust = 0.5, labels = c("b", "c", "d", "e")),
+          labels = "a",
+          nrow = 2, common.legend = T)
+
+ggsave(filename = "FigS1.png", FigS1, height = 8.5, width = 6.5, device = "png", dpi = "retina")
+
 # 
