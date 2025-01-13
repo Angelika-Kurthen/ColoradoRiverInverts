@@ -104,23 +104,30 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
   timestep <- seq(2, (length(temps$Temperature) + 1), by = 1)
   
   # create an array to put our output into
-  output.N.array <- array(0, dim = c(length(timestep) + 1))
-  
-  output.N.list <- list(output.N.array)
-  
+  # output.N.array <- array(0, dim = c(length(timestep) + 1))
+  # 
+  # output.N.list <- list(output.N.array)
+  # 
   # create array to put the total N of all species into
   Total.N <- array(0,
                    dim  <-c((length(timestep) +1 ), iterations),
                    dimnames <- list(1:(length(timestep) + 1), 1:iterations))
   
   # create list of arrays w/ abundance data for each spp
-  reparray <- array(0,
+  output.N.list <- array(0,
                     
                     dim = c(length(timestep) + 1, 3, iterations),
                     dimnames = list(1:(length(timestep)+1), c("S1", "S2", "S3"), 1:iterations)
   )
   
-  output.N.list <- reparray
+ 
+  
+  
+  sizelist <- array(0,
+                    
+                    dim = c(length(timestep) + 1, 3, iterations),
+                    dimnames = list(1:(length(timestep)+1), c("S1", "S2", "S3"), 1:iterations)
+  )
   
   Qmin <- Qmin
   a <- 0.01
@@ -166,7 +173,6 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
     
     emergetime <- vector()
     
-    sizelist <- vector()
     # delta <- vector()
     # development <- vector()
     TempSurvival <- vector()
@@ -206,7 +212,10 @@ Cmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct,
       
       if (t > 19) { # will be erased in burn
         size <- emergetime[t-1]
-        sizelist <- append(sizelist, size)
+        sizes <- c(mean(c(1, emergetime[t-1]/2), na.rm = T),
+                   mean(c(emergetime[t-1]/2, emergetime[t-1]), na.rm = T),
+                   emergetime[t-1])
+        sizelist[t, 1:3, iter] <- sizes 
         F3 <- ((size*mod$coefficients[2])+mod$coefficients[1]) * hydropeaking.mortality(0.8, 0.99, h = hp[t-1])
         #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
       }
