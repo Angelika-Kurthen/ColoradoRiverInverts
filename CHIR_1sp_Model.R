@@ -11,43 +11,6 @@ library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
-
-# Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
-# We have to manually load all tidyverse packages
-# library(purrr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(tibble, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(tidyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(readr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(stringr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(forcats, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(plyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-# library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-
-source("1spFunctions.R")
-
-#------------------------------------------------------------
-# Set up location specific data
-#-----------------------------------------------------------
-#if looking at ColRiver temps read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
-# #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
-# discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
-# flow.magnitude <- TimestepDischarge(discharge, 85000)
-# temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
-# temps <- TimestepTemperature(temp)
-# 
-# flow.data = flow.magnitude$Discharge
-# temp.data <- temps
-# baselineK <- 10000
-# disturbanceK <- 1000000
-# Qmin <- 0.25
-# extinct <- 50
-# iteration <- 1
-# peaklist <- 0.13
-# peakeach<- length(temps$Temperature)
-
 CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   
   # set up model
@@ -113,7 +76,10 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
     K = Kb # need to reset K for each iteration
     
     # pull random values from a uniform distribution 
-    output.N.list[1,1:3, iter] <- runif(3, min = 1, max = (0.3*K))
+    
+    output.N.list[1,1:3, iter] <- c(1166.201, 1041.528, 1417.288)
+    
+    #output.N.list[1,1:3, iter] <- runif(3, min = 1, max = (0.3*K))
     
     # we often want to look at different parameter values after we run code, so we create some lists
     
@@ -155,8 +121,8 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # Calculate fecundity per adult
       
       # we start by pulling fecundities from normal distribution
-      # assuming 50 50 sex ration
-      F3 = 600 * hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
+      # assuming 50 50 sex ration and 0.836 from Charles et al 2004
+      F3 = 600 * 0.836 * hydropeaking.mortality(0.0, 0.4, h = hp[t-1])
       #CHIR egg # and % mortality from Charles et al 2004
       # we can also relate fecundities to body size which is between 6 and 15 mm (also from Charles et al 2004)
       # we can "convert" emergetime to size by multiplying to get size between 6 and 15 mm and then convert to fecunity
@@ -164,7 +130,7 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       if (t > 19) {
         size <- 3*emergetime[t-1]-6
         sizelist <- append(sizelist, size)
-        F3 <- (13.33*size)+460 *0.92* hydropeaking.mortality(0.4, 0.6, h = hp[t-1])
+        F3 <- (13.33*size)+480 * 0.836* hydropeaking.mortality(0.0, 0.4, h = hp[t-1])
       }
       # #--------------------------------------------------
       # Calculate the disturbance magnitude-K relationship
@@ -192,35 +158,35 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       # Calculate new transition probabilities based on temperature
       # This is the growth v development tradeoff
       # using Birt et al 2009 calcs
-      # using survivals from Charles et al. 2004
+      # using survivals inspired by Thornton 1975 (lots of tests, survivals in the 70% range is reasonable since we don't know exact ph and salinity)
       
       # development measures
       # in this function, we assume that if below the min temp threshold (9) slow maturation
       # if above the max temp threshold (30), no one remains more than 1 timestep in each stage (fast maturation, small growth)
-
-  if (6 > temps$Temperature[t-1]) {
-    P1 <- (1-(1/20)) * TempSurvival[t-1]
-    P2 <- P1 
-    G1 <- 0.89/20 * TempSurvival[t-1]
-    G2 <- 0.82/20 * TempSurvival[t-1]
-  }
-if (temps$Temperature[t-1] > 30){
-    P1 <- 0
-    P2 <- 0
-    G1 <- 0.89 * TempSurvival[t-1]
-    G2 <- 0.82 * TempSurvival[t-1]
-  }
-
+      
+      if (6 > temps$Temperature[t-1]) {
+        P1 <- (1-(1/20)) * TempSurvival[t-1]
+        P2 <- P1
+        G1 <- 0.72/20 * TempSurvival[t-1]
+        G2 <- 0.71/20 * TempSurvival[t-1]
+      }
+      if (temps$Temperature[t-1] > 30){
+        P1 <- 0
+        P2 <- 0
+        G1 <- 0.72 * TempSurvival[t-1]
+        G2 <- 0.71 * TempSurvival[t-1]
+      }
+      
       if (6 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == F)){
-        G1 <- (0.89/((emergetime[t-1])/2)) * TempSurvival[t-1]
-        G2 <- (0.82/((emergetime[t-1])/2)) * TempSurvival[t-1]
+        G1 <- (0.72/((emergetime[t-1])/2)) * TempSurvival[t-1]
+        G2 <- (0.71/((emergetime[t-1])/2)) * TempSurvival[t-1]
         P1 <- (1-(1/((emergetime[t-1])/2))) * TempSurvival[t-1]
         P2 <- P1
       }
       if (6 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime[t-1]) == T)) {
-        G1 <- (0.89*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
+        G1 <- (0.72*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
         P1 <- (1-(1/((-0.136 * temps$Temperature[t-1]) + 5.088))) * TempSurvival[t-1]
-        G2 <- (0.82*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
+        G2 <- (0.71*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival[t-1]
         P2 <- P1
       }
       
@@ -257,7 +223,6 @@ if (temps$Temperature[t-1] > 30){
         output.N.list[t,,iter] <- 0
         Total.N[t, iter] <- 0}
       
-      
     } #-------------------------
     # End Inner Loop  
     #------------------------- 
@@ -266,65 +231,3 @@ if (temps$Temperature[t-1] > 30){
   #----------------------
   return(output.N.list[ , 1:3, ])
 }
-#------------------
-# Analyzing Results
-#-------------------
-# summarizing iterations
-# 
-# out <- CHIRmodel(flow.data = discharge, temp.data = temp, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 3, peaklist = 0, peakeach = length(temp$Temperature))
-# #
-# adults <-as.data.frame(cbind((temp$dts), out[1:length(temp$dts),3,1]))
-# colnames(adults) <- c("Time","Adult CHIRidae")
-# adults$Time <- as.Date(as.POSIXct(adults$Time, origin = "1970-01-01"))
-# #
-# ## turning replist into a df
-# means.list.CHIR <- mean.data.frame(out, burnin = 90, iteration = 3)
-# means.list.CHIR <- cbind(means.list.CHIR[1:length(means.list.CHIR$mean.abund),], temp$dts[90:132])
-# means.list.CHIR$`temp$dts` <- as.Date(means.list.CHIR$`temp$dts`)
-# 
-# # note how boom and bust this model is - K is set to be 10,000 not 100,000
-# abund.trends.CHIR <- ggplot(data = adults[90:131,], aes(x = Time,
-#                                        y = `Adult CHIRidae`/10000, group = 1)) +
-#   geom_point()+
-#   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-#   #                 ymax = mean.abund + 1.96 * se.abund),
-#   #             colour = 'transparent',
-#   #            alpha = .5,
-#   #             show.legend = FALSE) +
-#   geom_line(show.legend = FALSE) +
-#   ylab('Adult CHIRis Abundance/ Baseline Reproductive Limit') +
-#   xlab('Timestep')+
-#   scale_x_date(date_labels="%B", date_breaks  ="4 months")+
-# theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5),
-#       axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-# #
-# plot(out[80:105, 2], type = "b", xlab = "Timesteps Jan 1 to Dec 31", ylab = "CHIR adult abundace (max on Aug 23 after prolonged warm period)" )
-# 
-# 
-# plot(adults$`Adult CHIRidae`[90:130], adults$`Adult CHIRidae`[91:131], type = "b", xlab = "Adult CHIRids t", ylab = "Adult CHIRids t+1")
-# #
-# ggplot(data = means.list.CHIR, aes(x = `temp$dts`,
-#                           y = mean.abund/10000, group = 1)) +
-#   geom_point()+
-#   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-#   #                 ymax = mean.abund + 1.96 * se.abund),
-#   #             colour = 'transparent',
-#   #            alpha = .5,
-#   #             show.legend = FALSE) +
-#   geom_line(show.legend = FALSE) +
-#   geom_line(aes(y = discharge[89:131]*10), color = "blue")+
-#   ylab('CHIRis spp. Abundance/Reproductive Limit') +
-#   xlab('Timestep')+
-#   scale_x_date(date_labels="%B", date_breaks  ="4 months")+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5),
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-# 
-# #
-# # plot(means.list.CHIR$mean.abund[300:500], means.list.CHIR$mean.abund[301:501], type = "b", xlab = "Nt", ylab = "Nt+1")
-# #
-# # ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
-# #   geom_line(show.legend = FALSE) +
-# #   ylab('CHIRis spp. Abundance/Reproductive Limit') +
-# #   xlab(" ")
-# plot(temp$dts[90:131], temp$Temperature[90:131], col = "red", type = "l", xlab = "Time", ylab = "Temperature C")
-# 
