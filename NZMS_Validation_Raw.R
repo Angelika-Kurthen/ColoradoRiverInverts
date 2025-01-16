@@ -50,7 +50,37 @@ means.list.NZMS$date <- as.Date(means.list.NZMS$date)
 # 
 # NZMS.samp <- merge(NZMS.samp, discharge[, 3:4], by = "Date")
 # NZMS.samp <- aggregate(NZMS.samp$Density, list(NZMS.samp$Date), FUN = mean)
+NZMSsamp <- read.csv("~/ColoradoRiverInverts/NZMSsamp.csv")
+# makes sure dates are in date form
+NZMSsamp$Date <- as.Date(NZMSsamp$Date)
 
+# remove any samples that are flagged as "strange"
+NZMSsamp <- NZMSsamp[which(NZMSsamp$FlagStrange == F),]
+library(REdaS) 
+# read in temperature data - optional
+temp <- readNWISdv("09380000", "00010", "2007-10-01","2023-05-01")
+
+# put temp data into 2 week timestep bins
+temps <- TimestepTemperature(temp)
+
+# we have uneven sample distribution (some days, 11 samples taken, others only 1)
+# therefore, we use 2 week timesteps
+
+# we now will index each invert sample based on which timestep it falls into
+vals <- vector()
+for (i in 1:length(temps$dts)){
+  d <- NZMSsamp[which(NZMSsamp$Date %within% interval(temps$dts[i], temps$dts[i+1]-1) == T),]
+  if (length(d$CountTotal) > 0) {
+    s<- rep(i, times = length(d$CountTotal))
+    vals <- append(vals, s)}
+}
+
+
+# add to data frame
+NZMSsamp <- cbind(NZMSsamp, vals)
+
+# now we need into include mean water temperature for each 
+NZMSsamp <- cbind(NZMSsamp, temps$Temperature[NZMSsamp$vals])
 NZMS.samp <- NZMSsamp
 NZMS.samp$Density <- (NZMS.samp$Density/(0.028*(NZMS.samp$X_00060_00003 * 0.02831683)^4.1))
 
@@ -68,7 +98,7 @@ for (i in 1:length(temps$dts)){
 NZMS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(temps$dts, format = "%Y-%m-%d"), means)))
 NZMS.samp.sum <- NZMS.samp.sum[NZMS.samp.sum$means >= 0, ]
 NZMS.samp.sum$V1 <- as.Date(NZMS.samp.sum$V1, origin = "1970-01-01")
- 
+
 # culling data by lags - Temporal autocorrelation: a neglected factor in the study of behavioral repeatability and plasticity  
 ncor <- left_join(lam, means.list.NZMS, by = c("V1" = "date"), copy = T) 
 cor.test(ncor$V2, ncor$mean.abund, method = "spearman")
@@ -130,23 +160,3 @@ ggplot(data = means.list.NZMS, aes(x = date, y = scale(mean.abund), group = 1, c
   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")
-
-
-
-# attempting to use zinb data
-# est <- vector()
-# for (i in 1:length(unique(vals))){
-#   est[i] <- mean(std_index[[i]])
-# }
-# 
-# est <- as.data.frame(cbind(temps$dts[unique(vals)], est))
-# est$V1 <- as.Date(as.POSIXct(est$V1))
-# 
-# cor.df <- left_join(est, means.list.NZMS, by=c('V1'="date"), copy = T)
-# 
-# values <- means.list.NZMS[which(as.Date(temps$dts[unique(vals)]) %in% means.list.NZMS$date),]
-# nmix <- est[!is.na(est$V2),]
-# 
-# # because data starts in 2007, we use first few years as burn in so we need to also 
-# cor.test(values$mean.abund, est)
-# fo

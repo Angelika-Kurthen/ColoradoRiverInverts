@@ -50,6 +50,7 @@ discharge <- readNWISdv("09404200", "00060", "2004-05-22", "2024-08-23")
 discharge <- full_join(discharge, all_dates)
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 
+set.seed(111)
 out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.3, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = F)
@@ -83,7 +84,7 @@ means[length(temps$dts)] <- HYOS.samp$x[length(HYOS.samp$x)]
 # means.list.HYOS <- cbind(means.list.HYOS, temps$dts[286:last(means.list.HYOS$timesteps)])
 # means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 
-means.list.HYOS <- rowSums(out[,2:3,])/9
+means.list.HYOS <- rowSums(out[,3,])/9
 means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[200:530], temps$dts[199:529]))
 colnames(means.list.HYOS) <- c("mean.abund", "Date")
 means.list.HYOS$Date <- as.Date(as.POSIXct(means.list.HYOS$Date, origin = "1970-01-01"))
@@ -108,31 +109,31 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
 cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 
-hist(cor.df$V2, xlab = "Hydropsychidae Adults (#/hour)", col = "#CADBD7")
-colors <- c("black", "#FF7F00")
+#hist(cor.df$V2, xlab = "Hydropsychidae Adults (#/hour)", col = "#CADBD7")
 
-
-ggplot(data = means.list.HYOS[100:571,], aes(x = Date, y = mean.abund, group = 1, color = "Model")) +
+colors <- c("#FF7F00", "black" )
+HYOSts <- ggplot(data = means.list.HYOS[-c(250:331),], aes(x = Date, y = scale(mean.abund), group = 1, color = "Model")) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
   # alpha = .15,
   # show.legend = T) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data =HYOS.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = V2/10, color = "USGS Light Trap Data"), linewidth = 1, alpha = 0.8,show.legend = T)+
+  geom_line(data =HYOS.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Empirical"), linewidth = 1, alpha = 0.8,show.legend = T)+
   # geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = Discharge), color = "blue") +
   # geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*0.1), color = "green")+
   # #coord_cartesian(ylim = c(0,2000000)) +
-  ylab('Hydropsychidae Adults (#/m2)') +
-  scale_y_continuous(
+  ylab("Hydropsyche spp. Abund." ) +
+  #scale_y_continuous(
     # Features of the first axis
     # Add a second axis and specify its features
-    sec.axis = sec_axis(~./10, name="Hydropsychidae Adults (#/hour)")
-  ) + 
-  xlab("Year")+
+  #   sec.axis = sec_axis(~., name="Hydropsychidae Adults (ind/hour)")
+  # ) + 
+  xlab(" ")+
+  ylim(c(-3,7))+
   labs(colour=" ")+
   theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")+
   scale_color_manual(values = colors)

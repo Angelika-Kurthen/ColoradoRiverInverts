@@ -25,7 +25,7 @@ temps <- rep.avg.year(temps, 15, change.in.temp = 0, years.at.temp = 15)
 temps <- temps[20:359,2:3]
 temps$dts <- flow.magnitude$dts
 
-out <- BAETmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.1, extinct = 50, iteration = 9, peaklist = 0.13, peakeach = length(temps$Temperature))
+out <- BAETmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.1, extinct = 50, iteration = 9, peaklist = 0.13, peakeach = length(temps$Temperature), stage_output = "larvae")
 
 # upload larval baet data from Flaming Gorge Dam 
 bugdata <- read_delim("bugdata.txt", delim = "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
@@ -75,26 +75,27 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
   geom_text(x = 1000, y = 3250, label = "y = 0.00021x, R^2 = 0.37")+
   labs(y = "Baetidae Model Output", x = "Baetidae Emprical Data")
 
-ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = mean.abund, group = 1, color = "Model")) +
-  geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-                  ymax = mean.abund + 1.96 * se.abund),
-              colour = 'transparent',
-              alpha = .15,
-              show.legend = T) +
-  geom_line(show.legend = T, linewidth = 1) +
-  geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = V2*10, color = "Empirical"), linewidth = 1,  show.legend = T)+
+BAETts <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = scale(mean.abund), group = 1, color = "Model")) +
+  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
+  #                 ymax = mean.abund + 1.96 * se.abund),
+  #             colour = 'transparent',
+  #             alpha = .15,
+  #             show.legend = T) +
+  geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
+  geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Empirical"), linewidth = 1,  show.legend = T, alpha = 0.8)+
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,6000)) +
-  ylab('Baetidae S1 and S2 Density inds/(m2)') +
+  #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
+  ylab('Baetidae spp. Abund.') +
   xlab("")+
+  ylim(c(-3,7))+
   labs(colour=" ")+
   theme_bw()+
   scale_color_manual(values = colors)+
-  scale_y_continuous(
-    sec.axis = sec_axis(~./10, name="Baetidae Larvae (inds/m2)"
-    ))+
-  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+  #scale_y_continuous(
+    # sec.axis = sec_axis(~., name="Baetidae Larvae (inds/m2)"
+    # ))+
+  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")
 
