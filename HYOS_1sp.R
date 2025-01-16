@@ -74,7 +74,7 @@ source("1spFunctions.R")
 
 
 # discharge <- rep(0.1, times = length(temps$Temperature))
-HYOSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
+HYOSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, stage_output = "all"){
 #---------------------------------------------------------------
 # set up model
 source("HYOSSurvivorship.R")
@@ -318,7 +318,20 @@ for (iter in c(1:iterations)) {
 } #----------------------
 # End Outer Loop
 #----------------------
-return(output.N.list)
+if (stage_output == "larvae"){
+  return(output.N.list[ ,1:2, ])
+}
+
+if (stage_output == "all"){
+  return(output.N.list[ , 1:3, ])
+}
+if (stage_output == "3"){
+  return(output.N.list[ , 3, ])
+}
+
+if (stage_output == "size"){
+  return(sizelist)
+}
 
 }
 

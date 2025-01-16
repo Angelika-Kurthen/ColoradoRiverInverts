@@ -1,5 +1,5 @@
 ##########################
-# NZMS 1 sp model
+# NZMS 1 sp model with rho of 0.55
 ###########################
 library(purrr)
 library(tidyverse)
@@ -261,86 +261,7 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
     #----------------------
   }
   return(output.N.list)
+  return(sizelist)
   #return(Flist)
   #return(Klist)
 }
-
-# out <- NZMSmodel(flow.data = discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 500, iteration = 1, peaklist = 0, peakeach = length(temps$Temperature))
-# #------------------
-# # Analyzing Results
-# #-------------------
-# # summarizing iterations
-# 
-# ## turning replist into a df
-# means.list.NZMS <- mean.data.frame(out,burnin = 1, iteration= 1)
-# means.list.NZMS <- cbind(means.list.NZMS, temps$dts[1:length(means.list.NZMS$timesteps)])
-# means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
-# # plot abundance over time
-# 
-# arrows <- tibble(
-#   x1 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-#   x2 = c("2005-01-07", "2007-01-07", "2009-01-07", "2011-01-07"),
-#   y1 = c(14500, 14500, 14500, 14500), 
-#   y2 = c(10000, 12500, 12500, 12500)
-# )
-# 
-# arrows$x1 <- as.Date(arrows$x1)
-# arrows$x2 <- as.Date(arrows$x2)
-# 
-# means.list.NZMS <- means.list.NZMS[1300:1501,]
-# 
-# abund.trends.NZMS <- ggplot(data = means.list.NZMS, aes(x = `temps$dts`,
-#                                               y = mean.abund/10000, group = 1)) +
-#   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-#   #                 ymax = mean.abund + 1.96 * se.abund),
-#   #             colour = 'transparent',
-#   #             alpha = .5,
-#   #             show.legend = FALSE) +
-#   geom_line(show.legend = FALSE, linewidth = 0.7) +
-#   geom_point()+
-#   coord_cartesian(ylim = c(0,1.5)) +
-#   ylab('New Zealand Mudsnail Abundance/Recruitment Limit') +
-#   xlab(" ")+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-#         axis.text.y = element_text(size = 13))+
-#   scale_x_date(date_labels="%B", date_breaks  ="6 months")+
-#   annotate("segment", x = arrows$x1, y = arrows$y1, xend = arrows$x2, yend = arrows$y2,
-#            arrow = arrow(type = "closed", length = unit(0.02, "npc")), color = "red")+
-#   annotate("text", x = arrows$x1[1], y = 15000, label = "+1°C", size = 5)+
-#   annotate("text", x = arrows$x1[2], y = 15000, label = "+2.5°C", size = 5)+
-#   annotate("text", x = arrows$x1[3], y = 15000, label = "+5°C", size = 5)+
-#   annotate("text", x = arrows$x1[4], y = 15000, label = "+7.5°C", size = 5 )
-# 
-# 
-# 
-# 
-# means.list.NZMS$`temps$dts` <- format(as.Date(means.list.NZMS$`temps$dts`), "%Y-%m")
-# 
-# # take a look at results
-# # 
-# # par(mfrow = c(1,1))
-# # plot(timestep[9:(length(timestep)+1)], output.N.list[9:(length(timestep)+1), 3, 1], type = "l", ylab = "Baetis spp. Adults", xlab = "Timestep (1 fortnight)")
-# plot(timestep[9:length(timestep)], Total.N[10:(length(timestep)+1)], type= "l", ylab = "New Zealand Mudsnails. Total N", xlab = "Timestep (1 fortnight)", ylim = c(0,18000))
-# abline(v = 16, col = "red")
-# abline(v = 30, col = "red")
-# abline(v = 48, col = "red")
-# abline(v = 274, col = "red")
-# abline(v = 298, col = "red")
-# abline(v = 316, col = "red")
-# abline(v = 334, col = "red")
-# abline(v = 381, col = "red")
-# abline(v = 586, col = "red")
-# abline(v = 670, col = "red")
-# abline(v = 683, col = "red")
-# lines(timestep[9:length(timestep)], Klist[10:(length(timestep)+1)], type = "l", col = "blue")
-# lines(timestep, Klist, type = "l", col = "blue")
-# 
-# 
-# ggplot(data = NULL, mapping = aes(x = temps$dts, y = Total.N[2:2003]/10000))+
-#   geom_line(show.legend = FALSE) +
-#   ylab('Hydrospyche spp. Abundance/Reproductive Limit') +
-#   xlab(" ")
-# 
-# os <- as.data.frame(cbind(means.list.NZMS$mean.abund[1:200], means.list.NZMS$mean.abund[2:201]))
-# 
-# plot(os$V1, os$V2, type = "b", xlab = "Nt", ylab = "Nt+1", main = "Snail Abundance")

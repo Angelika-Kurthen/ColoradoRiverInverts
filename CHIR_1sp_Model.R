@@ -11,7 +11,7 @@ library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
-CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
+CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, stage_output = "all"){
   
   # set up model
   source("1spFunctions.R")
@@ -79,7 +79,7 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
     
     output.N.list[1,1:3, iter] <- c(1166.201, 1041.528, 1417.288)
     
-    #output.N.list[1,1:3, iter] <- runif(3, min = 1, max = (0.3*K))
+    output.N.list[1,1:3, iter] <- runif(3, min = 1, max = (0.3*K))
     
     # we often want to look at different parameter values after we run code, so we create some lists
     
@@ -229,5 +229,18 @@ CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
   } #----------------------
   # End Outer Loop
   #----------------------
-  return(output.N.list[ , 1:3, ])
+  if (stage_output == "larvae"){
+    return(output.N.list[ ,1:2, ])
+  }
+  
+  if (stage_output == "all"){
+    return(output.N.list[ , 1:3, ])
+  }
+  if (stage_output == "3"){
+    return(output.N.list[ , 3, ])
+  }
+  
+  if (stage_output == "size"){
+    return(sizelist)
+  }
 }
