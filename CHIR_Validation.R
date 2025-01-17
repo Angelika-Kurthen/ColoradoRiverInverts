@@ -24,7 +24,7 @@ library(dataRetrieval)
 library(foodbase)
 
 source("1spFunctions.R")
-
+source("CHIR_1sp_Model.R")
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 temps <- TimestepTemperature(temp)
 discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
@@ -60,8 +60,9 @@ for (i in 1:length(temps$dts)){
 means <- as.data.frame(cbind(means, as.Date(temps$dts)))
 means$V2 <- as.Date(means$V2, origin = "1970-01-01")
 
+
 set.seed(111)
-out <- CHIRmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- CHIRmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 means.list.CHIR <- rowSums(out[, 1:2, ])/9
 means.list.CHIR <- as.data.frame(cbind(means.list.CHIR[1:404], temps$dts))
@@ -73,7 +74,6 @@ means.list.CHIR <- means.list.CHIR[which(means.list.CHIR$Date < "2019-02-06"),] 
 cor.df <- na.omit(means.list.CHIR)
 
 rho <- cor.test((cor.df$means), (cor.df$mean.abund), method = "spearman")
-cortests <- append(cortests, rho$estimate)
 
 colors <- c("#FF7F00", "black" )
 means.list.CHIRnonas <- na.omit(means.list.CHIR)
