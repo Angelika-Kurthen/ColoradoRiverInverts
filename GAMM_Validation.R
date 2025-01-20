@@ -58,9 +58,9 @@ for (i in 1:length(temps$dts)){
 }
 means <- as.data.frame(cbind(means, as.Date(temps$dts)))
 means$V2 <- as.Date(means$V2, origin = "1970-01-01")
+#acf(na.omit(means$means))
 
 set.seed(111)
-
 out <- GAMMmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 means.list.GAMM <- rowSums(out[, 1:3, ])/9
@@ -72,32 +72,51 @@ means.list.GAMM <- means.list.GAMM[-(1:199), ] # use first 150 as burn in
 means.list.GAMM <- means.list.GAMM[which(means.list.GAMM$Date < "2019-02-06"),] # we have some one off data points
 cor.df <- na.omit(means.list.GAMM)
 
-cor.test((cor.df$means), (cor.df$mean.abund), method = "spearman")
+# checking for temporal autocorrelation
+#acf(cor.df$means) # there is some
+
+#splitting data by lags
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test(cor.df1$mean.abund, cor.df1$means, method = "spearman")
+cor.df2 <- cor.df %>%  slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$mean.abund, cor.df2$means, method = "spearman")
+
+rho <- mean(c(rho1$estimate, rho2$estimate))
+#cortests <- append(cortests, rho)
+#}
+#}
+  #cor.test((cor.df$means), (cor.df$mean.abund), method = "spearman")
 
 
 means.list.GAMMnonas <- na.omit(means.list.GAMM)
-colors <- c("#FF7F00", "black" )
-GAMMts <- ggplot(data = means.list.GAMMnonas, aes(x = Date,  y = scale(mean.abund), group = 1, color = "Model")) +
+colors <- c("#CCBB44", "black" )
+linetypes <- c("solid", "twodash")
+
+GAMMts <- ggplot(data = means.list.GAMMnonas, aes(x = Date,  y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
   #             alpha = .15,
   #             show.legend = T) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(aes(x = Date, y = scale(means), color = "Empirical"), linewidth = 1,  show.legend = T, alpha = 0.8)+
+  geom_line(aes(x = Date, y = scale(means), color = "Empirical", linetype = "Empirical"), linewidth = 1, show.legend = T, alpha = 0.8)+
   #geom_point(aes(x = Date, y = scale(means), color = "Empirical"))+
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
   #coord_cartesian(ylim = c(0,6000)) +
-  ylab('G. lacustris Abund.') +
+  geom_text(mapping = aes(x = as.Date("2018-06-01"), y =5, label = paste('rho', "==", 0.37)), parse = T, color = "black", size = 4.5)+
+  #labs(y = expression(~italic(G. lacustris)~ 'Abund.')) +
+  scale_linetype_manual(values = linetypes)+
+  labs(y=expression(paste(italic("G. lacustris"), " Abund.")))+
   xlab("")+
   labs(colour=" ")+
   theme_bw()+
-  ylim(c(-3,7))+
+  ylim(c(-4,7))+
   scale_color_manual(values = colors)+
   # scale_y_continuous(
   #   sec.axis = sec_axis(~., name="G. lacustris (inds/m3)"
   #   ))+
+  guides(linetype=guide_legend(" "), color = "none")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")
@@ -135,20 +154,6 @@ GAMM.samp <- cbind(GAMM.samp, vals)
 # now we need into include mean water temperature and discharge for each 
 GAMM.samp <- cbind(GAMM.samp, temps$Temperature[GAMM.samp$vals])
 GAMM.samp <- cbind(GAMM.samp, flow.magnitude$Discharge[GAMM.samp$vals])
-
-#GAMM.samp <- GAMM.samp[-which(GAMM.samp$Habitat == "Rock"), ]
-#GAMM.samp$Habitat <- as.character(GAMM.samp$Habitat)
-#GAMM.samp$Habitat[which(GAMM.samp$Habitat == "Sand")] <- 0
-#GAMM.samp$Habitat[which(GAMM.samp$Habitat == "Vegetation")] <- 1
-#GAMM.samp$Habitat <- as.numeric(GAMM.samp$Habitat)
-#GAMM.samp <- GAMM.samp[-which(GAMM.samp$Weather == "Rain"), ]
-
-# GAMM.samp$Weather <- as.character(GAMM.samp$Weather)
-# GAMM.samp$Weather[which(GAMM.samp$Weather == "Rain")] <- 1
-# GAMM.samp$Weather[which(GAMM.samp$Weather == "NoRain")] <- 0
-# GAMM.samp$Weather <- as.numeric(GAMM.samp$Weather)
-# 
-# GAMM.samp <- GAMM.samp[-which(GAMM.samp$Bats == T), ]
 max_visits <- vector() # vector to put max obs per site
 means <- vector()
 for (i in 1:length(temps$dts)){  # cycle through all the 14 day timesteps that we have model output for
@@ -215,7 +220,7 @@ circdate <- as.data.frame(df$circdate)
 #weather[is.na(weather)] <- Mode(na.omit(weather))
 
 site_intercept <- rep(1, times = length(flows$V1)) 
-site_covs<- as.matrix(cbind(site_intercept, temperature, flows, circdate)) #flows,temperature, circdate)
+site_covs<- as.matrix(cbind(site_intercept, flows)) #flows,temperature, circdate)
 obs_covs <- array(data= NA, dim = c(length(flows$V1),J,1))
 obs_covs[,,1] <- obs_intercept                                  
 
@@ -223,6 +228,7 @@ obs_covs[,,1] <- obs_intercept
 offset <- as.matrix(scale(log(volumes[-nodata, ])))
 offset[is.na(offset)] <- mean(offset, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
 # 
+
 sink("N-mixturePoisGAMM.jags")
 cat("
 model{
@@ -331,18 +337,25 @@ lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
 # library(ggplot2)
 # ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)# not getting all the 0s and missing the really high #s
 
-cor.df <- left_join(N, means.list.GAMM, by=c('V1'="V2"), copy = T)
-#cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-PoisN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+#cor.df <- left_join(N, means.list.GAMM, by=c('V1'="Date"), copy = T)
+cor.df <- na.omit(left_join(lam, means.list.GAMM, by=c('V1'="Date"), copy = T))
 
-cor.df <- left_join(lam, means.list.GAMM, by=c('V1'="V2"), copy = T)
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test((cor.df1$V2.x), (cor.df1$mean.abund), method = "spearman")
+
+cor.df2 <- cor.df %>%  slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$V2.x, cor.df2$mean.abund, method = "spearman")
+
+Poislam  <- mean(c(rho1$estimate, rho2$estimate))
 #cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-Poislam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+#PoisN <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
+
+#cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+#Poislam <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
 
 rm(zm)
-rm(Nmix_fit_UI1)
+#rm(Nmix_fit_UI1)
 rm(Nmix_fit)
-
 
 sink("N-mixtureZIPGAMM.jags")
 cat("
@@ -435,18 +448,23 @@ N$V1 <- as.Date(N$V1, origin = "1970-01-01")
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
 lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
 
+# cor.df <- left_join(N, means.list.GAMM, by=c('V1'="Date"), copy = T)
+# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
+# ZipN <-  cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
 
-cor.df <- left_join(N, means.list.GAMM, by=c('V1'="V2"), copy = T)
-#cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-ZipN <-  cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+cor.df <- na.omit(left_join(lam, means.list.GAMM, by=c('V1'="Date"), copy = T))
 
-cor.df <- left_join(lam, means.list.GAMM, by=c('V1'="V2"), copy = T)
-#or.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-Ziplam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test((cor.df1$V2.x), (cor.df1$mean.abund), method = "spearman")
+
+cor.df2 <- cor.df %>%  slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$V2.x, cor.df2$mean.abund, method = "spearman")
+
+Ziplam  <- mean(c(rho1$estimate, rho2$estimate))
 
 rm(zm)
 rm(Nmix_fit)
-rm(Nmix_fit_UI2)
+#rm(Nmix_fit_UI2)
 
 
 sink("N-mixtureZIPoverdispGAMM.jags")
@@ -561,16 +579,25 @@ lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
 # library(ggplot2)
 # ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
 
-cor.df <- left_join(N, means.list.GAMM, by=c('V1'="V2"), copy = T)
-#cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-Zip_ovdN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+cor.df <- na.omit(left_join(lam, means.list.GAMM, by=c('V1'="Date"), copy = T))
 
-cor.df <- left_join(lam, means.list.GAMM, by=c('V1'="V2"), copy = T)
-#cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-Zip_ovdlam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test((cor.df1$V2.x), (cor.df1$mean.abund), method = "spearman")
+
+cor.df2 <- cor.df %>%  slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$V2.x, cor.df2$mean.abund, method = "spearman")
+
+Zip_ovd_lam  <- mean(c(rho1$estimate, rho2$estimate))
+# cor.df <- left_join(N, means.list.GAMM, by=c('V1'="V2"), copy = T)
+# #cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
+# Zip_ovdN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+# 
+# cor.df <- left_join(lam, means.list.GAMM, by=c('V1'="V2"), copy = T)
+# #cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
+# Zip_ovdlam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 rm(zm)
-rm(Nmix_fit_UI3)
+#rm(Nmix_fit_UI3)
 rm(Nmix_fit)
 
 sink("N-mixturePoisoverdispGAMM.jags")
@@ -653,7 +680,6 @@ update(Nmix_fit, n.iter = 1000)
 Nmix_fit_UI4 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisoverdispGAMM.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 
 print(Nmix_fit_UI4)
-
 zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "p", "lambda", "N", "y.rep", "fit", "fit.rep", "exp"), n.iter = ni, n.thin = nt)
 
 lam <- MCMCpstr(zm, "lambda")
@@ -670,18 +696,29 @@ lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
 # plot(fit.rep ~ fit)
 # abline(0, 1) # 1 to 1 line not even there
 
-cor.df <- left_join(N, means.list.GAMM, by=c('V1'="V2"), copy = T)
+#cor.df <- left_join(N, means.list.GAMM, by=c('V1'="V2"), copy = T)
 #cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-Pois_ovdN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+#Pois_ovdN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 
-cor.df <- left_join(lam, means.list.GAMM, by=c('V1'="V2"), copy = T)
+#cor.df <- left_join(lam, means.list.GAMM, by=c('V1'="V2"), copy = T)
 #cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-Pois_ovdlam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+#Pois_ovdlam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+
+
+cor.df <- na.omit(left_join(lam, means.list.GAMM, by=c('V1'="Date"), copy = T))
+
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test((cor.df1$V2.x), (cor.df1$mean.abund), method = "spearman")
+
+cor.df2 <- cor.df %>%  slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$V2.x, cor.df2$mean.abund, method = "spearman")
+
+Pois_ovd_lam  <- mean(c(rho1$estimate, rho2$estimate))
 
 rm(zm)
 rm(Nmix_fit)
-rm(Nmix_fit_UI4)
+#rm(Nmix_fit_UI4)
 
 sink("N-mixtureNBGAMM.jags")
 cat("
@@ -791,17 +828,28 @@ lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
 
 Nmix_fit_UI5 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureNBGAMM.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 
+# cor.df <- left_join(lam, means.list.GAMM, by=c('V1'="V2"), copy = T)
+# #cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
+# nblam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+# 
+# 
+# cor.df <- left_join(N, means.list.GAMM, by=c('V1'="V2"), copy = T)
+# #cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
+# nbN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+
+cor.df <- na.omit(left_join(lam, means.list.GAMM, by=c('V1'="Date"), copy = T))
+
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test((cor.df1$V2.x), (cor.df1$mean.abund), method = "spearman")
+
+cor.df2 <- cor.df %>%  slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$V2.x, cor.df2$mean.abund, method = "spearman")
+
+NB_lam <- mean(c(rho1$estimate, rho2$estimate))
+
 print(Nmix_fit_UI5)
 
-cor.df <- left_join(lam, means.list.GAMM, by=c('V1'="V2"), copy = T)
-#cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-nblam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
-
-
-cor.df <- left_join(N, means.list.GAMM, by=c('V1'="V2"), copy = T)
-#cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-nbN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 rm(zm)
 rm(Nmix_fit)
-rm(Nmix_fit_UI5)
+#rm(Nmix_fit_UI5)

@@ -60,41 +60,46 @@ BAET.samp.sum$V1 <- as.Date(BAET.samp.sum$V1, origin = "1970-01-01")
 #BAET.samp.sum <- BAET.samp.sum[which(BAET.samp.sum$V1 %in% sample(BAET.samp.sum$V1, size = 30)),]
 
 cor.df <- left_join(BAET.samp.sum, means.list.BAET, by=c('V1'="temps$dts"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
-hist(cor.df$V2, xlab = "Baetidae Larvae (#/m2)", col = "#CADBD7")
 
+# checking for temporal autocorrelation
+#acf(cor.df$V2) #none
 
-summary(cor.lm)
-colors <- c("black", "#FF7F00")
-ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
-  geom_point()+
-  stat_smooth(method = "lm",
-              formula = y ~ x,
-              geom = "smooth")+
-  geom_text(x = 1000, y = 3250, label = "y = 0.00021x, R^2 = 0.37")+
-  labs(y = "Baetidae Model Output", x = "Baetidae Emprical Data")
+#cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+rho <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
-BAETts <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = scale(mean.abund), group = 1, color = "Model")) +
+colors <- c("#66CCEE", "black")
+linetypes <- c("solid", "twodash")
+# ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
+#   geom_point()+
+#   stat_smooth(method = "lm",
+#               formula = y ~ x,
+#               geom = "smooth")+
+#   geom_text(x = 1000, y = 3250, label = " ")+
+#   labs(y = "Baetidae Model Output", x = "Baetidae Emprical Data")
+
+BAETts <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
   #             alpha = .15,
   #             show.legend = T) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Empirical"), linewidth = 1,  show.legend = T, alpha = 0.8)+
+  geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Empirical", linetype = "Empirical"), linewidth = 1,  show.legend = T, alpha = 0.8)+
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
   #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
-  ylab('Baetidae spp. Abund.') +
+  labs(y=expression(paste(italic("Baetidae spp."), " Abund.")))+
+  geom_text(mapping = aes(x = as.Date("1999-01-01"), y =5, label = paste('rho', "==", 0.66)), parse = T, color = "black", size = 4.5)+
   xlab("")+
   ylim(c(-3,7))+
   labs(colour=" ")+
   theme_bw()+
   scale_color_manual(values = colors)+
+  scale_linetype_manual(values = linetypes)+
   #scale_y_continuous(
     # sec.axis = sec_axis(~., name="Baetidae Larvae (inds/m2)"
     # ))+
+  guides(linetype=guide_legend(" "), color = "none")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")

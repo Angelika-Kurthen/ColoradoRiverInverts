@@ -58,6 +58,8 @@ for (i in 1:length(temps$dts)){
   means <- append(means, s)
 }
 
+# test for temporal autocorrelation
+#acf(na.omit(means)) #we have some
 
 NZMS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.NZMS$`temps$dts`, format = "%Y-%m-%d"), means[51:406])))
 NZMS.samp.sum$V1 <- as.Date(NZMS.samp.sum$V1, origin = "1970-01-01")
@@ -67,8 +69,9 @@ NZMS.samp.sum$V1 <- as.Date(NZMS.samp.sum$V1, origin = "1970-01-01")
 cor.df <- left_join(NZMS.samp.sum, means.list.NZMS, by=c('V1'="temps$dts"), copy = T)
 cor.lm <- lm((cor.df$mean.abund) ~ (cor.df$V2))
 cor.test((cor.df$V2+1), (cor.df$mean.abund+1), method = "spearman")
-cor.df <- cor.df[-125,]
 
+
+# culling data by lags - Temporal autocorrelation: a neglected factor in the study of behavioral repeatability and plasticity  
 NZMS.samp.sum1 <- NZMS.samp.sum %>% slice(which(row_number() %% 3 == 0))
 NZMS.samp.sum2 <- NZMS.samp.sum %>%  slice(which(row_number() %% 3 == 1))
 NZMS.samp.sum3 <- NZMS.samp.sum %>%  slice(which(row_number() %% 3 == 2))
@@ -100,19 +103,22 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
   geom_text(x = 3e+05, y = 6100, label = "y = 0.0047x, R^2 = 0.05")+
   labs(y = "NZMS Model Output", x = "NZMS Emprical Data")
 
-colors <- c("black", "#FF7F00")
-ggplot(data = means.list.NZMS, aes(x = date, y = scale(mean.abund), group = 1, color = "Model")) +
+colors <- c("#4477AA", "black")
+linetypes <- c("solid", "twodash")
+NZMSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data = NZMS.samp.sum[-125,], aes(x =V1, y = scale(means), color = "Empirical"), linewidth = 1, alpha = 0.8, show.legend = T)+
-  geom_point(data = NZMS.samp.sum[125,], aes(x = V1, y = scale(means), color = "Empirical"), show.legend = T)+
-  ylab('Log New Zealand Mudsnail Abundance (#/m2)') +
+  geom_line(data = cor.df, aes(x =V1, y = scale(V2), color = "Empirical", linetype = "Empirical"), linewidth = 1, alpha = 0.8, show.legend = T)+
+  #geom_point(data = NZMS.samp.sum[125,], aes(x = V1, y = scale(means), color = "Empirical"), show.legend = T)+
+  labs(y=expression(paste(italic("P. antipodarum"), " Abund.")))+
+  ylim(c(-4,7))+
+  geom_text(mapping = aes(x = as.Date("2018-06-01"), y =5, label = paste('rho', "==", 0.59)), parse = T, color = "black", size = 4.5)+
   xlab("")+
   labs(colour=" ")+
   theme_bw()+
   scale_color_manual(values = colors)+
-  scale_y_continuous(
-    sec.axis = sec_axis(~., name="Log New Zealand Mudsnail Abundance (#/m3)")
-  )+ 
-  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+  scale_linetype_manual(values = linetypes)+
+  guides(linetype=guide_legend(" "), color = "none")+
+  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")
+

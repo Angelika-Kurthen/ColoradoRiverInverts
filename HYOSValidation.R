@@ -79,7 +79,8 @@ for (i in 1:length(temps$dts)){
   # we know the last value doesn't fit into interval and needs to be manually added
 }
 means[length(temps$dts)] <- HYOS.samp$x[length(HYOS.samp$x)]
-#
+
+
 # means.list.HYOS <- mean.data.frame(out, burnin = 286, iteration= 9)
 # means.list.HYOS <- cbind(means.list.HYOS, temps$dts[286:last(means.list.HYOS$timesteps)])
 # means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
@@ -94,10 +95,49 @@ HYOS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.HYOS$Date), mean
 HYOS.samp.sum$V1 <- as.Date(HYOS.samp.sum$V1, origin = "1970-01-01")
 HYOS.samp.sum <- HYOS.samp.sum[which(HYOS.samp.sum$V1 < "2022-01-01"),]
 
-cor.df <- left_join(HYOS.samp.sum, means.list.HYOS, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+#test for temporal autocorrelation
+#acf(na.omit(means)) # we have some
 
-summary(cor.lm)
+# use data splitting method
+HYOS.samp.sum1 <- HYOS.samp.sum %>% slice(which(row_number() %% 5 == 0))
+HYOS.samp.sum2 <- HYOS.samp.sum %>%  slice(which(row_number() %% 5 == 1))
+HYOS.samp.sum3 <- HYOS.samp.sum %>%  slice(which(row_number() %% 5 == 2))
+HYOS.samp.sum4 <- HYOS.samp.sum %>%  slice(which(row_number() %% 5 == 3))
+HYOS.samp.sum5 <- HYOS.samp.sum %>%  slice(which(row_number() %% 5 == 4))
+
+# cor.df <- left_join(HYOS.samp.sum, means.list.HYOS, by=c('V1'="Date"), copy = T)
+# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+# 
+# summary(cor.lm)
+
+cor.df1 <- left_join(HYOS.samp.sum1, means.list.HYOS, by=c('V1'="Date"), copy = T)
+#cor.lm1 <- lm(cor.df1$mean.abund ~ cor.df1$V2)
+# summary(cor.lm1)
+# plot(cor.df1$V2, cor.df1$mean.abund)
+rho1 <- cor.test((cor.df1$V2), (cor.df1$mean.abund), method = "spearman")
+
+cor.df2 <- left_join(HYOS.samp.sum2, means.list.HYOS, by=c('V1'="Date"), copy = T)
+#cor.lm2 <- lm(cor.df2$mean.abund ~ cor.df2$V2)
+rho2 <- cor.test((cor.df2$V2), (cor.df2$mean.abund), method = "spearman")
+
+cor.df3 <- left_join(HYOS.samp.sum3, means.list.HYOS, by=c('V1'="Date"), copy = T)
+# cor.lm3 <- lm(cor.df3$mean.abund ~ cor.df3$V2)
+# summary(cor.lm3)
+rho3 <- cor.test((cor.df3$V2), (cor.df3$mean.abund), method = "spearman")
+
+cor.df4 <- left_join(HYOS.samp.sum4, means.list.HYOS, by=c('V1'="Date"), copy = T)
+#cor.lm2 <- lm(cor.df2$mean.abund ~ cor.df2$V2)
+rho4 <- cor.test((cor.df4$V2), (cor.df4$mean.abund), method = "spearman")
+
+cor.df5 <- left_join(HYOS.samp.sum5, means.list.HYOS, by=c('V1'="Date"), copy = T)
+#cor.lm2 <- lm(cor.df2$mean.abund ~ cor.df2$V2)
+rho5 <- cor.test((cor.df5$V2), (cor.df5$mean.abund), method = "spearman")
+
+
+
+rho <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate, rho4$estimate, rho5$estimate))
+sd <- sd(c(rho1$estimate, rho2$estimate, rho3$estimate))
+
 ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
   geom_point()+
   stat_smooth(method = "lm",
@@ -106,24 +146,28 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
   geom_text(x = 3, y = 300, label = "y = 7.77e-11x, R^2 = 0.22")+
   labs(y = "Hydropsychidae Model Output", x = "Hydropsychidae Empirical Data")
 
-cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+#cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 
 #hist(cor.df$V2, xlab = "Hydropsychidae Adults (#/hour)", col = "#CADBD7")
 
-colors <- c("#FF7F00", "black" )
-HYOSts <- ggplot(data = means.list.HYOS[-c(250:331),], aes(x = Date, y = scale(mean.abund), group = 1, color = "Model")) +
+colors <- c("#AA3377", "black" )
+linetypes <- c("solid", "twodash")
+
+HYOSts <- ggplot(data = means.list.HYOS[-c(250:331),], aes(x = Date, y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
   # alpha = .15,
   # show.legend = T) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data =HYOS.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Empirical"), linewidth = 1, alpha = 0.8,show.legend = T)+
+  geom_line(data =HYOS.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Empirical", linetype = "Empirical"), linewidth = 1, alpha = 0.8,show.legend = T)+
   # geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = Discharge), color = "blue") +
   # geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*0.1), color = "green")+
   # #coord_cartesian(ylim = c(0,2000000)) +
-  ylab("Hydropsyche spp. Abund." ) +
+  labs(y=expression(paste(italic("Hydropsyche spp."), " Abund.")))+
+  geom_text(mapping = aes(x = as.Date("2020-01-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 4.5)+
+  scale_linetype_manual(values = linetypes)+
   #scale_y_continuous(
     # Features of the first axis
     # Add a second axis and specify its features
@@ -133,6 +177,7 @@ HYOSts <- ggplot(data = means.list.HYOS[-c(250:331),], aes(x = Date, y = scale(m
   ylim(c(-3,7))+
   labs(colour=" ")+
   theme_bw()+
+  guides(linetype=guide_legend(" "), color = "none")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")+

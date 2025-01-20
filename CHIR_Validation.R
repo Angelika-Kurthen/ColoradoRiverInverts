@@ -62,6 +62,7 @@ means$V2 <- as.Date(means$V2, origin = "1970-01-01")
 
 
 set.seed(111)
+
 out <- CHIRmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 means.list.CHIR <- rowSums(out[, 1:2, ])/9
@@ -73,110 +74,49 @@ means.list.CHIR <- means.list.CHIR[-(1:199), ] # use first 150 as burn in
 means.list.CHIR <- means.list.CHIR[which(means.list.CHIR$Date < "2019-02-06"),] # we have some one off data points
 cor.df <- na.omit(means.list.CHIR)
 
-rho <- cor.test((cor.df$means), (cor.df$mean.abund), method = "spearman")
+# testing data for temporal autocorrelation
+#acf(na.omit(cor.df$means)) # temporal autocorrelation
 
-colors <- c("#FF7F00", "black" )
+#splitting data by lags
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test(cor.df1$mean.abund, cor.df1$means, method = "spearman")
+cor.df2 <- cor.df %>%  slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$mean.abund, cor.df2$means, method = "spearman")
+
+rho <- mean(c(rho1$estimate, rho2$estimate))
+
+#rho <- cor.test((cor.df$means), (cor.df$mean.abund), method = "spearman")
+
+colors <- c("#228833", "black" )
+linetypes <- c("solid", "twodash")
+
 means.list.CHIRnonas <- na.omit(means.list.CHIR)
-CHIRts <- ggplot(data = means.list.CHIRnonas, aes(x = Date,  y = scale(mean.abund), group = 1, color = "Model")) +
+CHIRts <- ggplot(data = means.list.CHIRnonas, aes(x = Date,  y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
   # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
   #                 ymax = mean.abund + 1.96 * se.abund),
   #             colour = 'transparent',
   #             alpha = .15,
   #             show.legend = T) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(aes(x = Date, y = scale(means), color = "Empirical"), linewidth = 1,  show.legend = T, alpha = 0.8)+
+  geom_line(aes(x = Date, y = scale(means), color = "Empirical", linetype = "Empirical"), linewidth = 1,  show.legend = T, alpha = 0.8)+
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
   #coord_cartesian(ylim = c(0,6000)) + S1 and S2 inds/m2
-  ylab('Chironomidae spp. Abund.') +
+  geom_text(mapping = aes(x = as.Date("2018-06-01"), y =5, label = paste('rho', "==", 0.33)), parse = T, color = "black", size = 4.5)+
+  scale_linetype_manual(values = linetypes)+
+  labs(y=expression(paste(italic("Chironomidae spp."), " Abund.")))+
   xlab("")+
-  ylim(c(-3, 7))+
+  ylim(c(-4, 7))+
   labs(colour=" ")+
   theme_bw()+
   scale_color_manual(values = colors)+
   # scale_y_continuous(
   #   sec.axis = sec_axis(~., name="Chironomidae Larvae (inds/m3)"
   #   ))+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+    guides(linetype=guide_legend(" "), color = "none")+
+theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")
-##-------------------------------------------------------------
-temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
-temps <- TimestepTemperature(temp)
-discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
-flow.magnitude <- TimestepDischarge(discharge, 85000)
-
-write.csv2(temps, file = "CHIRvalidtemps.csv")
-temps <- read.csv2("CHIRvalidtemps.csv")
-temps$dts <- as.Date(temps$dts)
-
-write.csv2(flow.magnitude, file = "CHIRvaliddischarge.csv")
-flow.magnitude <- read.csv2("CHIRvaliddischarge.csv")
-
-
-drift.data.total <- readDB(gear = "Drift", type = "Sample", updater = F)
-# get drift data from between Lees Ferry and RM -6
-drift.LF <- drift.data.total[which(drift.data.total$RiverMile >= -6 & drift.data.total$RiverMile <= 0),]
-#specify
-CHIR.samp.LF <- sampspec(samp = drift.LF, species = c("CHIL"), stats = T)
-# pull stats and merge with sample info
-CHIR.samp <- merge(CHIR.samp.LF$Statistics, CHIR.samp.LF$Samples, by = "BarcodeID", all = T)
-# make sure we are using the same gear
-CHIR.samp <- CHIR.samp[which(CHIR.samp$GearID == 4),] 
-CHIR.samp <- CHIR.samp[which(CHIR.samp$FlagStrange == 0), ]
-# calculate density
-CHIR.samp$Density <- CHIR.samp$CountTotal/CHIR.samp$Volume
-CHIR.samp <- merge(CHIR.samp, discharge[, 3:4], by = "Date")
-
-CHIR.samp$Density <- (CHIR.samp$Density)/(1.3 *(CHIR.samp$X_00060_00003 * 0.0283168)^4.1)
-CHIR.samp <- aggregate(CHIR.samp$Density, list(CHIR.samp$Date), FUN = mean)
-
-means <- vector()
-for (i in 1:length(temps$dts)){
-  d <- CHIR.samp[which(CHIR.samp$Group.1 >= temps$dts[i] & CHIR.samp$Group.1 < temps$dts[i+1]),]
-  if (any(is.nan(mean(d$x))) == T || any(is.na((d$x) == T))) {
-    s = NA
-  } else {
-    s <- mean(d$x)}
-  means <- append(means, s)
-  # we know the last value doesn't fit into interval and needs to be manually added
-}
-means <- as.data.frame(cbind(means, as.Date(temps$dts)))
-means$V2 <- as.Date(means$V2, origin = "1970-01-01")
-source("CHIR_1sp_Model.R")
-
-out <- CHIRmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.2, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
-
-means.list.CHIR <- rowSums(out[, 1:2, ])/9
-means.list.CHIR <- as.data.frame(cbind(means.list.CHIR[1:404], temps$dts))
-colnames(means.list.CHIR) <- c("mean.abund", "Date")
-means.list.CHIR$mean.abund <- as.numeric(means.list.CHIR$mean.abund)
-means.list.CHIR$Date <- as.Date(means.list.CHIR$Date, origin = "1970-01-01")
-means.list.CHIR <- as.data.frame(cbind(means.list.CHIR, means))
-means.list.CHIR <- means.list.CHIR[-(1:199), ] # use first 150 as burn in 
-means.list.CHIR <- means.list.CHIR[which(means.list.CHIR$Date < "2019-02-06"),] # we have some one off data points
-cor.df <- na.omit(means.list.CHIR)
-
-cor.test((cor.df$means), (cor.df$mean.abund), method = "spearman")
-
-ggplot(data = cor.df, aes(x = Date,
-                                   y = mean.abund, group = 1, color = "Model")) +
-  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                 ymax = mean.abund + 1.96 * se.abund),
-  #             colour = 'transparent',
-  # alpha = .15,
-  # show.legend = T) +
-  geom_line(show.legend = T, linewidth = 0.7) +
-  geom_line(data =cor.df, aes(x = Date, y = means, color = "Empirical"), show.legend = T)+
-  #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,2000000)) +
-  ylab('Hydropsyichidae S3 Density inds/(m2)') +
-  xlab("")+
-  labs(colour=" ")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), )+
-  scale_x_date(date_labels="%B", date_breaks  ="6 months")
 
 ##################
 # N mix models
