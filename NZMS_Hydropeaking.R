@@ -48,18 +48,21 @@ set.seed(123) # make reproducible
   sizesd[hyd] <- sd(c(s1s, s2s, s3s))
 
   # now instead of getting the mean, calculate biomass at every timestep
-  s1ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 1, ]) * (0.02 * mean(c(0.5, 3.2))^2.4315), year(temps$dts[-c(1:259)])))
-  s2ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 2, ]) * (0.02 * mean(c(3.2, 4))^2.4315), year(temps$dts[-c(1:259)])))
-  s3ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 3, ]) * (0.02 * mean(c(4, 5.5))^2.4315), year(temps$dts[-c(1:259)])))
+  # s1ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 1, ]) * (0.02 * mean(c(0.5, 3.2))^2.4315), year(temps$dts[-c(1:259)])))
+  # s2ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 2, ]) * (0.02 * mean(c(3.2, 4))^2.4315), year(temps$dts[-c(1:259)])))
+  # s3ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 3, ]) * (0.02 * mean(c(4, 5.5))^2.4315), year(temps$dts[-c(1:259)])))
 
   # find annual stage specific biomass based on year
-  s1sYr <- aggregate(V1 ~ V2, data = s1ss, FUN = sum, na.rm = TRUE)
-  s2sYr <- aggregate(V1 ~ V2, data = s2ss, FUN = sum, na.rm = TRUE)
-  s3sYr <- aggregate(V1 ~ V2, data = s3ss, FUN = sum, na.rm = TRUE)
+  # s1sYr <- aggregate(V1 ~ V2, data = s1ss, FUN = sum, na.rm = TRUE)
+  # s2sYr <- aggregate(V1 ~ V2, data = s2ss, FUN = sum, na.rm = TRUE)
+  # s3sYr <- aggregate(V1 ~ V2, data = s3ss, FUN = sum, na.rm = TRUE)
+  # 
+  # # add all stages together to get average annual biomass (aka secondary production)
+  #Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
 
-  # add all stages together to get average annual biomass (aka secondary production)
-  Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
-
+  # no emerging biomass
+  S3Yrprod[hyd] <- 0
+  
   # calculate the average of mean abundances at each hydropeaking intensity
   means[hyd] <- mean(means.list.NZMS$mean.abund)
   # calculate the standard deviation of mean abundances at each hydropeaking intensity
@@ -73,7 +76,7 @@ NZMS_hyd_means <- as.data.frame(cbind(hydropeak, means, sd, rep("NZMS", length(m
 NZMS_hyd_size <- as.data.frame(cbind(hydropeak, sizemeans, sizesd, rep("NZMS", length(sizemeans))))
 
 # compile annual biomass data
-NZMS_hyd_yrprod <- as.data.frame(cbind(hydropeak, Yrprod, rep("NZMS", length(sizemeans))))
+NZMS_hyd_yrprod <- as.data.frame(cbind(hydropeak, S3Yrprod, rep("NZMS", length(sizemeans))))
 # 
 # ggplot(data = NZMS_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "NZMS")) +
 #   geom_ribbon(aes(ymin = means - sd,
