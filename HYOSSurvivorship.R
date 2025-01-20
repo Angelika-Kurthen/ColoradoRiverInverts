@@ -81,7 +81,7 @@ min.RSS <- function(par){
 }
 params <- optim(par = c(0.23, 4.5), fn = min.RSS)
 
-TempSurv <- function(n){
+TempSurv_HYOS <- function(n){
   if (n <= 0){
     a <- 0
   }else{

@@ -42,7 +42,7 @@ surv.df.GAMM <- flow.surv.rate(surv.fit.GAMM$m$getPars()[2] , surv.fit.GAMM$m$ge
 GAMMSurvRates <- read_excel("VitalRates.xlsx", sheet = "Gammarus Survival Rates")
 GAMMSurvRates <- as.data.frame(GAMMSurvRates)
 fit <- nlsLM(logit(Survival) ~ a*Temperature^4+ b*Temperature^3 + c*Temperature^2 + d*Temperature + e, data = GAMMSurvRates, start = c(a = 1, b = 1, c = 1, d= 1, e = 1))
-TempSurv <- function(x){
+TempSurv_GAMM <- function(x){
   #y = -0.05241*x^2 + 1.75693*x -10.20119 
   y = -2.489e-04*x^4 +1.689e-02*x^3 -4.211e-01*x^2 +4.5*x -1.449e+01 
   return(inv.logit(y))

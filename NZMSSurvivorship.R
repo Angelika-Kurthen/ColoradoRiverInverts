@@ -56,7 +56,7 @@ ggplot(surv.df.NZMS, aes(x = Q, y = surv))+
 NZMSSurvRates <- read_excel("VitalRates.xlsx", sheet = "NZMS Survival Rates")
 NZMSSurvRates <- as.data.frame(NZMSSurvRates)
 fit <- nlsLM(logit(Survival) ~ a*Temperature^2+ b*Temperature + c, data = NZMSSurvRates, start = c(a = 1, b = 1, c = 1))
-TempSurv <- function(x){
+TempSurv_NZMS <- function(x){
   y = -0.0892*x^2 + 3.0492*x -6.6794
   return(inv.logit(y))
 }

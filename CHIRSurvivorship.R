@@ -114,7 +114,7 @@ params <- optim(par = c(0.01, 6), fn = min.RSS, method = "BFGS")
 
 #params <- optim(par = c(0, 0), fn = min.RSS, method = "BFGS")
 # #
-TempSurv <- function(n){
+TempSurv_CHIR <- function(n){
   if (n <= 0){
     a <- 0
   }else {

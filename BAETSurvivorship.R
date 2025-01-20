@@ -67,7 +67,7 @@ min.RSS <- function(par){
 }
 params <- optim(par = c(0.2, 4), fn = min.RSS, method = "BFGS")
 
-TempSurv <- function(n){
+TempSurv_BAET <- function(n){
   if (n <= 0){
     a <- 0
   }else {
