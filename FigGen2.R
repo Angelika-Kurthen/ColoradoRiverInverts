@@ -66,8 +66,8 @@ hyd_ts <- ggplot(data = Hydro_TS_Biomass, aes(hydropeak, log(sizemeans), color =
   #               colour = V3,
   #               alpha = .15,
   #               show.legend = T) +
-  scale_color_manual(name = "Taxon", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
   geom_line(linewidth = 1, alpha = 0.8)+
+    scale_color_manual(name = "Taxon", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
   geom_vline(aes(xintercept = 0.01), linewidth = 1, linetype = "dotted")+
   geom_vline(aes(xintercept = 0.17 ), linewidth = 1, linetype="dashed")+ 
   geom_vline(aes(xintercept = 0.55 ), linewidth = 1, linetype = "dotdash")+
@@ -79,28 +79,28 @@ hyd_ts <- ggplot(data = Hydro_TS_Biomass, aes(hydropeak, log(sizemeans), color =
     axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
                                    
 # read in mean annual productivity/biomass data
-Hydro_Yr_Prod <- as.data.frame(rbind(BAET_hyd_yrprod, HYOS_hyd_yrprod, NZMS_hyd_yrprod, CHIR_hyd_yrprod, GAMM_hyd_yrprod))                                 
+Hydro_Yr_Prod <- as.data.frame(rbind(BAET_hyd_yrprod, HYOS_hyd_yrprod, CHIR_hyd_yrprod, NZMS_hyd_yrprod, GAMM_hyd_yrprod))                                 
 # make sure in correct format
 
 Hydro_Yr_Prod$hydropeak <- as.numeric(Hydro_Yr_Prod$hydropeak)
-Hydro_Yr_Prod$Yrprod <- as.numeric(Hydro_Yr_Prod$Yrprod)
+Hydro_Yr_Prod$S3Yrprod <- as.numeric(Hydro_Yr_Prod$S3Yrprod)
 Hydro_Yr_Prod$V3 <- as.factor(Hydro_Yr_Prod$V3)
 
-Hyd_yr <- ggplot(data = Hydro_Yr_Prod, aes(hydropeak, log(Yrprod), color = V3)) + 
+Hyd_yr <- ggplot(data = Hydro_Yr_Prod, aes(hydropeak, log(S3Yrprod), group = V3, color = V3)) + 
   # geom_ribbon(aes(ymin = sizemeans - sizesd,
   #                   ymax = sizemeans + sizesd),
   #               colour = V3,
   #               alpha = .15,
   #               show.legend = T) +
-  scale_color_manual(name = "Taxon", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
   geom_line(linewidth = 1, alpha = 0.8)+
+  scale_color_manual(name = "Taxon", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
   geom_vline(aes(xintercept = 0.01), linewidth = 1, linetype = "dotted")+
   geom_vline(aes(xintercept = 0.17 ), linewidth = 1, linetype="dashed")+ 
   geom_vline(aes(xintercept = 0.55 ), linewidth = 1, linetype = "dotdash")+
   theme_bw()+
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 4), limit = c(0, 14))+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
   xlab("Hydropeaking Intensity")+
-  ylab("Log Annual Biomass Production (mg)")+
+  ylab("Log Annual Emergent Biomass (mg)")+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
