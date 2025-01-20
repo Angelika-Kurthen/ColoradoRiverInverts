@@ -133,7 +133,7 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
     TempSurvival <- vector()
     for(c in temps$Temperature){
       
-      b <- TempSurv(c)
+      b <- TempSurv_NZMS(c)
       
       TempSurvival <- append(TempSurvival, b)
     }

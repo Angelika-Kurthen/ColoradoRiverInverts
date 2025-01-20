@@ -170,7 +170,7 @@ for (iter in c(1:iterations)) {
   TempSurvival <- vector()
   for(c in temps$Temperature){
     
-    b <- TempSurv(c)
+    b <- TempSurv_HYOS(c)
     
     TempSurvival <- append(TempSurvival, b)
   }
@@ -304,7 +304,7 @@ for (iter in c(1:iterations)) {
     #s2
     output.N.list[t,2,iter] <- flood.mortality(output.N.list[t,2,iter], k, h, Q[t-1], Qmin)
     #3
-    output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
+    #output.N.list[t,3,iter] <- flood.mortality(output.N.list[t,3,iter], k, h, Q[t-1], Qmin)
     
     flowmortlist <- append(flowmortlist, flood.mortality(1, k, h, Q[t-1], Qmin))
     #replist[[1]][,,1] <- output.N.list[[1]]

@@ -134,11 +134,10 @@ for (iter in c(1:iterations)) {
   
   emergetime <- vector()
   
-  sizelist2 <- vector()
-  sizelist3 <- vector()
+  sizelist <- vector()
   TempSurvival <- vector()
   for(c in temps$Temperature){
-    b <- TempSurv(c)
+    b <- TempSurv_GAMM(c)
     TempSurvival <- append(TempSurvival, b)
   }
   #-------------------------
@@ -181,12 +180,13 @@ for (iter in c(1:iterations)) {
     # 
     
     if (t > 13) {
-      size2 <- emergetime[t-1]
-      sizelist2 <- append(sizelist2, size2)
-      size3 <- emergetime[t-1]
-      sizelist3 <- append(sizelist3, size3)
-      F2 <-  (1.934*(size2) - 4.67) *0.5* hydropeaking.mortality(0, 1, h = hp[t-1])
-      F3 <-  ( 2.812*(size3) + 2.94)*0.5* hydropeaking.mortality(0, 1, h = hp[t-1]) #* 0.78 * 0.65
+      size <- emergetime[t-1]
+      sizelist <- append(sizelist, size)
+      # size is then scaled to the eggs generally produced by the size class
+      # for F2 between 5 and 14.67
+      # for F3 between 17 and 31
+      F2 <-  (1.934*(size) - 4.67) *0.5* hydropeaking.mortality(0, 1, h = hp[t-1])
+      F3 <-  ( 2.812*(size) + 2.94)*0.5* hydropeaking.mortality(0, 1, h = hp[t-1]) #* 0.78 * 0.65
       #F3 <- (57*size)+506 * 0.5 * hydropeaking.mortality(0.0, 0.2, h = hp[t-1]) * 0.78 * 0.65
     }
     # size <- delta[t-1]
@@ -229,31 +229,8 @@ for (iter in c(1:iterations)) {
     # in this function, we assume that if below the min temp threshold (9) no maturation occurs (slow maturation, large growth)
     # if above the max temp threshold (15), no one remains more than 1 timestep in each stage (fast maturation, small growth)
     
-    # # Probabilities of remaining in stages (when temps low, high prob of remaining)
+    # # Probabilities of remaining in stages (when temps low, high prob of remaining) - from REF 
     #development measures (basically, if below 10C, no development, if between 10 and 12, follows a function, if above 12, prob of transition to next stage is 0.6395)
-    # 
-    # if (5 > temps$Temperature[t-1]) {
-    #   G1 <- 0.32/((emergetime[t-1])/2)
-    #   G2 <- G1
-    #   P1 <- 0.32*(1-1/(emergetime[t-1]/2))
-    #   P2 <- P1
-    #   }
-    # 
-    # if (temps$Temperature[t-1] > 21){
-    #   G1 <- 0.32/((emergetime[t-1]/2))
-    #   G2 <- G1
-    #   P1 <- 0.32*(1-1/((emergetime[t-1]/2)))
-    #   P2 <- P1
-    #   }
-    # 
-    # 
-    # if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 21 & is.na(emergetime[t] == F)){
-    #   G1 <- 0.32/((emergetime[t-1])/2)
-    #   G2 <- G1
-    #   P1 <-0.32(1-(1/((emergetime[t-1])/2)))
-    #   P2 <- P1
-    # }
-
     
     if (temps$Temperature[t-1] < 10){
       G1 = 0
@@ -261,15 +238,15 @@ for (iter in c(1:iterations)) {
     }
     
     if (is.na(emergetime[t-1])== F){
-    G1 = (1/(emergetime[t-1]/2)) *TempSurvival[t-1]
-    G2 = (1/(emergetime[t-1]/2))*TempSurvival[t-1]
+    G1 = (0.95/(emergetime[t-1]/2)) *TempSurvival[t-1]
+    G2 = (0.99/(emergetime[t-1]/2))*TempSurvival[t-1]
     P1 = (1-(1/(emergetime[t-1]/2))) *TempSurvival[t-1]
     P2 = (1-(1/(emergetime[t-1]/2))) *TempSurvival[t-1]
     P3 = (1-(0.64))*TempSurvival[t-1] }#survival for last stage 
     
     if(is.na(emergetime[t-1])==T){
-      G1 = (1/( ((-0.233 * temps$Temperature[t-1]) + 11)/2)) *TempSurvival[t-1]
-      G2 = (1/( ((-0.233 * temps$Temperature[t-1]) + 11)/2))*TempSurvival[t-1]
+      G1 = (0.95/( ((-0.233 * temps$Temperature[t-1]) + 11)/2)) *TempSurvival[t-1]
+      G2 = (0.99/( ((-0.233 * temps$Temperature[t-1]) + 11)/2))*TempSurvival[t-1]
       P1 = (1-(1/( ((-0.233 * temps$Temperature[t-1]) + 11)/2))) *TempSurvival[t-1]
       P2 = (1-(1/( ((-0.233 * temps$Temperature[t-1]) + 11)/2))) *TempSurvival[t-1]
       P3 = (1-(0.64))*TempSurvival[t-1] }
@@ -305,10 +282,10 @@ for (iter in c(1:iterations)) {
     
     #------------------------------------------
     # Calculate immediate mortality due to temperature regime (outside of thermal optima)
-    output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] * TempSurvival[t-1]
-    output.N.list[t, 2, iter] <- output.N.list[t, 2, iter] * TempSurvival[t-1]
-    output.N.list[t, 3, iter] <- output.N.list[t, 3, iter] * TempSurvival[t-1]
-    #Calculate immediate mortality due to flows
+    # output.N.list[t, 1, iter] <- output.N.list[t, 1, iter] * TempSurvival[t-1]
+    # output.N.list[t, 2, iter] <- output.N.list[t, 2, iter] * TempSurvival[t-1]
+    # output.N.list[t, 3, iter] <- output.N.list[t, 3, iter] * TempSurvival[t-1]
+    # #Calculate immediate mortality due to flows
     # mortality due to flooding follows N0 = Nz*e^-hQ
     #s1
     output.N.list[t, 1, iter] <- flood.mortality(output.N.list[t, 1, iter], k, h, Q[t-1], Qmin)
