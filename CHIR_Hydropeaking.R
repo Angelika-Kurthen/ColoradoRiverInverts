@@ -30,7 +30,7 @@ means <- vector()
 sd <- vector()
 sizemeans <- vector()
 sizesd <- vector()
-Yrprod <- vector()
+S3Yrprod <- vector()
 # cycle though hydropeaking scenarios
 for (hyd in 1:length(hydropeak)){
   set.seed(123) # make reproducible
@@ -38,8 +38,7 @@ for (hyd in 1:length(hydropeak)){
   sizes <- CHIRmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.2, extinct = 50, iteration = 2, peaklist = hydropeak[hyd], peakeach = length(temps$Temperature), stage_output = "size")
   # model abundances
   out <- CHIRmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.2, extinct = 50, iteration = 2, peaklist = hydropeak[hyd], peakeach = length(temps$Temperature))
-  # for each stage, calculate mean biomass
-  s1s <- mean(out[-c(1:260), 1, ]) * (0.0018 * (mean(sizes[-c(1:260)]/2))^2.617)
+  s1s <- mean(out[-c(1:260), 1, ]) * (0.0018 * (mean((sizes[-c(1:260)])/2))^2.617)
   s2s <- mean(out[-c(1:260), 2,]) * (0.0018 * (mean(sizes[-c(1:260)]))^2.617)
   s3s <- mean(out[-c(1:260), 3,]) * (0.0018 * (mean(sizes[-c(1:260)]))^2.617)
   # sum the mean biomass of each stage to get mean timestep biomass
@@ -60,8 +59,10 @@ for (hyd in 1:length(hydropeak)){
   s3sYr <- aggregate(V1 ~ V2, data = s3ss, FUN = sum, na.rm = TRUE)
   
   # add all stages together to get average annual biomass (aka secondary production)
-  Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
+  #Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
   
+  # average annual biomass of only stage 3 (emergent adults)
+  S3Yrprod[hyd] <- mean(s3sYr$V1, na.rm = T)
   
   # calculate mean abundances at each timestep
   means.list.CHIR <- mean.data.frame(out, burnin = 260, iteration = 2)
@@ -78,48 +79,48 @@ CHIR_hyd_means <- as.data.frame(cbind(hydropeak, means, sd, rep("CHIR", length(m
 CHIR_hyd_size <- as.data.frame(cbind(hydropeak, sizemeans, sizesd, rep("CHIR", length(sizemeans))))
 
 # compile annual production biomass data
-CHIR_hyd_yrprod <- as.data.frame(cbind(hydropeak, Yrprod, rep("CHIR", length(sizemeans))))
+CHIR_hyd_yrprod <- as.data.frame(cbind(hydropeak, S3Yrprod, rep("CHIR", length(sizemeans))))
+# 
+# ggplot(data = CHIR_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "CHIR")) +
+#   geom_ribbon(aes(ymin = means - sd,
+#                   ymax = means + sd),
+#               colour = 'transparent',
+#               alpha = .15,
+#               show.legend = T) +
+#   geom_point(show.legend = T, linewidth = 1, alpha = 0.8) +
+#   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
+#   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
+#   #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
+#   ylab('CHIR spp. Abund.') +
+#   xlab("")+
+#   labs(colour=" ")+
+#   theme_bw()+
+#   scale_color_manual(values = colors)+
+#   #scale_y_continuous(
+#   # sec.axis = sec_axis(~., name="CHIRidae Larvae (inds/m2)"
+#   # ))+
+#   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), )
 
-ggplot(data = CHIR_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "CHIR")) +
-  geom_ribbon(aes(ymin = means - sd,
-                  ymax = means + sd),
-              colour = 'transparent',
-              alpha = .15,
-              show.legend = T) +
-  geom_point(show.legend = T, linewidth = 1, alpha = 0.8) +
-  #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
-  ylab('CHIR spp. Abund.') +
-  xlab("")+
-  labs(colour=" ")+
-  theme_bw()+
-  scale_color_manual(values = colors)+
-  #scale_y_continuous(
-  # sec.axis = sec_axis(~., name="CHIRidae Larvae (inds/m2)"
-  # ))+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), )
 
-
-ggplot(data = CHIR_hyd_size, aes(x = hydropeak,  y = sizemeans, group = 1, color = "CHIR")) +
-  geom_ribbon(aes(ymin = sizemeans - sizesd,
-                  ymax = sizemeans + sizesd),
-              colour = 'transparent',
-              alpha = .15,
-              show.legend = T) +
-  geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
-  ylab('CHIR spp. Biomass (mg)') +
-  xlab("")+
-  labs(colour=" ")+
-  theme_bw()+
-  scale_color_manual(values = colors)+
-  #scale_y_continuous(
-  # sec.axis = sec_axis(~., name="CHIRidae Larvae (inds/m2)"
-  # ))+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), )
-
+# ggplot(data = CHIR_hyd_size, aes(x = hydropeak,  y = sizemeans, group = 1, color = "CHIR")) +
+#   geom_ribbon(aes(ymin = sizemeans - sizesd,
+#                   ymax = sizemeans + sizesd),
+#               colour = 'transparent',
+#               alpha = .15,
+#               show.legend = T) +
+#   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
+#   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
+#   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
+#   #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
+#   ylab('CHIR spp. Biomass (mg)') +
+#   xlab("")+
+#   labs(colour=" ")+
+#   theme_bw()+
+#   scale_color_manual(values = colors)+
+#   #scale_y_continuous(
+#   # sec.axis = sec_axis(~., name="CHIRidae Larvae (inds/m2)"
+#   # ))+
+#   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), )
+# 

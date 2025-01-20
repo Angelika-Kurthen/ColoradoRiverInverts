@@ -37,29 +37,31 @@ for (hyd in 1:length(hydropeak)){
 
   # model abundances (size structured)
   out <- GAMMmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.25, extinct = 50, iteration = 2, peaklist = hydropeak[hyd], peakeach = length(temps$Temperature))
-  # for each stage, calculate mean biomass
+  # for each stage, calculate mean biomass from Berezina
   s1s <- mean(out[-c(1:260), 1, ]) * (0.063 * mean(c(2.5, 7))^2.46)
   s2s <- mean(out[-c(1:260), 2,]) * (0.063 * mean(c(7, 9))^2.46)
   s3s <- mean(out[-c(1:260), 3,]) * (0.063 * mean(c(9, 12))^2.46)
-  # sum the mean biomass of each stage to get mean timestep biomass
-  sizemeans[hyd] <- sum(c(s1s, s2s, s3s))
+  # average the mean biomass of each stage to get mean timestep biomass
+  sizemeans[hyd] <- mean(c(s1s, s2s, s3s))
   # produce standard devation
   sizesd[hyd] <- sd(c(s1s, s2s, s3s))
   
   # now instead of getting the mean, calculate biomass at every timestep
-  s1ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 1, ]) * (0.063 * mean(c(2.5, 7))^2.46), year(temps$dts[-c(1:259)])))
-  s2ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 2, ]) * (0.063 * mean(c(7, 9))^2.46), year(temps$dts[-c(1:259)])))
-  s3ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 3, ]) * (0.063 * mean(c(9, 12))^2.46), year(temps$dts[-c(1:259)])))
-  
+  # s1ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 1, ]) * (0.063 * mean(c(2.5, 7))^2.46), year(temps$dts[-c(1:259)])))
+  # s2ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 2, ]) * (0.063 * mean(c(7, 9))^2.46), year(temps$dts[-c(1:259)])))
+  # s3ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 3, ]) * (0.063 * mean(c(9, 12))^2.46), year(temps$dts[-c(1:259)])))
+  # 
   
   # find annual stage specific biomass based on year
-  s1sYr <- aggregate(V1 ~ V2, data = s1ss, FUN = sum, na.rm = TRUE)
-  s2sYr <- aggregate(V1 ~ V2, data = s2ss, FUN = sum, na.rm = TRUE)
-  s3sYr <- aggregate(V1 ~ V2, data = s3ss, FUN = sum, na.rm = TRUE)
+  # s1sYr <- aggregate(V1 ~ V2, data = s1ss, FUN = sum, na.rm = TRUE)
+  # s2sYr <- aggregate(V1 ~ V2, data = s2ss, FUN = sum, na.rm = TRUE)
+  # s3sYr <- aggregate(V1 ~ V2, data = s3ss, FUN = sum, na.rm = TRUE)
+  # 
+  # # add all stages together to get average annual biomass (aka secondary production)
+  # Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
   
-  # add all stages together to get average annual biomass (aka secondary production)
-  Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
-  
+  # no emerging biomass
+  S3Yrprod[hyd] <- 0
   
   # calculate mean abundances at each timestep
   means.list.GAMM <- mean.data.frame(out, burnin = 260, iteration = 2)
@@ -76,48 +78,48 @@ GAMM_hyd_means <- as.data.frame(cbind(hydropeak, means, sd, rep("GAMM", length(m
 GAMM_hyd_size <- as.data.frame(cbind(hydropeak, sizemeans, sizesd, rep("GAMM", length(sizemeans))))
 
 # compile annual biomass data
-GAMM_hyd_yrprod <- as.data.frame(cbind(hydropeak, Yrprod, rep("GAMM", length(sizemeans))))
+GAMM_hyd_yrprod <- as.data.frame(cbind(hydropeak, S3Yrprod, rep("GAMM", length(sizemeans))))
 
-ggplot(data = GAMM_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "GAMM")) +
-  geom_ribbon(aes(ymin = means - sd,
-                  ymax = means + sd),
-              colour = 'transparent',
-              alpha = .15,
-              show.legend = T) +
-  geom_point(show.legend = T, linewidth = 1, alpha = 0.8) +
-  #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
-  ylab('GAMM spp. Abund.') +
-  xlab("")+
-  labs(colour=" ")+
-  theme_bw()+
-  scale_color_manual(values = colors)+
-  #scale_y_continuous(
-  # sec.axis = sec_axis(~., name="GAMMidae Larvae (inds/m2)"
-  # ))+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), )
-
-
-ggplot(data = GAMM_hyd_size, aes(x = hydropeak,  y = sizemeans, group = 1, color = "GAMM")) +
-  geom_ribbon(aes(ymin = sizemeans - sizesd,
-                  ymax = sizemeans + sizesd),
-              colour = 'transparent',
-              alpha = .15,
-              show.legend = T) +
-  geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
-  ylab('GAMM spp. Biomass (mg)') +
-  xlab("")+
-  labs(colour=" ")+
-  theme_bw()+
-  scale_color_manual(values = colors)+
-  #scale_y_continuous(
-  # sec.axis = sec_axis(~., name="GAMMidae Larvae (inds/m2)"
-  # ))+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), )
-
+# ggplot(data = GAMM_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "GAMM")) +
+#   geom_ribbon(aes(ymin = means - sd,
+#                   ymax = means + sd),
+#               colour = 'transparent',
+#               alpha = .15,
+#               show.legend = T) +
+#   geom_point(show.legend = T, linewidth = 1, alpha = 0.8) +
+#   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
+#   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
+#   #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
+#   ylab('GAMM spp. Abund.') +
+#   xlab("")+
+#   labs(colour=" ")+
+#   theme_bw()+
+#   scale_color_manual(values = colors)+
+#   #scale_y_continuous(
+#   # sec.axis = sec_axis(~., name="GAMMidae Larvae (inds/m2)"
+#   # ))+
+#   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), )
+# 
+# 
+# ggplot(data = GAMM_hyd_size, aes(x = hydropeak,  y = sizemeans, group = 1, color = "GAMM")) +
+#   geom_ribbon(aes(ymin = sizemeans - sizesd,
+#                   ymax = sizemeans + sizesd),
+#               colour = 'transparent',
+#               alpha = .15,
+#               show.legend = T) +
+#   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
+#   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
+#   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
+#   #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
+#   ylab('GAMM spp. Biomass (mg)') +
+#   xlab("")+
+#   labs(colour=" ")+
+#   theme_bw()+
+#   scale_color_manual(values = colors)+
+#   #scale_y_continuous(
+#   # sec.axis = sec_axis(~., name="GAMMidae Larvae (inds/m2)"
+#   # ))+
+#   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), )
+# 

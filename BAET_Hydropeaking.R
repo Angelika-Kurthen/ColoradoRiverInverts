@@ -31,7 +31,7 @@ means <- vector()
 sd <- vector()
 sizemeans <- vector()
 sizesd <- vector()
-Yrprod <- vector()
+S3Yrprod <- vector()
 
 # cycle though hydropeaking scenarios
 for (hyd in 1:length(hydropeak)){
@@ -60,7 +60,10 @@ for (hyd in 1:length(hydropeak)){
   s3sYr <- aggregate(V1 ~ V2, data = s3ss, FUN = sum, na.rm = TRUE)
   
   # add all stages together to get average annual biomass (aka secondary production)
-  Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
+  #Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
+  
+  # average annual biomass of only stage 3 (emergent adults)
+  S3Yrprod[hyd] <- mean( s3sYr$V1, na.rm = T)
   
   # calculate mean abundances at each timestep
   means.list.BAET <- mean.data.frame(out, burnin = 260, iteration = 2)
@@ -75,7 +78,7 @@ BAET_hyd_means <- as.data.frame(cbind(hydropeak, means, sd, rep("BAET", length(m
 # compile timeseries biomass data
 BAET_hyd_size <- as.data.frame(cbind(hydropeak, sizemeans, sizesd, rep("BAET", length(sizemeans))))
 # compile annual biomass data
-BAET_hyd_yrprod <- as.data.frame(cbind(hydropeak, Yrprod, rep("BAET", length(sizemeans))))
+BAET_hyd_yrprod <- as.data.frame(cbind(hydropeak, S3Yrprod, rep("BAET", length(sizemeans))))
 
 
 # ggplot(data = BAET_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "BAET")) +

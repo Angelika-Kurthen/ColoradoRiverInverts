@@ -29,7 +29,7 @@ means <- vector()
 sd <- vector()
 sizemeans <- vector()
 sizesd <- vector()
-Yrprod <- vector()
+S3Yrprod <- vector()
 
 # cycle though hydropeaking scenarios
 for (hyd in 1:length(hydropeak)){
@@ -51,15 +51,19 @@ for (hyd in 1:length(hydropeak)){
   s1ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 1, ]) * (0.0046 * ((sizes[-c(1:260)]))^2.926), year(temps$dts[-c(1:259)])))
   s2ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 2, ]) * (0.0046 * ((sizes[-c(1:260)]+3))^2.926), year(temps$dts[-c(1:259)])))
   s3ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 3, ]) * (0.0046 * ((sizes[-c(1:260)]+3))^2.926), year(temps$dts[-c(1:259)])))
-  
-  
+
+  # 
   # find annual stage specific biomass based on year
   s1sYr <- aggregate(V1 ~ V2, data = s1ss, FUN = sum, na.rm = TRUE)
   s2sYr <- aggregate(V1 ~ V2, data = s2ss, FUN = sum, na.rm = TRUE)
   s3sYr <- aggregate(V1 ~ V2, data = s3ss, FUN = sum, na.rm = TRUE)
 
   # add all stages together to get average annual biomass (aka secondary production)
-  Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
+  #Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
+  
+  # average annual biomass of only stage 3 (emergent adults)
+  S3Yrprod[hyd] <- mean( s3sYr$V1, na.rm = T)
+  
   # calculate mean abundances at each timestep
   means.list.HYOS <- mean.data.frame(out, burnin = 260, iteration = 2)
   # calculate the average of mean abundances at each hydropeaking intensity
@@ -74,49 +78,49 @@ HYOS_hyd_means <- as.data.frame(cbind(hydropeak, means, sd, rep("HYOS", length(m
 HYOS_hyd_size <- as.data.frame(cbind(hydropeak, sizemeans, sizesd, rep("HYOS", length(sizemeans))))
 
 # compile timeseries biomass data
-HYOS_hyd_yrprod <- as.data.frame(cbind(hydropeak, Yrprod, rep("HYOS", length(sizemeans))))
+HYOS_hyd_yrprod <- as.data.frame(cbind(hydropeak, S3Yrprod, rep("HYOS", length(sizemeans))))
 
-
-ggplot(data = HYOS_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "HYOS")) +
-  geom_ribbon(aes(ymin = means - sd,
-                  ymax = means + sd),
-              colour = 'transparent',
-              alpha = .15,
-              show.legend = T) +
-  geom_point(show.legend = T, linewidth = 1, alpha = 0.8) +
-  #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
-  ylab('HYOS spp. Abund.') +
-  xlab("")+
-  labs(colour=" ")+
-  theme_bw()+
-  scale_color_manual(values = colors)+
-  #scale_y_continuous(
-  # sec.axis = sec_axis(~., name="HYOSidae Larvae (inds/m2)"
-  # ))+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), )
-
-
-ggplot(data = HYOS_hyd_size, aes(x = hydropeak,  y = sizemeans, group = 1, color = "HYOS")) +
-  geom_ribbon(aes(ymin = sizemeans - sizesd,
-                  ymax = sizemeans + sizesd),
-              colour = 'transparent',
-              alpha = .15,
-              show.legend = T) +
-  geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
-  ylab('HYOS spp. Biomass (mg)') +
-  xlab("")+
-  labs(colour=" ")+
-  theme_bw()+
-  scale_color_manual(values = colors)+
-  #scale_y_continuous(
-  # sec.axis = sec_axis(~., name="HYOSidae Larvae (inds/m2)"
-  # ))+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), )
-
+# 
+# ggplot(data = HYOS_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "HYOS")) +
+#   geom_ribbon(aes(ymin = means - sd,
+#                   ymax = means + sd),
+#               colour = 'transparent',
+#               alpha = .15,
+#               show.legend = T) +
+#   geom_point(show.legend = T, linewidth = 1, alpha = 0.8) +
+#   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
+#   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
+#   #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
+#   ylab('HYOS spp. Abund.') +
+#   xlab("")+
+#   labs(colour=" ")+
+#   theme_bw()+
+#   scale_color_manual(values = colors)+
+#   #scale_y_continuous(
+#   # sec.axis = sec_axis(~., name="HYOSidae Larvae (inds/m2)"
+#   # ))+
+#   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), )
+# 
+# 
+# ggplot(data = HYOS_hyd_size, aes(x = hydropeak,  y = sizemeans, group = 1, color = "HYOS")) +
+#   geom_ribbon(aes(ymin = sizemeans - sizesd,
+#                   ymax = sizemeans + sizesd),
+#               colour = 'transparent',
+#               alpha = .15,
+#               show.legend = T) +
+#   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
+#   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
+#   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
+#   #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
+#   ylab('HYOS spp. Biomass (mg)') +
+#   xlab("")+
+#   labs(colour=" ")+
+#   theme_bw()+
+#   scale_color_manual(values = colors)+
+#   #scale_y_continuous(
+#   # sec.axis = sec_axis(~., name="HYOSidae Larvae (inds/m2)"
+#   # ))+
+#   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), )
+# 
