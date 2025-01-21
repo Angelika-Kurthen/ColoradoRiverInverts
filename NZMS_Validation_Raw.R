@@ -23,14 +23,14 @@ temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 temps <- TimestepTemperature(temp)
 
 set.seed(333)
-out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 2000, baselineK = 5000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- NZMSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 9000, baselineK = 5000, Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 
 # adults<-as.data.frame(cbind(as.Date(temps$dts), out[1:length(temps$dts),2:3,1]))
 # colnames(adults) <- c("Time","Adult")
 # adults$Time <- as.Date(adults$Time, origin = "1970-01-01")
 
-means.list.NZMS <- mean.data.frame(out,burnin = 50, iteration= 9)
+means.list.NZMS <- mean.data.frame(out,burnin = 50, iteration= 1000)
 means.list.NZMS <- cbind(means.list.NZMS, temps$dts[1:length(means.list.NZMS$timesteps)])
 means.list.NZMS$`temps$dts` <- as.Date(means.list.NZMS$`temps$dts`)
 # plot abundance over time
