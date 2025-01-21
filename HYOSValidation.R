@@ -51,7 +51,7 @@ discharge <- full_join(discharge, all_dates)
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 
 set.seed(111)
-out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.3, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- HYOSmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
 
 drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = F)
 
@@ -85,7 +85,7 @@ means[length(temps$dts)] <- HYOS.samp$x[length(HYOS.samp$x)]
 # means.list.HYOS <- cbind(means.list.HYOS, temps$dts[286:last(means.list.HYOS$timesteps)])
 # means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 
-means.list.HYOS <- rowSums(out[,3,])/9
+means.list.HYOS <- rowSums(out[,3,])/999
 means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[200:530], temps$dts[199:529]))
 colnames(means.list.HYOS) <- c("mean.abund", "Date")
 means.list.HYOS$Date <- as.Date(as.POSIXct(means.list.HYOS$Date, origin = "1970-01-01"))
@@ -143,7 +143,7 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
   stat_smooth(method = "lm",
               formula = y ~ x,
               geom = "smooth")+
-  geom_text(x = 3, y = 300, label = "y = 7.77e-11x, R^2 = 0.22")+
+  geom_text(x = 3, y = 300, label = "")+
   labs(y = "Hydropsychidae Model Output", x = "Hydropsychidae Empirical Data")
 
 #cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
