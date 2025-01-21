@@ -9,9 +9,7 @@ library(dataRetrieval)
 library(devtools)
 library(foodbase)
 library(lubridate)
-library(AICcmodavg)
-library(unmarked)
-library(ubms)
+
 
 library(purrr)
 library(tidyverse)
@@ -61,9 +59,9 @@ means$V2 <- as.Date(means$V2, origin = "1970-01-01")
 #acf(na.omit(means$means))
 
 set.seed(111)
-out <- GAMMmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 9, peaklist = 0.17, peakeach = length(temps$Temperature))
+out <- GAMMmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
 
-means.list.GAMM <- rowSums(out[, 1:3, ])/9
+means.list.GAMM <- rowSums(out[, 1:3, ])/1000
 means.list.GAMM <- as.data.frame(cbind(means.list.GAMM[1:404], temps$dts))
 colnames(means.list.GAMM) <- c("mean.abund", "Date")
 means.list.GAMM$Date <- as.Date(as.POSIXct(means.list.GAMM$Date, origin = "1970-01-01"))
