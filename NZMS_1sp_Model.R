@@ -118,8 +118,8 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
     
     K = Kb # need to reset K for each iteration
     # we can pull random values  
-    output.N.list[1,1:3, iter]<- rnbinom(3, size = 6020.175, mu = 35.11555 )/3
-    
+    #output.N.list[1,1:3, iter]<- rnbinom(3, size = 6020.175, mu = 35.11555 )/3
+    output.N.list[1,1:3, iter] <- runif(3, min = 1, max = (0.3*K))
     # we often want to look at different parameter values after we run code, so we create some lists
     # list to input Ks
     Klist <- vector()
@@ -208,8 +208,8 @@ NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extin
       stageduration1 <- timestep_to_mat(temps$Temperature[t-1])[[1]]
       stageduration2 <- timestep_to_mat(temps$Temperature[t-1])[[2]]
       
-      G1 = (0.9/stageduration1) *TempSurvival[t-1]
-      G2 = (0.9/stageduration2)*TempSurvival[t-1]
+      G1 = (0.91/stageduration1) *TempSurvival[t-1]
+      G2 = (0.91/stageduration2)*TempSurvival[t-1]
       P1 = (1-(1/stageduration1)) *TempSurvival[t-1]
       P2 = (1-(1/stageduration2)) *TempSurvival[t-1]
       P3 = (1-(1/7))*TempSurvival[t-1]
