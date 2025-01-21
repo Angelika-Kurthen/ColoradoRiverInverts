@@ -30,7 +30,7 @@ means <- vector()
 sd <- vector()
 sizemeans <- vector()
 sizesd <- vector()
-Yrprod <- vector()
+S3Yrprod <- vector()
 # cycle though hydropeaking scenarios
 for (hyd in 1:length(hydropeak)){
 set.seed(123) # make reproducible
