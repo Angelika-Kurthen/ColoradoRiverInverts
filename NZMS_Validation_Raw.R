@@ -94,14 +94,14 @@ rho3 <- cor.test((cor.df3$V2+1), (cor.df3$mean.abund+1), method = "spearman")
 rho <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate))
 sd <- sd(c(rho1$estimate, rho2$estimate, rho3$estimate))
 
-summary(cor.df)
-ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
-  geom_point()+
-  stat_smooth(method = "lm",
-              formula = y ~ x,
-              geom = "smooth")+
-  geom_text(x = 3e+05, y = 6100, label = "y = 0.0047x, R^2 = 0.05")+
-  labs(y = "NZMS Model Output", x = "NZMS Emprical Data")
+# summary(cor.df)
+# ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
+#   geom_point()+
+#   stat_smooth(method = "lm",
+#               formula = y ~ x,
+#               geom = "smooth")+
+#   geom_text(x = 3e+05, y = 6100, label = "")+
+#   labs(y = "NZMS Model Output", x = "NZMS Emprical Data")
 
 colors <- c("#4477AA", "black")
 linetypes <- c("solid", "twodash")
