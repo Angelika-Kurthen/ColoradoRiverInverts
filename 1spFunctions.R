@@ -221,26 +221,26 @@ flood.mortality <- function(N, k, h, Q, Qmin){
 }
 
 #function to  code into mean population abundance over iterations
-mean.data.frame <- function(data, burnin, iteration){
+mean.data.frame <- function(data, burnin, iteration, stages = 'all'){
   repdf <- plyr::adply(data, c(1,2,3))
   #repdf <- plyr::adply(data, c(1,2))
   names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
   repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
-  
+
   # totn <- plyr::adply(Total.N, c(1,2))
   # names(totmesteps <- as.numeric(as.character(totn$timesteps))n) <- c('timesteps', 'rep', 'tot.abund')
   # totn$ti
-  
+
   # joining totn and repdf together
   # repdf <- dplyr::left_join(totn, repdf)
-  
+
   ## calculating relative abundance
   # repdf <- mutate(repdf, rel.abund = abund/tot.abund)
   repdf$timesteps <- as.factor(repdf$timesteps)
   ## Taking mean results to cf w/ observed data'
-  
-  means.list<- repdf %>%
-    # select(-tot.abund) %>%
+  if (stages == "all"){
+    print("all")
+    means.list<- repdf %>%
     dplyr::group_by(timesteps, rep) %>% # combining stages
     dplyr::summarise(abund = sum(abund)) %>%
     ungroup() %>%
@@ -249,12 +249,74 @@ mean.data.frame <- function(data, burnin, iteration){
                      sd.abund = sd(abund),
                      se.abund = sd(abund)/sqrt(iteration)) %>%
     ungroup()
-  
-  if (is.null(burnin)== F){
-    means.list <- means.list[burnin:length(means.list$timesteps), ]
   }
+
+  if (stages == "3") {
+    repdf <- subset(repdf, stage == "S1")
+    print(head(repdf))  # Debug subset
+    means.list <- repdf %>%
+      dplyr::group_by(timesteps) %>%
+      dplyr::summarise(mean.abund = mean(abund),
+                       sd.abund = sd(abund),
+                       se.abund = sd(abund) / sqrt(iteration)) %>%
+      ungroup()  }
+
+  if (stages == "2:3"){
+    print("2:3")
+    repdf <- subset(repdf, stage == "S3" | stage == "S2")
+    means.list<- repdf %>%
+      # select(-tot.abund) %>%
+      dplyr::group_by(timesteps, rep) %>% # combining stages
+      dplyr::summarise(abund = sum(abund)) %>%
+      ungroup() %>%
+      dplyr::group_by(timesteps) %>%
+      dplyr::summarise(mean.abund = mean(abund),
+                       sd.abund = sd(abund),
+                       se.abund = sd(abund)/sqrt(iteration)) %>%
+      ungroup()
+  }
+
+  if (stages == "1:2"){
+    repdf <- subset(repdf, stage == "S1" | stage == "S2")
+    print("1:2")
+    means.list<- repdf %>%
+      # select(-tot.abund) %>%
+      dplyr::group_by(timesteps, rep) %>% # combining stages
+      dplyr::summarise(abund = sum(abund)) %>%
+      ungroup() %>%
+      dplyr::group_by(timesteps) %>%
+      dplyr::summarise(mean.abund = mean(abund),
+                       sd.abund = sd(abund),
+                       se.abund = sd(abund)/sqrt(iteration)) %>%
+      ungroup()
+  }
+
+  if (stages == "2"){
+    repdf <- subset(repdf, stage == "S2")
+    print("2")
+    means.list<- repdf %>%
+      dplyr::group_by(timesteps) %>%
+      dplyr::summarise(mean.abund = mean(abund),
+                       sd.abund = sd(abund),
+                       se.abund = sd(abund)/sqrt(iteration)) %>%
+      ungroup()
+  }
+  if (stages == "1"){
+    repdf <- subset(repdf, stage == "S1")
+    print("1")
+    means.list<- repdf %>%
+      dplyr::group_by(timesteps) %>%
+      dplyr::summarise(mean.abund = mean(abund),
+                       sd.abund = sd(abund),
+                       se.abund = sd(abund)/sqrt(iteration)) %>%
+      ungroup()
+  }
+  # if (is.null(burnin)== F){
+  #   means.list <- means.list[burnin:length(means.list$timesteps), ]
+  # }
   return(means.list)
 }
+
 
 # want to make a function to find the yearly average time series of a set of flows
 average.yearly.flows <- function(flowdata, flow.column_name, date.column_name){
