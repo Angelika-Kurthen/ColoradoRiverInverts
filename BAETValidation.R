@@ -57,14 +57,10 @@ means.list.BAET$`temps$dts` <- as.Date(means.list.BAET$`temps$dts`)
 BAET.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.BAET$`temps$dts`), means[200:340])))
 BAET.samp.sum$V1 <- as.Date(BAET.samp.sum$V1, origin = "1970-01-01")
 
-#BAET.samp.sum <- BAET.samp.sum[which(BAET.samp.sum$V1 %in% sample(BAET.samp.sum$V1, size = 30)),]
 
 cor.df <- left_join(BAET.samp.sum, means.list.BAET, by=c('V1'="temps$dts"), copy = T)
 
-# checking for temporal autocorrelation
-#acf(cor.df$V2) #none
 
-#cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 rho <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 colors <- c("#66CCEE", "black")
@@ -77,21 +73,29 @@ linetypes <- c("solid", "twodash")
 #   geom_text(x = 1000, y = 3250, label = " ")+
 #   labs(y = "Baetidae Model Output", x = "Baetidae Emprical Data")
 
+
+
+rmse.baet<- sqrt(mean((cor.df$V2 - cor.df$mean.abund)^2))
+
+rmse.baet.scale <- sqrt(mean((scale(cor.df$V2) - scale(cor.df$mean.abund))^2))
+# coverage 
+coverage <- mean(scale(cor.df$V2) >= (scale(cor.df$mean.abund) - (1.96*rmse.baet.scale)) & scale(cor.df$V2) <= (scale(cor.df$mean.abund) + (1.96*rmse.baet.scale)))
+
 BAETts <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
-  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                 ymax = mean.abund + 1.96 * se.abund),
-  #             colour = 'transparent',
-  #             alpha = .15,
-  #             show.legend = T) +
+  geom_ribbon(aes(ymin = scale(mean.abund) - 1.96 * rmse.baet.scale,
+                  ymax = scale(mean.abund) + 1.96 * rmse.baet.scale),
+              colour = 'transparent',
+              fill = "black",
+              alpha = .1,
+              show.legend = F) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
   geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Empirical", linetype = "Empirical"), linewidth = 1,  show.legend = T, alpha = 0.8)+
-  #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,6000)) +S1 and S2 (inds/m2)
   labs(y=expression(paste(italic("Baetidae spp."), " Abund.")))+
-  geom_text(mapping = aes(x = as.Date("1999-01-01"), y =5, label = paste('rho', "==", 0.66)), parse = T, color = "black", size = 4.5)+
-  xlab("")+
-  ylim(c(-3,7))+
+  geom_text(mapping = aes(x = as.Date("1998-11-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("1998-11-01"), y =5.5, label = paste("C = 89%")), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("1998-11-01"), y =6, label = paste("Scaled RMSE = 0.96")), color = "black", size = 4.5)+
+    xlab("")+
+  ylim(c(-4,7))+
   labs(colour=" ")+
   theme_bw()+
   scale_color_manual(values = colors)+

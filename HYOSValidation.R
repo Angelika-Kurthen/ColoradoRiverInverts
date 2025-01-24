@@ -80,20 +80,28 @@ for (i in 1:length(temps$dts)){
 }
 means[length(temps$dts)] <- HYOS.samp$x[length(HYOS.samp$x)]
 
+repdf <- plyr::adply(out, c(1,2,3))
+names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
+repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
+repdf$timesteps <- as.factor(repdf$timesteps)
+repdfhyos <- subset(repdf,stage == "S3")
+means.list.HYOS<- repdfhyos %>%
+  dplyr::group_by(timesteps) %>%
+  dplyr::summarise(mean.abund = mean(abund),
+                   sd.abund = sd(abund),
+                   se.abund = sd(abund)/sqrt(1000)) %>%
+  ungroup()
 
-# means.list.HYOS <- mean.data.frame(out, burnin = 286, iteration= 9)
-# means.list.HYOS <- cbind(means.list.HYOS, temps$dts[286:last(means.list.HYOS$timesteps)])
-# means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
 
-means.list.HYOS <- rowSums(out[,3,])/999
-means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[200:530], temps$dts[199:529]))
-colnames(means.list.HYOS) <- c("mean.abund", "Date")
+
+means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[200:530,], temps$dts[199:529]))
+colnames(means.list.HYOS) <- c("timesteps", "mean.abund", "sd.abund", "se.abund", "Date")
 means.list.HYOS$Date <- as.Date(as.POSIXct(means.list.HYOS$Date, origin = "1970-01-01"))
 
 
 HYOS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.HYOS$Date), means[200:530])))
 HYOS.samp.sum$V1 <- as.Date(HYOS.samp.sum$V1, origin = "1970-01-01")
-HYOS.samp.sum <- HYOS.samp.sum[which(HYOS.samp.sum$V1 < "2022-01-01"),]
+#HYOS.samp.sum <- HYOS.samp.sum[which(HYOS.samp.sum$V1 < "2022-01-01"),]
 
 #test for temporal autocorrelation
 #acf(na.omit(means)) # we have some
@@ -105,7 +113,7 @@ HYOS.samp.sum3 <- HYOS.samp.sum %>%  slice(which(row_number() %% 5 == 2))
 HYOS.samp.sum4 <- HYOS.samp.sum %>%  slice(which(row_number() %% 5 == 3))
 HYOS.samp.sum5 <- HYOS.samp.sum %>%  slice(which(row_number() %% 5 == 4))
 
-# cor.df <- left_join(HYOS.samp.sum, means.list.HYOS, by=c('V1'="Date"), copy = T)
+cor.df <- left_join(HYOS.samp.sum, means.list.HYOS, by=c('V1'="Date"), copy = T)
 # cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 # 
 # summary(cor.lm)
@@ -137,15 +145,15 @@ rho5 <- cor.test((cor.df5$V2), (cor.df5$mean.abund), method = "spearman")
 
 rho <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate, rho4$estimate, rho5$estimate))
 sd <- sd(c(rho1$estimate, rho2$estimate, rho3$estimate))
-
-ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
-  geom_point()+
-  stat_smooth(method = "lm",
-              formula = y ~ x,
-              geom = "smooth")+
-  geom_text(x = 3, y = 300, label = "")+
-  labs(y = "Hydropsychidae Model Output", x = "Hydropsychidae Empirical Data")
-
+# 
+# ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
+#   geom_point()+
+#   stat_smooth(method = "lm",
+#               formula = y ~ x,
+#               geom = "smooth")+
+#   geom_text(x = 3, y = 300, label = "")+
+#   labs(y = "Hydropsychidae Model Output", x = "Hydropsychidae Empirical Data")
+# 
 #cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 
@@ -154,19 +162,28 @@ ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
 colors <- c("#AA3377", "black" )
 linetypes <- c("solid", "twodash")
 
-HYOSts <- ggplot(data = means.list.HYOS[-c(250:331),], aes(x = Date, y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
-  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                 ymax = mean.abund + 1.96 * se.abund),
-  #             colour = 'transparent',
-  # alpha = .15,
-  # show.legend = T) +
+rmse.hyos <- sqrt(mean((cor.df$V2 - cor.df$mean.abund)^2))
+
+rmse.hyos.scale <- sqrt(mean((scale(cor.df$V2) - scale(cor.df$mean.abund))^2))
+coverage <- mean(scale(cor.df$V2) >= (scale(cor.df$mean.abund) - (1.96*rmse.hyos.scale)) & scale(cor.df$V2) <= (scale(cor.df$mean.abund) + (1.96*rmse.hyos.scale)))
+
+HYOSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
+  geom_ribbon(aes(ymin = scale(mean.abund) - (1.96 * rmse.hyos.scale),
+                  ymax = scale(mean.abund) + (1.96 * rmse.hyos.scale)), 
+  alpha = .1,
+  fill = "black",
+  color = "transparent",
+  show.legend = F) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data =HYOS.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Empirical", linetype = "Empirical"), linewidth = 1, alpha = 0.8,show.legend = T)+
+  geom_line(data =cor.df, aes(x = V1, y = scale(V2), color = "Empirical", linetype = "Empirical"), linewidth = 1, alpha = 0.8,show.legend = T)+
   # geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = Discharge), color = "blue") +
   # geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*0.1), color = "green")+
   # #coord_cartesian(ylim = c(0,2000000)) +
   labs(y=expression(paste(italic("Hydropsyche spp."), " Abund.")))+
-  geom_text(mapping = aes(x = as.Date("2020-01-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2020-01-01"), y =5, label = paste('rho', "==", 0.69)), parse = T, color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2020-01-01"), y =5.5, label = paste('C = 93%')), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2020-01-01"), y =6, label = paste('Scaled RMSE = 1.19')), color = "black", size = 4.5)+
+  
   scale_linetype_manual(values = linetypes)+
   #scale_y_continuous(
     # Features of the first axis
@@ -174,10 +191,10 @@ HYOSts <- ggplot(data = means.list.HYOS[-c(250:331),], aes(x = Date, y = scale(m
   #   sec.axis = sec_axis(~., name="Hydropsychidae Adults (ind/hour)")
   # ) + 
   xlab(" ")+
-  ylim(c(-3,7))+
+  #ylim(c(-3,7))+
   labs(colour=" ")+
   theme_bw()+
-  guides(linetype=guide_legend(" "), color = "none")+
+  guides(linetype=guide_legend(" "), color = "none", fill = "none")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")+
@@ -239,7 +256,7 @@ df <- cbind.data.frame(temps$dts, means)
 df <- df[!is.na(df$means), ]
 # phenology may also play into dynamics, so include month column as well
 #month <- month(HYOS.samp$Date)
-install.packages("aspace")
+#install.packages("aspace")
 library(aspace)
 df$circdate <- sin(as_radians((lubridate::yday(df$`temps$dts`)/365)*360))
 
@@ -257,8 +274,8 @@ flows <- vector()
 temperature <- vector()
 time <- matrix(data = NA, nrow = R, ncol = J)
 windspeed <- matrix(data = NA, nrow = R, ncol = J)
-habitat <- matrix(data = NA, nrow = R, ncol = J)
-weather <- matrix(data = NA, nrow = R, ncol = J)
+# habitat <- matrix(data = NA, nrow = R, ncol = J)
+# weather <- matrix(data = NA, nrow = R, ncol = J)
 for (i in 1:length(temps$dts)){
   d <- HYOS.samp[which(HYOS.samp$Date >= temps$dts[i] & HYOS.samp$Date < temps$dts[i+1]), ]
   flows[i] <- mean(d$`flow.magnitude$Discharge[HYOS.samp$vals]`)
@@ -266,9 +283,9 @@ for (i in 1:length(temps$dts)){
   temperature[i] <- mean(d$`temps$Temperature[HYOS.samp$vals]`)
   windspeed[i, ] <- c(d$WindSpeed, rep(NA, times = (J- length(d$CountTotal))))
   site_mat[i, ] <- c(d$CountTotal, rep(NA, times = (J- length(d$CountTotal))))
-  habitat[i, ] <- c(d$Habitat, rep(NA, times = (J- length(d$CountTotal))))
+  # habitat[i, ] <- c(d$Habitat, rep(NA, times = (J- length(d$CountTotal))))
   time[i, ] <- c(d$TimeElapsed,rep(NA, times = (J- length(d$CountTotal))))
-  weather[i, ] <- c(d$Weather, rep(NA, times = (J- length(d$CountTotal))))
+  # weather[i, ] <- c(d$Weather, rep(NA, times = (J- length(d$CountTotal))))
 }
 
 # we need to remove all timesteps that are just NAs
@@ -283,22 +300,21 @@ temperature <- as.data.frame(scale(temperature[-nodata])) # site cov temp
 circdate <- as.data.frame(df$circdate)
 windspeed <- as.matrix((scale(windspeed[-nodata,])))
 windspeed[is.na(windspeed)] <- mean(windspeed, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
-habitat <- as.matrix(habitat[-nodata,])
+# habitat <- as.matrix(habitat[-nodata,])
 Mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
 }
 habitat[is.na(habitat)] <- Mode(na.omit(habitat)) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
-weather <- as.matrix(weather[-nodata,])
-weather[is.na(weather)] <- Mode(na.omit(weather))
+# weather <- as.matrix(weather[-nodata,])
+# weather[is.na(weather)] <- Mode(na.omit(weather))
 
 site_intercept <- rep(1, times = length(flows$V1)) 
-site_covs<- as.matrix(cbind(site_intercept, temperature)) #flows,temperature, circdate)
-obs_covs <- array(data= NA, dim = c(length(flows$V1),J,2))
+site_covs<- as.matrix(cbind(site_intercept, flows, circdate)) #flows,temperature, circdate)
+obs_covs <- array(data= NA, dim = c(length(flows$V1),J,1))
 obs_covs[,,1] <- obs_intercept                                  
-obs_covs[,,2] <- windspeed
-#obs_covs[,,3] <- windspeed
-#obs_covs[,,4] <- habitat
+#obs_covs[,,2] <- windspeed
+
 #offset
 offset <- as.matrix(scale(log(time[-nodata, ])))
 offset[is.na(offset)] <- mean(offset, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
@@ -378,48 +394,66 @@ Nmix_fit_UI1 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to
 #
 print(Nmix_fit_UI1)
 
-zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp" , "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
 
 
 lam <- MCMCpstr(zm, "lambda")
-N <- MCMCpstr(zm, "N")
-N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+# N <- MCMCpstr(zm, "N")
+# N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+# N$V1 <- as.Date(N$V1, origin = "1970-01-01")
 
 
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
 lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
 
-y.rep <- MCMCpstr(zm, "y.rep")
-exp <- MCMCpstr(zm, "exp")
+# y.rep <- MCMCpstr(zm, "y.rep")
+# exp <- MCMCpstr(zm, "exp")
+# 
+# plot(unlist(y.rep), unlist(site_mat))
+# 
+# plot(unlist(y.rep), unlist(site_mat))
+# abline(0, 1)
+# 
+# fit <- MCMCchains(zm, "fit")
+# fit.rep <- MCMCchains(zm, "fit.rep")
+# mean(fit > fit.rep) # close to 1 so bad fit?
+# plot(fit.rep ~ fit)
+# abline(0, 1) # 1 to 1 line not even there
+# 
 
-plot(unlist(y.rep), unlist(site_mat))
+# fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+#                      data = rep(c("Observed", "Simulated"), each = length(site_mat)))
+# library(ggplot2)
+# ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)# not getting all the 0s and missing the really high #s
+# 
+# cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
+# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+# PoisN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
-plot(unlist(y.rep), unlist(site_mat))
-abline(0, 1)
-
-fit <- MCMCchains(zm, "fit")
-fit.rep <- MCMCchains(zm, "fit.rep")
-mean(fit > fit.rep) # close to 1 so bad fit?
-plot(fit.rep ~ fit)
-abline(0, 1) # 1 to 1 line not even there
-
-
-fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
-                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
-library(ggplot2)
-ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)# not getting all the 0s and missing the really high #s
-
-cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-PoisN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
-
+# use data splitting method
 
 cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-Poislam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
+cor.df1 <- cor.df  %>% slice(which(row_number() %% 5 == 0))
+rho1 <- cor.test((cor.df1$V2), (cor.df1$mean.abund), method = "spearman")
 
+cor.df2<- cor.df %>%  slice(which(row_number() %% 5 == 1))
+rho2 <- cor.test((cor.df2$V2), (cor.df2$mean.abund), method = "spearman")
+
+cor.df3 <- cor.df %>%  slice(which(row_number() %% 5 == 2))
+rho3 <- cor.test((cor.df3$V2), (cor.df3$mean.abund), method = "spearman")
+
+cor.df4 <- cor.df %>%  slice(which(row_number() %% 5 == 3))
+rho4 <- cor.test((cor.df4$V2), (cor.df4$mean.abund), method = "spearman")
+
+cor.df5 <- cor.df %>%  slice(which(row_number() %% 5 == 4))
+rho5 <- cor.test((cor.df5$V2), (cor.df5$mean.abund), method = "spearman")
+
+Poislam <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate, rho4$estimate, rho5$estimate))
+
+rm(zm)
+rm(Nmix_fit)
+# rm(Nmix_fit_UI1)
 sink("N-mixtureZIPHYOS.jags")
 cat("
 model{
@@ -499,45 +533,61 @@ Nmix_fit_UI2 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to
 #
 print(Nmix_fit_UI2)
 
-zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
 
 
 lam <- MCMCpstr(zm, "lambda")
-N <- MCMCpstr(zm, "N")
-N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+# N <- MCMCpstr(zm, "N")
+# N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+# N$V1 <- as.Date(N$V1, origin = "1970-01-01")
 
 
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
 lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
 
-
-y.rep <- MCMCpstr(zm, "y.rep")
-exp <- MCMCpstr(zm, "exp")
-
-
-plot(unlist(y.rep), unlist(site_mat))
-abline(0, 1)
-
-fit <- MCMCchains(zm, "fit")
-fit.rep <- MCMCchains(zm, "fit.rep")
-mean(fit > fit.rep) # close to 1 so bad fit?
-plot(fit.rep ~ fit)
-abline(0, 1) # 1 to 1 line not even there
-
-
-fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
-                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
-library(ggplot2)
-ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)#still not getting all the 0s and missing the really high #s
-
-cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-ZipN <-  cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
-
+# 
+# y.rep <- MCMCpstr(zm, "y.rep")
+# exp <- MCMCpstr(zm, "exp")
+# 
+# 
+# plot(unlist(y.rep), unlist(site_mat))
+# abline(0, 1)
+# 
+# fit <- MCMCchains(zm, "fit")
+# fit.rep <- MCMCchains(zm, "fit.rep")
+# mean(fit > fit.rep) # close to 1 so bad fit?
+# plot(fit.rep ~ fit)
+# abline(0, 1) # 1 to 1 line not even there
+# 
+# 
+# fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+#                      data = rep(c("Observed", "Simulated"), each = length(site_mat)))
+# library(ggplot2)
+# ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)#still not getting all the 0s and missing the really high #s
+# 
+# cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
 cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-Ziplam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+
+cor.df1 <- cor.df  %>% slice(which(row_number() %% 5 == 0))
+rho1 <- cor.test((cor.df1$V2), (cor.df1$mean.abund), method = "spearman")
+
+cor.df2<- cor.df %>%  slice(which(row_number() %% 5 == 1))
+rho2 <- cor.test((cor.df2$V2), (cor.df2$mean.abund), method = "spearman")
+
+cor.df3 <- cor.df %>%  slice(which(row_number() %% 5 == 2))
+rho3 <- cor.test((cor.df3$V2), (cor.df3$mean.abund), method = "spearman")
+
+cor.df4 <- cor.df %>%  slice(which(row_number() %% 5 == 3))
+rho4 <- cor.test((cor.df4$V2), (cor.df4$mean.abund), method = "spearman")
+
+cor.df5 <- cor.df %>%  slice(which(row_number() %% 5 == 4))
+rho5 <- cor.test((cor.df5$V2), (cor.df5$mean.abund), method = "spearman")
+
+Ziplam <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate, rho4$estimate, rho5$estimate))
+
+rm(zm)
+rm(Nmix_fit)
+# rm(Nmix_fit_UI2)
 
 sink("N-mixtureZIPoverdispHYOS.jags")
 cat("
@@ -624,40 +674,58 @@ Nmix_fit_UI3 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to
 
 print(Nmix_fit_UI3)
 
-zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "p", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
 
 
 lam <- MCMCpstr(zm, "lambda")
-p <- MCMCpstr(zm, "p")
-N <- MCMCpstr(zm, "N")
-N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1, origin = "1970-01-01")
-
+# p <- MCMCpstr(zm, "p")
+# N <- MCMCpstr(zm, "N")
+# N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+# N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+# 
 
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
 lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
-
-plot(unlist(y.rep), unlist(site_mat))
-abline(0, 1)
-
-
-mean(fit > fit.rep) # close to 1 so bad fit?
-plot(fit.rep ~ fit)
-abline(0, 1) # 1 to 1 line not even there
-
-
-fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
-                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
-library(ggplot2)
-ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
-
-cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-Zip_ovdN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
-
+#
+# plot(unlist(y.rep), unlist(site_mat))
+# abline(0, 1)
+#
+#
+# mean(fit > fit.rep) # close to 1 so bad fit?
+# plot(fit.rep ~ fit)
+# abline(0, 1) # 1 to 1 line not even there
+#
+#
+# fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+#                      data = rep(c("Observed", "Simulated"), each = length(site_mat)))
+# library(ggplot2)
+# ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
+#
+# cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
+# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+# Zip_ovdN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+#
 cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-Zip_ovdlam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+cor.df1 <- cor.df  %>% slice(which(row_number() %% 5 == 0))
+rho1 <- cor.test((cor.df1$V2), (cor.df1$mean.abund), method = "spearman")
+
+cor.df2<- cor.df %>%  slice(which(row_number() %% 5 == 1))
+rho2 <- cor.test((cor.df2$V2), (cor.df2$mean.abund), method = "spearman")
+
+cor.df3 <- cor.df %>%  slice(which(row_number() %% 5 == 2))
+rho3 <- cor.test((cor.df3$V2), (cor.df3$mean.abund), method = "spearman")
+
+cor.df4 <- cor.df %>%  slice(which(row_number() %% 5 == 3))
+rho4 <- cor.test((cor.df4$V2), (cor.df4$mean.abund), method = "spearman")
+
+cor.df5 <- cor.df %>%  slice(which(row_number() %% 5 == 4))
+rho5 <- cor.test((cor.df5$V2), (cor.df5$mean.abund), method = "spearman")
+Zip_ovdlam <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate, rho4$estimate, rho5$estimate))
+
+rm(zm)
+rm(Nmix_fit)
+# rm(Nmix_fit_UI3)
 
 sink("N-mixturePoisoverdispHYOS.jags")
 cat("
@@ -740,43 +808,58 @@ Nmix_fit_UI4 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to
 
 print(Nmix_fit_UI4)
 
-zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "p", "lambda", "N", "y.rep", "fit", "fit.rep", "exp"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
 
 lam <- MCMCpstr(zm, "lambda")
-p <- MCMCpstr(zm, "p")
-N <- MCMCpstr(zm, "N")
-N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1, origin = "1970-01-01")
-
+# p <- MCMCpstr(zm, "p")
+# N <- MCMCpstr(zm, "N")
+# N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+# N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+# 
 
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
 lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
 
-plot(unlist(y.rep), unlist(site_mat))
-abline(0, 1)
+# plot(unlist(y.rep), unlist(site_mat))
+# abline(0, 1)
+# 
+# plot(unlist(site_mat), unlist(exp))
+# 
+# fit <- MCMCchains(zm, "fit")
+# fit.rep <- MCMCchains(zm, "fit.rep")
+# mean(fit > fit.rep) # close to 1 so bad fit?
+# plot(fit.rep ~ fit)
+# abline(0, 1) # 1 to 1 line not even there
 
-plot(unlist(site_mat), unlist(exp))
-
-fit <- MCMCchains(zm, "fit")
-fit.rep <- MCMCchains(zm, "fit.rep")
-mean(fit > fit.rep) # close to 1 so bad fit?
-plot(fit.rep ~ fit)
-abline(0, 1) # 1 to 1 line not even there
-
-cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-Pois_ovdN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
-
-
+# cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
+# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+# Pois_ovdN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+# 
+# 
 cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-Pois_ovdlam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+cor.df1 <- cor.df  %>% slice(which(row_number() %% 5 == 0))
+rho1 <- cor.test((cor.df1$V2), (cor.df1$mean.abund), method = "spearman")
 
-fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
-                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
-library(ggplot2)
-ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
+cor.df2<- cor.df %>%  slice(which(row_number() %% 5 == 1))
+rho2 <- cor.test((cor.df2$V2), (cor.df2$mean.abund), method = "spearman")
 
+cor.df3 <- cor.df %>%  slice(which(row_number() %% 5 == 2))
+rho3 <- cor.test((cor.df3$V2), (cor.df3$mean.abund), method = "spearman")
+
+cor.df4 <- cor.df %>%  slice(which(row_number() %% 5 == 3))
+rho4 <- cor.test((cor.df4$V2), (cor.df4$mean.abund), method = "spearman")
+
+cor.df5 <- cor.df %>%  slice(which(row_number() %% 5 == 4))
+rho5 <- cor.test((cor.df5$V2), (cor.df5$mean.abund), method = "spearman")
+Pois_ovdlam <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate, rho4$estimate, rho5$estimate))
+
+# fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+#                      data = rep(c("Observed", "Simulated"), each = length(site_mat)))
+# library(ggplot2)
+# ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
+rm(zm)
+rm(Nmix_fit)
+# rm(Nmix_fit_U4)
 sink("N-mixtureNBHYOS.jags")
 cat("
 model{
@@ -870,123 +953,70 @@ update(Nmix_fit, n.iter = 1000)
 
 
 
-zm = coda.samples(Nmix_fit, variable.names = c("lambda", "N", "theta","s", "fit", "fit_new", "yhat", "y_new"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
 
 
 lam <- MCMCpstr(zm, "lambda")
-N <- MCMCpstr(zm, "N")
-N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+# N <- MCMCpstr(zm, "N")
+# N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+# N$V1 <- as.Date(N$V1, origin = "1970-01-01")
 
 
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
 lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
 
-
-
-th <- MCMCchains(zm, "theta")
-s <- MCMCchains(zm, "s")
-fit <- MCMCchains(zm, "fit")
-fit_new <- MCMCchains(zm, "fit_new")
-yhat <- MCMCchains(zm, "yhat")
-y_new <- MCMCchains(zm, "y_new")
-dim(lam)
-dim(th)
-
-y.rep <- MCMCpstr(zm, "yhat")
-exp <- MCMCpstr(zm, "y_new")
-
-
-plot(unlist(y.rep), unlist(site_mat))
-abline(0, 1)
-
-plot(unlist(site_mat), unlist(exp))
-
-fit <- MCMCchains(zm, "fit")
-fit.rep <- MCMCchains(zm, "fit_new")
-mean(fit > fit.rep) # close to 1 so bad fit?
-plot(fit.rep ~ fit)
-abline(0, 1) # 1 to 1 line not even there
-
-
-fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
-                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
-library(ggplot2)
-ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
-
+# 
+# 
+# th <- MCMCchains(zm, "theta")
+# s <- MCMCchains(zm, "s")
+# fit <- MCMCchains(zm, "fit")
+# fit_new <- MCMCchains(zm, "fit_new")
+# yhat <- MCMCchains(zm, "yhat")
+# y_new <- MCMCchains(zm, "y_new")
+# dim(lam)
+# dim(th)
+# 
+# y.rep <- MCMCpstr(zm, "yhat")
+# exp <- MCMCpstr(zm, "y_new")
+# 
+# 
+# plot(unlist(y.rep), unlist(site_mat))
+# abline(0, 1)
+# 
+# plot(unlist(site_mat), unlist(exp))
+# 
+# fit <- MCMCchains(zm, "fit")
+# fit.rep <- MCMCchains(zm, "fit_new")
+# mean(fit > fit.rep) # close to 1 so bad fit?
+# plot(fit.rep ~ fit)
+# abline(0, 1) # 1 to 1 line not even there
+# 
+# 
+# fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+#                      data = rep(c("Observed", "Simulated"), each = length(site_mat)))
+# library(ggplot2)
+# ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
+# 
 
 Nmix_fit_UI5 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureNBHYOS.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 
 print(Nmix_fit_UI5)
 
 cor.df <- left_join(lam, means.list.HYOS, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-nblam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
+cor.df1 <- cor.df  %>% slice(which(row_number() %% 5 == 0))
+rho1 <- cor.test((cor.df1$V2), (cor.df1$mean.abund), method = "spearman")
+
+cor.df2<- cor.df %>%  slice(which(row_number() %% 5 == 1))
+rho2 <- cor.test((cor.df2$V2), (cor.df2$mean.abund), method = "spearman")
+
+cor.df3 <- cor.df %>%  slice(which(row_number() %% 5 == 2))
+rho3 <- cor.test((cor.df3$V2), (cor.df3$mean.abund), method = "spearman")
+
+cor.df4 <- cor.df %>%  slice(which(row_number() %% 5 == 3))
+rho4 <- cor.test((cor.df4$V2), (cor.df4$mean.abund), method = "spearman")
+
+cor.df5 <- cor.df %>%  slice(which(row_number() %% 5 == 4))
+rho5 <- cor.test((cor.df5$V2), (cor.df5$mean.abund), method = "spearman")
+nblam <- mean(c(rho1$estimate, rho2$estimate, rho3$estimate, rho4$estimate, rho5$estimate))
 
 
-cor.df <- left_join(N, means.list.HYOS, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-nbN <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
-
-
-#######################
-# Using Anya's Data
-#######################
-# 
-# Abundance.Data <- read.csv("~/ColoradoRiverInverts/Abundance Data.csv")
-# Abundance.Data <- Abundance.Data[which(Abundance.Data$Latitude >= 35.774119 & Abundance.Data$Latitude <= 35.846578 & Abundance.Data$Longitude <= -113.323281 & Abundance.Data$Longitude >= -113.361047),]
-# 
-# drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = F)
-# 
-# drift.CR <- drift.data.total[which(drift.data.total$Region == "GrandCanyon" & drift.data.total$RiverMile >= 219 & drift.data.total$RiverMile <= 225),]
-# 
-# 
-# specieslist <- c("HYOS")
-# HYOS.samp.CR <- sampspec(samp = drift.CR, stats = T, species = specieslist)
-# HYOS.samp <- merge(HYOS.samp.CR$Statistics, HYOS.samp.CR$Samples, by = "BarcodeID", all = T)
-# HYOS.samp <- HYOS.samp[which(HYOS.samp$FlagStrange == F),]
-# HYOS.samp$Density <- HYOS.samp$CountTotal/HYOS.samp$TimeElapsed
-# 
-# fullhyos <- merge(Abundance.Data, HYOS.samp, by.x = "SampleID", by.y ="BarcodeID")
-# 
-# HYOS.samp <- aggregate(fullhyos$Density, list(fullhyos$Date), FUN = mean)
-# 
-# means <- vector()
-# for (i in 1:length(temps$dts)){
-#   d <- HYOS.samp[which(HYOS.samp$Group.1 >= temps$dts[i] & HYOS.samp$Group.1 < temps$dts[i+1]),]
-#   if (any(is.nan(mean(d$x))) == T || any(is.na((d$x) == T))) {
-#     s = NA
-#   } else {
-#     s<- mean(d$x)}
-#   means <- append(means, s)
-#   # we know the last value doesn't fit into interval and needs to be manually added
-# }
-# means[length(temps$dts)] <- HYOS.samp$x[length(HYOS.samp$x)]
-# #
-# # means.list.HYOS <- mean.data.frame(out, burnin = 286, iteration= 9)
-# # means.list.HYOS <- cbind(means.list.HYOS, temps$dts[286:last(means.list.HYOS$timesteps)])
-# # means.list.HYOS$`temps$dts` <- as.Date(means.list.HYOS$`temps$dts`)
-# 
-# means.list.HYOS <- rowSums(out[,3,])/9
-# means.list.HYOS <- as.data.frame(cbind(means.list.HYOS[200:530], temps$dts[199:529]))
-# colnames(means.list.HYOS) <- c("mean.abund", "Date")
-# means.list.HYOS$Date <- as.Date(as.POSIXct(means.list.HYOS$Date, origin = "1970-01-01"))
-# 
-# 
-# HYOS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.HYOS$Date), means[200:530])))
-# HYOS.samp.sum$V1 <- as.Date(HYOS.samp.sum$V1, origin = "1970-01-01")
-# cor.df <- left_join(HYOS.samp.sum, means.list.HYOS, by=c('V1'="Date"), copy = T)
-# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-# 
-# summary(cor.lm)
-# ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
-#   geom_point()+
-#   stat_smooth(method = "lm",
-#               formula = y ~ x,
-#               geom = "smooth")+
-#   geom_text(x = 3, y = 300, label = "y = 7.77e-11x, R^2 = 0.22")+
-#   labs(y = "Hydropsychidae Model Output", x = "Hydropsychidae Empirical Data")
-# 
-# cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
-# 
-# 

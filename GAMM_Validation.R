@@ -61,13 +61,26 @@ means$V2 <- as.Date(means$V2, origin = "1970-01-01")
 set.seed(111)
 out <- GAMMmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 10000, Qmin = 0.25, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
 
-means.list.GAMM <- rowSums(out[, 1:3, ])/1000
-means.list.GAMM <- as.data.frame(cbind(means.list.GAMM[1:404], temps$dts))
-colnames(means.list.GAMM) <- c("mean.abund", "Date")
+repdf <- plyr::adply(out, c(1,2,3))
+names(repdf) <- c('timesteps', 'stage', 'rep', 'abund')
+repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
+repdf$timesteps <- as.factor(repdf$timesteps)
+means.list.GAMM <- repdf %>%
+  dplyr::group_by(timesteps, rep) %>% # combining stages
+  dplyr::summarise(abund = sum(abund)) %>%
+  ungroup() %>%
+  dplyr::group_by(timesteps) %>%
+  dplyr::summarise(mean.abund = mean(abund),
+                   sd.abund = sd(abund),
+                   se.abund = sd(abund)/sqrt(1000)) %>%
+  ungroup()
+
+means.list.GAMM <- as.data.frame(cbind(means.list.GAMM[1:404,], temps$dts))
+colnames(means.list.GAMM) <- c("timesteps", "mean.abund", "sd.abund", "se.abund", "Date")
 means.list.GAMM$Date <- as.Date(as.POSIXct(means.list.GAMM$Date, origin = "1970-01-01"))
 means.list.GAMM <- as.data.frame(cbind(means.list.GAMM, means))
 means.list.GAMM <- means.list.GAMM[-(1:199), ] # use first 150 as burn in 
-means.list.GAMM <- means.list.GAMM[which(means.list.GAMM$Date < "2019-02-06"),] # we have some one off data points
+#means.list.GAMM <- means.list.GAMM[which(means.list.GAMM$Date < "2019-02-06"),] # we have some one off data points
 cor.df <- na.omit(means.list.GAMM)
 
 # checking for temporal autocorrelation
@@ -85,24 +98,31 @@ rho <- mean(c(rho1$estimate, rho2$estimate))
 #}
   #cor.test((cor.df$means), (cor.df$mean.abund), method = "spearman")
 
-
 means.list.GAMMnonas <- na.omit(means.list.GAMM)
+
+rmse.gamm<- sqrt(mean((means.list.GAMMnonas$means - means.list.GAMMnonas$mean.abund)^2))
+
+rmse.gamm.scale <- sqrt(mean((scale(means.list.GAMMnonas$means) - scale(means.list.GAMMnonas$mean.abund))^2))
+coverage <- mean(scale(means.list.GAMMnonas$means) >= (scale(means.list.GAMMnonas$mean.abund) - (1.96*rmse.gamm.scale)) & scale(means.list.GAMMnonas$means) <= (scale(means.list.GAMMnonas$mean.abund) + (1.96*rmse.gamm.scale)))
 colors <- c("#CCBB44", "black" )
 linetypes <- c("solid", "twodash")
 
 GAMMts <- ggplot(data = means.list.GAMMnonas, aes(x = Date,  y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
-  # geom_ribbon(aes(ymin = mean.abund - 1.96 * se.abund,
-  #                 ymax = mean.abund + 1.96 * se.abund),
-  #             colour = 'transparent',
-  #             alpha = .15,
-  #             show.legend = T) +
+  geom_ribbon(aes(ymin = scale(mean.abund) - 1.96 * rmse.gamm.scale,
+                  ymax = scale(mean.abund) + 1.96 * rmse.gamm.scale),
+              colour = 'transparent',
+              alpha = .1,
+              fill = "black",
+              show.legend = F) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
   geom_line(aes(x = Date, y = scale(means), color = "Empirical", linetype = "Empirical"), linewidth = 1, show.legend = T, alpha = 0.8)+
   #geom_point(aes(x = Date, y = scale(means), color = "Empirical"))+
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
   #coord_cartesian(ylim = c(0,6000)) +
-  geom_text(mapping = aes(x = as.Date("2018-06-01"), y =5, label = paste('rho', "==", 0.37)), parse = T, color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2018-06-01"), y =5, label = paste('rho', "==", 0.41)), parse = T, color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2018-06-01"), y =5.5, label = paste('C = 98%')), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2018-06-01"), y =6, label = paste('Scaled RMSE = 1.21')), color = "black", size = 4.5)+
   #labs(y = expression(~italic(G. lacustris)~ 'Abund.')) +
   scale_linetype_manual(values = linetypes)+
   labs(y=expression(paste(italic("G. lacustris"), " Abund.")))+
@@ -114,7 +134,7 @@ GAMMts <- ggplot(data = means.list.GAMMnonas, aes(x = Date,  y = scale(mean.abun
   # scale_y_continuous(
   #   sec.axis = sec_axis(~., name="G. lacustris (inds/m3)"
   #   ))+
-  guides(linetype=guide_legend(" "), color = "none")+
+  guides(linetype=guide_legend(" "), color = "none", fill = "none")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")
@@ -218,7 +238,7 @@ circdate <- as.data.frame(df$circdate)
 #weather[is.na(weather)] <- Mode(na.omit(weather))
 
 site_intercept <- rep(1, times = length(flows$V1)) 
-site_covs<- as.matrix(cbind(site_intercept, flows)) #flows,temperature, circdate)
+site_covs<- as.matrix(cbind(site_intercept, temperature)) #flows,temperature, circdate)
 obs_covs <- array(data= NA, dim = c(length(flows$V1),J,1))
 obs_covs[,,1] <- obs_intercept                                  
 
@@ -303,13 +323,13 @@ Nmix_fit_UI1 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to
 #
 print(Nmix_fit_UI1)
 
-zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp" , "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
 
 
 lam <- MCMCpstr(zm, "lambda")
-N <- MCMCpstr(zm, "N")
-N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+# N <- MCMCpstr(zm, "N")
+# N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+# N$V1 <- as.Date(N$V1, origin = "1970-01-01")
 
 
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
@@ -434,13 +454,13 @@ Nmix_fit_UI2 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to
 #
 print(Nmix_fit_UI2)
 
-zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
 
 
 lam <- MCMCpstr(zm, "lambda")
-N <- MCMCpstr(zm, "N")
-N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+# N <- MCMCpstr(zm, "N")
+# N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+# N$V1 <- as.Date(N$V1, origin = "1970-01-01")
 
 
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
@@ -462,7 +482,7 @@ Ziplam  <- mean(c(rho1$estimate, rho2$estimate))
 
 rm(zm)
 rm(Nmix_fit)
-#rm(Nmix_fit_UI2)
+rm(Nmix_fit_UI2)
 
 
 sink("N-mixtureZIPoverdispGAMM.jags")
@@ -550,15 +570,15 @@ Nmix_fit_UI3 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to
 
 print(Nmix_fit_UI3)
 
-zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "p", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
 
 
 lam <- MCMCpstr(zm, "lambda")
-p <- MCMCpstr(zm, "p")
-N <- MCMCpstr(zm, "N")
-N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1, origin = "1970-01-01")
-
+# p <- MCMCpstr(zm, "p")
+# N <- MCMCpstr(zm, "N")
+# N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+# N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+# 
 
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
 lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
@@ -595,7 +615,7 @@ Zip_ovd_lam  <- mean(c(rho1$estimate, rho2$estimate))
 # Zip_ovdlam <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 rm(zm)
-#rm(Nmix_fit_UI3)
+rm(Nmix_fit_UI3)
 rm(Nmix_fit)
 
 sink("N-mixturePoisoverdispGAMM.jags")
@@ -678,14 +698,15 @@ update(Nmix_fit, n.iter = 1000)
 Nmix_fit_UI4 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisoverdispGAMM.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 
 print(Nmix_fit_UI4)
-zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "p", "lambda", "N", "y.rep", "fit", "fit.rep", "exp"), n.iter = ni, n.thin = nt)
+rm(Nmix_fit_UI4)
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
 
 lam <- MCMCpstr(zm, "lambda")
-p <- MCMCpstr(zm, "p")
-N <- MCMCpstr(zm, "N")
-N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1, origin = "1970-01-01")
-
+# p <- MCMCpstr(zm, "p")
+# N <- MCMCpstr(zm, "N")
+# N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+# N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+# 
 
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
 lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
@@ -713,6 +734,7 @@ cor.df2 <- cor.df %>%  slice(which(row_number() %% 2 == 1))
 rho2 <- cor.test(cor.df2$V2.x, cor.df2$mean.abund, method = "spearman")
 
 Pois_ovd_lam  <- mean(c(rho1$estimate, rho2$estimate))
+
 
 rm(zm)
 rm(Nmix_fit)
@@ -815,10 +837,10 @@ zm = coda.samples(Nmix_fit, variable.names = c("lambda", "N"), n.iter = ni, n.th
 
 
 lam <- MCMCpstr(zm, "lambda")
-N <- MCMCpstr(zm, "N")
-N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1, origin = "1970-01-01")
-
+# N <- MCMCpstr(zm, "N")
+# N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+# N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+# 
 
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
 lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
@@ -850,4 +872,4 @@ print(Nmix_fit_UI5)
 
 rm(zm)
 rm(Nmix_fit)
-#rm(Nmix_fit_UI5)
+rm(Nmix_fit_UI5)
