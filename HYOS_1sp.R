@@ -234,22 +234,22 @@ for (iter in c(1:iterations)) {
     # Timesteps = -0.95(TEMP) + 24.75 
     
     #development measures# at cold temps
-    if (5 > temps$Temperature[t-1])  {
-      G1 <- 0.36/20 *TempSurvival[t-1]
-      P1 <- 1-(1/20)* TempSurvival[t-1]
-    }
+    # if (5 > temps$Temperature[t-1])  {
+    #   G1 <- 0.36/20 *TempSurvival[t-1]
+    #   P1 <- 1-(1/20)* TempSurvival[t-1]
+    # }
     if (30 > temps$Temperature[t-1]){ # Spend about 20 timesteps in Stage 2
-      G2 <- 0.04/20 * TempSurvival[t-1] 
+      G2 <- 0.04/20 * TempSurvival[t-1]
       P2 <- 1-(1/20) *TempSurvival[t-1]
     } else {
       G2 = 0.04/3 *TempSurvival[t-1]  # make them grow fast when super warm
       P2 = 1 - (1/3) *TempSurvival[t-1]
     }
 
-    if (temps$Temperature[t-1] > 30){
-      G1 <- 0.36 *TempSurvival[t-1]
-      P1 <- 0
-    }
+    # if (temps$Temperature[t-1] > 30){
+    #   G1 <- 0.36 *TempSurvival[t-1]
+    #   P1 <- 0
+    # }
     # Stage 1 can vary from a few timesteps to many (saw Instar 2 last from 5 to 250 days)
     if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <=30 & is.na(emergetime[t] == F)){
       G1 <- 0.36/(emergetime[t-1]) *TempSurvival[t-1]
