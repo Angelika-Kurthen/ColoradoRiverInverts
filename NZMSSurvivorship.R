@@ -57,7 +57,7 @@ NZMSSurvRates <- read_excel("VitalRates.xlsx", sheet = "NZMS Survival Rates")
 NZMSSurvRates <- as.data.frame(NZMSSurvRates)
 fit <- nlsLM(logit(Survival) ~ a*Temperature^2+ b*Temperature + c, data = NZMSSurvRates, start = c(a = 1, b = 1, c = 1))
 TempSurv_NZMS <- function(x){
-  y = -0.0892*x^2 + 3.0492*x -6.6794
+  y = -0.08814*x^2  +3.09981*x -9.18655 
   return(inv.logit(y))
 }
 
