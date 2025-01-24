@@ -71,24 +71,24 @@ HYOSSurvRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Survival Rat
 HYOSSurvRates <- as.data.frame(HYOSSurvRates)
 # fit <- nlsLM(logit(Survival)~ a*Temperature^2 + b*Temperature + c, data = HYOSSurvRates, start = c(a= 1, b=1, c = 1))
 # 
-# TempSurv <- function(x){
-#   a <- -0.09934 *x^2 +3.44127*x -15.47038
-#   return(inv.logit(a))
+TempSurv_HYOS <- function(x){
+  a <- -0.09934 *x^2 +3.44127*x -15.47038
+  return(inv.logit(a))
+}
+# min.RSS <- function(par){
+#   mod <- dnbinom(as.integer(-HYOSSurvRates$Temperature + 31), size = par[2], prob = par[1])
+#   a <- sum(HYOSSurvRates$Survival - (mod*(max(HYOSSurvRates$Survival)/max(mod))))^2
 # }
-min.RSS <- function(par){
-  mod <- dnbinom(as.integer(-HYOSSurvRates$Temperature + 31), size = par[2], prob = par[1])
-  a <- sum(HYOSSurvRates$Survival - (mod*(max(HYOSSurvRates$Survival)/max(mod))))^2
-}
-params <- optim(par = c(0.23, 4.5), fn = min.RSS)
-
-TempSurv_HYOS <- function(n){
-  if (n <= 0){
-    a <- 0
-  }else{
-  a <-  dnbinom(as.integer(-n + 32), size = 2.8835371 , prob = 0.1932115)*(max(HYOSSurvRates$Survival)/max(dnbinom(as.integer(-HYOSSurvRates$Temperature + 32), size =2.8835371, prob = 0.1932115 )))
-  }
-  return((a))
-}
+# params <- optim(par = c(0.23, 4.5), fn = min.RSS)
+# 
+# TempSurv_HYOS <- function(n){
+#   if (n <= 0){
+#     a <- 0
+#   }else{
+#   a <-  dnbinom(as.integer(-n + 32), size = 2.8835371 , prob = 0.1932115)*(max(HYOSSurvRates$Survival)/max(dnbinom(as.integer(-HYOSSurvRates$Temperature + 32), size =2.8835371, prob = 0.1932115 )))
+#   }
+#   return((a))
+# }
 
 
 # 
