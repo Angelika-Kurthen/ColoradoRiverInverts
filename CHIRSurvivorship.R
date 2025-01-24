@@ -52,9 +52,10 @@ fit <- nlsLM(logit(Survival) ~ a*Temp^4 + b*Temp^3 + c*Temp^2 + d*Temp + e, data
 fit <- nlsLM(logit(Survival) ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1))
 inv.logit(predict(fit))
 # fit <- nlsLM(Survival ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a=1, b=1, c=1))
-#  TempSurv <- function(n){
-#    #a <- -0.001785*n^2+ 0.074341*n -0.154283
-#    #with 0,0
+ TempSurv_CHIR <- function(n){
+   a <- -0.03178*n^2+  1.20308*n -9.25551 
+   #a <- -0.001785*n^2+ 0.074341*n -0.154283
+   #with 0,0
 #    #a <- -0.02184*n^2 +0.92739*n -8.55032
 #  #with 40,0 and 0,0
 #     #a <- -0.02469*n^2 +  1.02303*n -9.10223
@@ -70,8 +71,8 @@ inv.logit(predict(fit))
 #    #a <- -0.0241*n^2 + 0.9536*n -7.7931
 #    # wo stratmont
 #    a <- -0.01954*n^2  + 0.81415*n -7.54678 
-#    return(inv.logit(a)+0.28)
-#  }
+   return(inv.logit(a))
+ }
 
 
 #a = -1.016e-04  b = 9.412e-03 c = -3.121e-01 d = 4.317e+00 e =-2.032e+01 
@@ -104,24 +105,24 @@ inv.logit(predict(fit))
 #   return(inv.logit(a))
 # }
 #
-min.RSS <- function(par){
-  mod <- dnbinom(as.integer(CHIRSurvRate$Temp), size = par[2], prob = par[1])
-  a <- sum(CHIRSurvRate$Survival - (mod*(max(CHIRSurvRate$Survival)/max(mod))))^2
-}
-params <- optim(par = c(0.01, 6), fn = min.RSS, method = "BFGS")
-
+# min.RSS <- function(par){
+#   mod <- dnbinom(as.integer(CHIRSurvRate$Temp), size = par[2], prob = par[1])
+#   a <- sum(CHIRSurvRate$Survival - (mod*(max(CHIRSurvRate$Survival)/max(mod))))^2
+# }
+# params <- optim(par = c(0.01, 6), fn = min.RSS, method = "BFGS")
+# 
 
 
 #params <- optim(par = c(0, 0), fn = min.RSS, method = "BFGS")
 # #
-TempSurv_CHIR <- function(n){
-  if (n <= 0){
-    a <- 0
-  }else {
-    a <-  dnbinom(as.integer(-n + 36), size = params$par[2] , prob = params$par[1])*(max(CHIRSurvRate$Survival)/max(dnbinom(as.integer(-CHIRSurvRate$Temp + 36), size =params$par[2], prob = params$par[1])))
-  }
-  return((a))
-}
+# TempSurv_CHIR <- function(n){
+#   if (n <= 0){
+#     a <- 0
+#   }else {
+#     a <-  dnbinom(as.integer(-n + 36), size = params$par[2] , prob = params$par[1])*(max(CHIRSurvRate$Survival)/max(dnbinom(as.integer(-CHIRSurvRate$Temp + 36), size =params$par[2], prob = params$par[1])))
+#   }
+#   return((a))
+# }
 
 
 # survs <- vector()
@@ -138,10 +139,10 @@ TempSurv_CHIR <- function(n){
 #   xlab('`Max Event Discharge/Bankfull Discharge`')
 
 # 
-# tem <- seq(0, 40, by = 1)#http://127.0.0.1:23003/graphics/ed0483c1-b811-4223-bfde-c3d3a3dceb62.png
-# plot(CHIRSurvRate$Temp, CHIRSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+tem <- seq(0, 40, by = 1)#http://127.0.0.1:23003/graphics/ed0483c1-b811-4223-bfde-c3d3a3dceb62.png
+plot(CHIRSurvRate$Temp, CHIRSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
 # lines(tem, survs, col = "green")
-# #lines(tem, TempSurv(tem), col = "green")
+lines(tem, TempSurv_CHIR(tem), col = "green")
 #lines(tem,  dnbinom(as.integer(-tem + 37.5), size = params$par[2] , prob = params$par[1])*(max(CHIRSurvRate$Survival)/max(dnbinom(as.integer(-CHIRSurvRate$Temp + 37.5), size =params$par[2], prob = params$par[1]))))
 # plot(temp, s, xlab = "Temperature C", ylab = "Survival", col = "red", pch = 16, cex = 1.5, xlim = c(0,40), ylim = c(0,1))
 # points(temp, predict(fit.betalogit), col = "blue", pch = 1)
