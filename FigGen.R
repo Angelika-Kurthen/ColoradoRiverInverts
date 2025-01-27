@@ -757,3 +757,79 @@ FigS1 <- ggarrange(chaostestplot,
 ggsave(filename = "FigS1.png", FigS1, height = 8.5, width = 6.5, device = "png", dpi = "retina")
 
 # 
+#####
+#Table 1
+source("NegExpSurv.R")
+#make some copies 
+high.df1<-high.df
+high.df2<-high.df
+high.df1$Response <- rep("A", times = 2000 )
+high.df2$Response <- rep("B", times = 2000)
+
+#combine into one large dataset
+flow.response <- rbind(high.df, high.df1, high.df2, low.df)
+
+flow <- ggplot(data = flow.response, aes(x = Q, y = Survival, color = Response))+
+  geom_line(linewidth = 1, aes(linetype = Response), alpha = 0.8)+
+  scale_color_manual(name = "Strategy", labels=c( "Boom", "Fast","Moderate", "Slow"), values=c("#228833","#CCBB44","#66CCEE",  "#AA3377"))+
+  scale_linetype_manual(name = "Strategy", labels=c( "Boom", "Fast","Moderate", "Slow"), values=c(2,4,3,1))+
+  xlab("Flow Magnitude")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  theme_bw()
+####
+Fecundity <- c(1200, 500, 500, 300)
+DegreeDays <- c(500, 900, 1200, 1500)
+Strategy <- c("Boom", "Fast", "Moderate", "Slow")
+Y1 <- c(0, 0.8, 0, 0.8)
+Y2 <- c(0.2, 1, 0.2, 1)
+traits <- as.data.frame(cbind(as.factor(Strategy), 
+                              as.numeric(DegreeDays), 
+                              as.numeric(Fecundity), 
+                              as.numeric(Y1), 
+                              as.numeric(Y2)))
+
+fec <- ggplot(data = traits, aes(x = Strategy, y = Fecundity, color = Strategy))+
+  geom_point(size = 3)+
+  ylab("Average Fecundity")+
+  xlab("Life History Strategy")+
+  scale_color_manual(name = "Strategy", labels=c( "Boom", "Fast","Moderate", "Slow"), values=c("#228833","#CCBB44","#66CCEE",  "#AA3377"))+
+  geom_text(
+    aes(label = paste(Fecundity)),
+    parse = TRUE,
+    color = "black",
+    nudge_y = 100,
+  )+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  theme_bw()
+
+
+  
+dd <- ggplot(data= traits, aes(x = Strategy, y = DegreeDays, color = Strategy))+
+  geom_point(size = 3)+
+  ylab("Degree Days")+
+  xlab("Life History Strategy")+
+  geom_text(
+    aes(label = paste(DegreeDays)),
+    parse = TRUE,
+    color = "black",
+    nudge_y = 100,
+  )+
+  scale_color_manual(name = "Strategy", labels=c( "Boom", "Fast","Moderate", "Slow"), values=c("#228833","#CCBB44","#66CCEE",  "#AA3377"))+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  theme_bw()
+
+ovi <- ggplot(data = traits, aes(x = Strategy, color = Strategy))+
+  geom_segment(aes(x = Strategy, xend = Strategy, y = Y1, yend = Y2), linewidth = 3)+
+  ylab("Oviposition Location")+
+  xlab("Life History Strategy")+
+  scale_color_manual(name = "Strategy", labels=c( "Boom", "Fast","Moderate", "Slow"), values=c("#228833","#CCBB44","#66CCEE",  "#AA3377"))+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
+  theme_bw()
+
+ggarrange(fec, dd, ovi, flow, ncol = 2, nrow = 2, common.legend = T, labels = c("a", "b", "c", "d"))
+
+  
