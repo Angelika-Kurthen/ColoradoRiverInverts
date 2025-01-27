@@ -130,10 +130,10 @@ Temp_Abund$means <- as.numeric(Temp_Abund$means)
 Temp_Abund$sd <- as.numeric(Temp_Abund$sd)
 Temp_Abund$V4 <- as.factor(Temp_Abund$V4)
 #plot 
-temp_abund <- ggplot(data = Temp_Abund, aes(temp_seq, log(means), color = V4, group = V4))+ 
+temp_abund <- ggplot(data = Temp_Abund, aes(temp_seq, (means), color = V4, group = V4))+ 
   geom_line(linewidth = 1, alpha = 0.8)+
-  geom_ribbon(data = Temp_Abund, aes(ymin = log(means - sd),
-                                      ymax = log(means + sd), fill = V4),
+  geom_ribbon(data = Temp_Abund, aes(ymin = (means - sd),
+                                      ymax = (means + sd), fill = V4),
               alpha = .15,
               color= "transparent",
               show.legend = F) +
@@ -145,7 +145,7 @@ temp_abund <- ggplot(data = Temp_Abund, aes(temp_seq, log(means), color = V4, gr
              linewidth=1)+
   # geom_vline(aes(xintercept = 0.55 ), linetype = "dotdash", 
   #            linewidth=1)+
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 4), limit = c(0, 12))+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
   theme_bw()+
   xlab("Temperature Increase")+
   ylab("Log Abundance")+
@@ -160,9 +160,9 @@ Temp_TS_Biomass$sizemeans <- as.numeric(Temp_TS_Biomass$sizemeans)
 Temp_TS_Biomass$sizesd <- as.numeric(Temp_TS_Biomass$sizesd)
 Temp_TS_Biomass$V4 <- as.factor(Temp_TS_Biomass$V4)
 #plot
-te_ts <- ggplot(data = Temp_TS_Biomass, aes(temp_seq, log(sizemeans), group = V4, color = V4)) + 
-  geom_ribbon(aes(ymin = log(sizemeans - sizesd),
-                  ymax = log(sizemeans + sizesd), fill = V4),
+te_ts <- ggplot(data = Temp_TS_Biomass, aes(temp_seq, (sizemeans), group = V4, color = V4)) + 
+  geom_ribbon(aes(ymin = (sizemeans - sizesd),
+                  ymax = (sizemeans + sizesd), fill = V4),
               color = "transparent",
               alpha = .15,
               show.legend = F) +
@@ -175,7 +175,7 @@ te_ts <- ggplot(data = Temp_TS_Biomass, aes(temp_seq, log(sizemeans), group = V4
   theme_bw()+
   xlab("Temperature Increase")+
   ylab("Log Average Timestep Biomass (mg)")+
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 4), limit = c(0, 12))+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
@@ -188,9 +188,9 @@ Temp_Yr_Prod$S3Yrprod <- as.numeric(Temp_Yr_Prod$S3Yrprod)
 Temp_Yr_Prod$S3Yrprod_sd <- as.numeric(Temp_Yr_Prod$S3Yrprod_sd)
 Temp_Yr_Prod$V4 <- as.factor(Temp_Yr_Prod$V4)
 
-temp_yr <- ggplot(data = Temp_Yr_Prod, aes(temp_seq, log(S3Yrprod), group = V4, color = V4)) + 
-  geom_ribbon(aes(ymin = log(S3Yrprod - S3Yrprod_sd),
-                  ymax = log(S3Yrprod + S3Yrprod_sd), fill = V4),
+temp_yr <- ggplot(data = Temp_Yr_Prod, aes(temp_seq, (S3Yrprod), group = V4, color = V4)) + 
+  geom_ribbon(aes(ymin = (S3Yrprod - S3Yrprod_sd),
+                  ymax = (S3Yrprod + S3Yrprod_sd), fill = V4),
               color = "transparent",
               alpha = .15,
               show.legend = F) +
@@ -201,7 +201,7 @@ temp_yr <- ggplot(data = Temp_Yr_Prod, aes(temp_seq, log(S3Yrprod), group = V4, 
   geom_vline(aes(xintercept = 2), linewidth = 1, linetype="dashed")+
   #geom_vline(aes(xintercept = 0.55 ), linewidth = 1, linetype = "dotdash")+
   theme_bw()+
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 4), limit = c(0,12))+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
   xlab("Temperature Increase")+
   ylab("Log Annual Emergent Biomass (mg)")+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
