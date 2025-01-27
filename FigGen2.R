@@ -129,7 +129,7 @@ Temp_Abund$temp_seq <- as.numeric(Temp_Abund$temp_seq)
 Temp_Abund$means <- as.numeric(Temp_Abund$means)
 Temp_Abund$sd <- as.numeric(Temp_Abund$sd)
 Temp_Abund$V4 <- as.factor(Temp_Abund$V4)
-#plot
+#plot 
 temp_abund <- ggplot(data = Temp_Abund, aes(temp_seq, log(means), color = V4, group = V4))+ 
   geom_line(linewidth = 1, alpha = 0.8)+
   geom_ribbon(data = Temp_Abund, aes(ymin = log(means - sd),
