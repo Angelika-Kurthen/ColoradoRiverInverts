@@ -5,8 +5,9 @@
 library(readxl)
 library(minpack.lm)
 library(tidyverse)
-library(car)
+# library(car)
 library(boot)
+
 BAETVitalRates <- read_excel("VitalRates.xlsx", sheet = "Baetid Mortality Rates")
 BAETVitalRates <- as.data.frame(BAETVitalRates)
 
@@ -52,7 +53,7 @@ BAETSurvRate <- as.data.frame(BAETSurvRate)
 #inv.logit(predict(fit))
 #-0.02837*x^2 + 1.21299*x  -10.92723
 
-fit <- nlsLM(logit(Survival) ~ a*Temperature^2 + b*Temperature+ c, data = BAETSurvRate, start = c(a = 1, b = 1, c = 1))
+#fit <- nlsLM(logit(Survival) ~ a*Temperature^2 + b*Temperature+ c, data = BAETSurvRate, start = c(a = 1, b = 1, c = 1))
 # # 
 TempSurv_BAET <- function(n){
   a <-  -0.02429*n^2 +0.73459 *n -2.59225 
@@ -89,9 +90,9 @@ TempSurv_BAET <- function(n){
 #   xlab('`Max Event Discharge/Bankfull Discharge`')
 # 
 # 
-tem <- seq(0, 40, by = 1)
-plot(BAETSurvRate$Temperature, BAETSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
-lines(tem, TempSurv_BAET(tem))
+# tem <- seq(0, 40, by = 1)
+# plot(BAETSurvRate$Temperature, BAETSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+# lines(tem, TempSurv_BAET(tem))
 #lines(tem,  dnbinom(as.integer(-tem + 33), size = params$par[2] , prob = params$par[1])*(max(BAETSurvRate$Survival)/max(dnbinom(as.integer(-BAETSurvRate$Temperature + 33), size =params$par[2], prob = params$par[1]))))
 # plot(temp, s, xlab = "Temperature C", ylab = "Survival", col = "red", pch = 16, cex = 1.5, xlim = c(0,40), ylim = c(0,1))
 # points(temp, predict(fit.betalogit), col = "blue", pch = 1)
