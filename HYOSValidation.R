@@ -305,15 +305,15 @@ Mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
 }
-habitat[is.na(habitat)] <- Mode(na.omit(habitat)) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
+#habitat[is.na(habitat)] <- Mode(na.omit(habitat)) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
 # weather <- as.matrix(weather[-nodata,])
 # weather[is.na(weather)] <- Mode(na.omit(weather))
 
 site_intercept <- rep(1, times = length(flows$V1)) 
 site_covs<- as.matrix(cbind(site_intercept, flows, circdate)) #flows,temperature, circdate)
-obs_covs <- array(data= NA, dim = c(length(flows$V1),J,1))
+obs_covs <- array(data= NA, dim = c(length(flows$V1),J,2))
 obs_covs[,,1] <- obs_intercept                                  
-#obs_covs[,,2] <- windspeed
+obs_covs[,,2] <- windspeed
 
 #offset
 offset <- as.matrix(scale(log(time[-nodata, ])))
