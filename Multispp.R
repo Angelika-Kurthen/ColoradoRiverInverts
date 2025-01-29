@@ -383,8 +383,8 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinc
       stageduration1_NZMS <- timestep_to_mat(temps$Temperature[t-1])[[1]]
       stageduration2_NZMS <- timestep_to_mat(temps$Temperature[t-1])[[2]]
       
-      G1_NZMS = (0.9/stageduration1_NZMS) *TempSurvival_NZMS[t-1]
-      G2_NZMS = (0.9/stageduration2_NZMS)*TempSurvival_NZMS[t-1]
+      G1_NZMS = (0.91/stageduration1_NZMS) *TempSurvival_NZMS[t-1]
+      G2_NZMS = (0.91/stageduration2_NZMS)*TempSurvival_NZMS[t-1]
       P1_NZMS = (1-(1/stageduration1_NZMS)) *TempSurvival_NZMS[t-1]
       P2_NZMS = (1-(1/stageduration2_NZMS)) *TempSurvival_NZMS[t-1]
       P3_NZMS = (1-(1/7))*TempSurvival_NZMS[t-1]
@@ -394,26 +394,26 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinc
       if (5 > temps$Temperature[t-1]) {
         P1_CHIR <- (1-(1/20)) * TempSurvival_CHIR[t-1]
         P2_CHIR <- P1_CHIR
-        G1_CHIR <- (0.82/20) * TempSurvival_CHIR[t-1]
-        G2_CHIR <- (0.82/20) * TempSurvival_CHIR[t-1]
+        G1_CHIR <- (0.74/20) * TempSurvival_CHIR[t-1]
+        G2_CHIR <- (0.66/20) * TempSurvival_CHIR[t-1]
       }
       if (temps$Temperature[t-1] > 30){
         P1_CHIR <- 0
         P2_CHIR <- 0
-        G1_CHIR <- 0.82 * TempSurvival_CHIR[t-1]
-        G2_CHIR <- 0.82 * TempSurvival_CHIR[t-1]
+        G1_CHIR <- 0.74 * TempSurvival_CHIR[t-1]
+        G2_CHIR <- 0.66 * TempSurvival_CHIR[t-1]
       }
       
       if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime_CHIR[t-1]) == F)){
-        G1_CHIR <- (0.82/((emergetime_CHIR[t-1])/2)) * TempSurvival_CHIR[t-1]
-        G2_CHIR <- (0.82/((emergetime_CHIR[t-1])/2)) * TempSurvival_CHIR[t-1]
+        G1_CHIR <- (0.74/((emergetime_CHIR[t-1])/2)) * TempSurvival_CHIR[t-1]
+        G2_CHIR <- (0.66/((emergetime_CHIR[t-1])/2)) * TempSurvival_CHIR[t-1]
         P1_CHIR <- (1-(1/((emergetime_CHIR[t-1])/2))) * TempSurvival_CHIR[t-1]
         P2_CHIR <- P1_CHIR
       }
       if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime_CHIR[t-1]) == T)) {
-        G1_CHIR <- (0.82*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival_CHIR[t-1]
+        G1_CHIR <- (0.74*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival_CHIR[t-1]
         P1_CHIR <- (1-(1/((-0.136 * temps$Temperature[t-1]) + 5.088))) * TempSurvival_CHIR[t-1]
-        G2_CHIR <- (0.82*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival_CHIR[t-1]
+        G2_CHIR <- (0.66*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival_CHIR[t-1]
         P2_CHIR <- P1_CHIR
       }
       
@@ -424,15 +424,15 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinc
       }
       
       if (is.na(emergetime_GAMM[t-1])== F){
-        G1_GAMM = (1/(emergetime_GAMM[t-1]/2)) *TempSurvival_GAMM[t-1]
-        G2_GAMM = (1/(emergetime_GAMM[t-1]/2))*TempSurvival_GAMM[t-1]
+        G1_GAMM = (0.95/(emergetime_GAMM[t-1]/2)) *TempSurvival_GAMM[t-1]
+        G2_GAMM = (0.99/(emergetime_GAMM[t-1]/2))*TempSurvival_GAMM[t-1]
         P1_GAMM = (1-(1/(emergetime_GAMM[t-1]/2))) *TempSurvival_GAMM[t-1]
         P2_GAMM = (1-(1/(emergetime_GAMM[t-1]/2))) *TempSurvival_GAMM[t-1]
         P3_GAMM = (1-(0.64))*TempSurvival_GAMM[t-1] }#survival for last stage 
       
       if(is.na(emergetime_GAMM[t-1])==T){
-        G1_GAMM = (1/( ((-0.233 * temps$Temperature[t-1]) + 11)/2)) *TempSurvival_GAMM[t-1]
-        G2_GAMM = (1/( ((-0.233 * temps$Temperature[t-1]) + 11)/2))*TempSurvival_GAMM[t-1]
+        G1_GAMM = (0.95/( ((-0.233 * temps$Temperature[t-1]) + 11)/2)) *TempSurvival_GAMM[t-1]
+        G2_GAMM = (0.99/( ((-0.233 * temps$Temperature[t-1]) + 11)/2))*TempSurvival_GAMM[t-1]
         P1_GAMM = (1-(1/( ((-0.233 * temps$Temperature[t-1]) + 11)/2))) *TempSurvival_GAMM[t-1]
         P2_GAMM = (1-(1/( ((-0.233 * temps$Temperature[t-1]) + 11)/2))) *TempSurvival_GAMM[t-1]
         P3_GAMM = (1-(0.64))*TempSurvival_GAMM[t-1] }
@@ -538,27 +538,27 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinc
       
       output.N.list[t,3,iter, "GAMM"] <- flood.mortality(output.N.list[t,3,iter, "GAMM"], GAMM_k, GAMM_h, Q[t-1], Qmin)
       
-      #check extinction threshold for each spp
+      #check extinction threshold for each spp + add rescue effect
       # Hydrospyche spp. 
       if (sum(output.N.list[t, ,iter, "HYOS"]) < extinction){
-        output.N.list[t,,iter, "HYOS"] <- 0
+        output.N.list[t,1:3,iter, "HYOS"] <- c(50,10,5) #rescue effect
       } 
       
       #Baetidae spp
       if (sum(output.N.list[t, ,iter, "BAET"]) < extinction){
-        output.N.list[t,,iter, "BAET"] <- 0
+        output.N.list[t,1:3,iter, "BAET"] <- c(50,10,5)
       } 
       #NZMS
       if (sum(output.N.list[t, ,iter, "NZMS"]) < extinction){
-        output.N.list[t,,iter, "NZMS"] <- 0
+        output.N.list[t,1:3,iter, "NZMS"] <- c(50,10,5)
       } 
       #CHIR
       if (sum(output.N.list[t, ,iter, "CHIR"]) < extinction){
-        output.N.list[t,,iter, "CHIR"] <- 0
+        output.N.list[t,1:3,iter, "CHIR"] <- c(50,10,5)
       } 
       
       if (sum(output.N.list[t, ,iter, "GAMM"]) < extinction){
-        output.N.list[t,,iter, "GAMM"] <- 0
+        output.N.list[t,1:3,iter, "GAMM"] <- c(50,10,5)
       } 
       # convert to biomass
       # for timesteps before we have backcounted stage duration  we use mean
