@@ -1,7 +1,11 @@
 ############################
 # Hydropeaking Sensitivity NZMS
 #############################
+# Load necessary libraries
+library(doParallel)
+library(foreach)
 
+# Load custom functions and data
 source("1spFunctions.R")
 source("NZMS_1sp_Model.R")
 
@@ -25,27 +29,29 @@ flows$Discharge <- flows$Discharge/85000
 
 # create sequence of hydropeaking intensities
 hydropeak <- seq(0.00, 0.7, by = 0.05)
-# makes some vectors for data to go into
-means <- vector()
-sd <- vector()
-sizemeans <- vector()
-sizesd <- vector()
-S3Yrprod <- vector()
-# cycle though hydropeaking scenarios
-for (hyd in 1:length(hydropeak)){
+
+# Detect available cores for parallel execution
+cores <- as.numeric(Sys.getenv("SLURM_CPUS_ON_NODE", 1)) # Default to 1 if not running under SLURM
+cl <- makeCluster(cores)
+registerDoParallel(cl)
+
+# Parallel computation for hydropeaking scenarios
+results <- foreach(hyd = 1:length(hydropeak), .combine = rbind) %dopar% {
+  set.seed(123 + hyd) # Ensure reproducibility
+
 set.seed(123) # make reproducible
   # model abundances (size structured)
-  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 2, peaklist = hydropeak[hyd], peakeach = length(temps$Temperature))
+  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = hydropeak[hyd], peakeach = length(temps$Temperature))
   # calculate mean abundances at each timestep
-  means.list.NZMS <- mean.data.frame(out, burnin = 260, iteration = 2)
+  means.list.NZMS <- mean.data.frame(out, burnin = 260, iteration = 1000)
   # for each stage, calculate mean biomass
   s1s <- mean(out[-c(1:260), 1, ]) * (0.02 * mean(c(0.5, 3.2))^2.4315)
   s2s <- mean(out[-c(1:260), 2, ]) * (0.02 * mean(c(3.2, 4))^2.4315)
   s3s <- mean(out[-c(1:260), 3, ]) * (0.02 * mean(c(4, 5.5))^2.4315)
   # sum the mean biomass of each stage to get mean timestep biomass
-  sizemeans[hyd] <- sum(c(s1s, s2s, s3s))
+  sizemean <- sum(c(s1s, s2s, s3s))
   # produce standard devation
-  sizesd[hyd] <- sd(c(s1s, s2s, s3s))
+  sizesd <- sd(c(s1s, s2s, s3s))
 
   # now instead of getting the mean, calculate biomass at every timestep
   # s1ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 1, ]) * (0.02 * mean(c(0.5, 3.2))^2.4315), year(temps$dts[-c(1:259)])))
@@ -61,22 +67,32 @@ set.seed(123) # make reproducible
   #Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
 
   # no emerging biomass
-  S3Yrprod[hyd] <- 0
-  
+  S3Yrprod<- 0
+  S3Yrprodsd<- 0
   # calculate the average of mean abundances at each hydropeaking intensity
-  means[hyd] <- mean(means.list.NZMS$mean.abund)
+  mean_abund <- mean(means.list.NZMS$mean.abund)
   # calculate the standard deviation of mean abundances at each hydropeaking intensity
-  sd[hyd] <- sd(means.list.NZMS$mean.abund, na.rm = T)
+  sd_abund <- sd(means.list.NZMS$mean.abund, na.rm = T)
+  # Return the results for this hydropeaking scenario
+  c(hydropeak[hyd], mean_abund, sd_abund, sizemean, sizesd, S3Yrprod, S3Yrprodsd)
+  
 }
+stopCluster(cl)
+
+# Compile results into data frames
+results_df <- as.data.frame(results)
+colnames(results_df) <- c("Hydropeak", "MeanAbund", "SdAbund", "SizeMean", "SizeSd", "S3Yrprod", "S3Yrprodsd")
+# Save the results as a CSV file
+write.csv(results_df, file = "nzms_hydropeaking_results.csv", row.names = FALSE)
 
 # compile abundance data
-NZMS_hyd_means <- as.data.frame(cbind(hydropeak, means, sd, rep("NZMS", length(means))))
+#NZMS_hyd_means <- as.data.frame(cbind(hydropeak, means, sd, rep("NZMS", length(means))))
 
 # compile timeseries biomass data
-NZMS_hyd_size <- as.data.frame(cbind(hydropeak, sizemeans, sizesd, rep("NZMS", length(sizemeans))))
+#NZMS_hyd_size <- as.data.frame(cbind(hydropeak, sizemeans, sizesd, rep("NZMS", length(sizemeans))))
 
 # compile annual biomass data
-NZMS_hyd_yrprod <- as.data.frame(cbind(hydropeak, S3Yrprod, rep("NZMS", length(sizemeans))))
+#NZMS_hyd_yrprod <- as.data.frame(cbind(hydropeak, S3Yrprod, rep("NZMS", length(sizemeans))))
 # 
 # ggplot(data = NZMS_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "NZMS")) +
 #   geom_ribbon(aes(ymin = means - sd,

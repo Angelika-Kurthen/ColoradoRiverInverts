@@ -57,14 +57,14 @@ results <- foreach(hyd = 1:length(hydropeak), .combine = rbind) %dopar% {
   s3ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 3, ]) * (0.0053 * ((sizes[-c(1:260)]))^2.875), year(temps$dts[-c(1:259)])))
   s3sYr <- aggregate(V1 ~ V2, data = s3ss, FUN = sum, na.rm = TRUE)
   S3Yrprod <- mean(s3sYr$V1, na.rm = TRUE)
-  
+  S3Yrprodsd <- sd(s3sYr$V1, na.rm = TRUE)
   # Calculate mean abundances at each timestep
   means.list.BAET <- mean.data.frame(out, burnin = 260, iteration = 1000)
   mean_abund <- mean(means.list.BAET$mean.abund)
   sd_abund <- sd(means.list.BAET$mean.abund, na.rm = TRUE)
   
   # Return the results for this hydropeaking scenario
-  c(hydropeak[hyd], mean_abund, sd_abund, sizemean, sizesd, S3Yrprod)
+  c(hydropeak[hyd], mean_abund, sd_abund, sizemean, sizesd, S3Yrprod,S3Yrprodsd)
 }
 
 # Stop the cluster
@@ -72,6 +72,6 @@ stopCluster(cl)
 
 # Compile results into data frames
 results_df <- as.data.frame(results)
-colnames(results_df) <- c("Hydropeak", "MeanAbund", "SdAbund", "SizeMean", "SizeSd", "S3Yrprod")
+colnames(results_df) <- c("Hydropeak", "MeanAbund", "SdAbund", "SizeMean", "SizeSd", "S3Yrprod", "S3Yrprodsd")
 # Save the results as a CSV file
 write.csv(results_df, file = "baet_hydropeaking_results.csv", row.names = FALSE)

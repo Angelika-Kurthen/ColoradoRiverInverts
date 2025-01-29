@@ -1,9 +1,13 @@
 ############################
 # Hydropeaking Sensitivity GAMM
 #############################
+# Load necessary libraries
+library(doParallel)
+library(foreach)
 
+# Load custom functions and data
 source("1spFunctions.R")
-source("GAMM_1sp_Model.R")
+source("GAMM_1sp_model.R")
 
 
 # read in Lees Ferry temp and discharge data from 2007 to 2023
@@ -25,16 +29,14 @@ flows$Discharge <- flows$Discharge/85000
 
 # create sequence of hydropeaking intensities
 hydropeak <- seq(0.0, 0.7, by = 0.05)
-# makes some vectors for data to go into
-means <- vector()
-sd <- vector()
-sizemeans <- vector()
-sizesd <- vector()
-Yrprod <- vector()
-# cycle though hydropeaking scenarios
-for (hyd in 1:length(hydropeak)){
-  set.seed(123)# make reproducible
+# Detect available cores for parallel execution
+cores <- as.numeric(Sys.getenv("SLURM_CPUS_ON_NODE", 1)) # Default to 1 if not running under SLURM
+cl <- makeCluster(cores)
+registerDoParallel(cl)
 
+# Parallel computation for hydropeaking scenarios
+results <- foreach(hyd = 1:length(hydropeak), .combine = rbind) %dopar% {
+  set.seed(123 + hyd) # Ensure reproducibility
   # model abundances (size structured)
   out <- GAMMmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.25, extinct = 50, iteration = 2, peaklist = hydropeak[hyd], peakeach = length(temps$Temperature))
   # for each stage, calculate mean biomass from Berezina
@@ -42,9 +44,9 @@ for (hyd in 1:length(hydropeak)){
   s2s <- mean(out[-c(1:260), 2,]) * (0.063 * mean(c(7, 9))^2.46)
   s3s <- mean(out[-c(1:260), 3,]) * (0.063 * mean(c(9, 12))^2.46)
   # average the mean biomass of each stage to get mean timestep biomass
-  sizemeans[hyd] <- mean(c(s1s, s2s, s3s))
+  sizemean <- mean(c(s1s, s2s, s3s))
   # produce standard devation
-  sizesd[hyd] <- sd(c(s1s, s2s, s3s))
+  sizesd <- sd(c(s1s, s2s, s3s))
   
   # now instead of getting the mean, calculate biomass at every timestep
   # s1ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 1, ]) * (0.063 * mean(c(2.5, 7))^2.46), year(temps$dts[-c(1:259)])))
@@ -61,24 +63,36 @@ for (hyd in 1:length(hydropeak)){
   # Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
   
   # no emerging biomass
-  S3Yrprod[hyd] <- 0
-  
+  S3Yrprod<- 0
+  S3Yrprodsd <- 0
   # calculate mean abundances at each timestep
   means.list.GAMM <- mean.data.frame(out, burnin = 260, iteration = 2)
   # calculate the average of mean abundances at each hydropeaking intensity
-  means[hyd] <- mean(means.list.GAMM$mean.abund)
+  mean_abund <- mean(means.list.GAMM$mean.abund)
   # calculate the standard deviation of mean abundances at each hydropeaking intensity
-  sd[hyd] <- sd(means.list.GAMM$mean.abund, na.rm = T)
+  sd_abund <- sd(means.list.GAMM$mean.abund, na.rm = T)
+  
+  # Return the results for this hydropeaking scenario
+  c(hydropeak[hyd], mean_abund, sd_abund, sizemean, sizesd, S3Yrprod, S3Yrprodsd)
 }
 
+# Stop the cluster
+stopCluster(cl)
+
+# Compile results into data frames
+results_df <- as.data.frame(results)
+colnames(results_df) <- c("Hydropeak", "MeanAbund", "SdAbund", "SizeMean", "SizeSd", "S3Yrprod", "S3Yrprodsd")
+# Save the results as a CSV file
+write.csv(results_df, file = "gamm_hydropeaking_results.csv", row.names = FALSE)
+
 # compile abundance data
-GAMM_hyd_means <- as.data.frame(cbind(hydropeak, means, sd, rep("GAMM", length(means))))
+#GAMM_hyd_means <- as.data.frame(cbind(hydropeak, means, sd, rep("GAMM", length(means))))
 
 # compile timeseries biomass data
-GAMM_hyd_size <- as.data.frame(cbind(hydropeak, sizemeans, sizesd, rep("GAMM", length(sizemeans))))
+#GAMM_hyd_size <- as.data.frame(cbind(hydropeak, sizemeans, sizesd, rep("GAMM", length(sizemeans))))
 
 # compile annual biomass data
-GAMM_hyd_yrprod <- as.data.frame(cbind(hydropeak, S3Yrprod, rep("GAMM", length(sizemeans))))
+#GAMM_hyd_yrprod <- as.data.frame(cbind(hydropeak, S3Yrprod, rep("GAMM", length(sizemeans))))
 
 # ggplot(data = GAMM_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "GAMM")) +
 #   geom_ribbon(aes(ymin = means - sd,

@@ -1,7 +1,11 @@
 ############################
 # Hydropeaking Sensitivity CHIR
 #############################
+# Load necessary libraries
+library(doParallel)
+library(foreach)
 
+# Load custom functions and data
 source("1spFunctions.R")
 source("CHIR_1sp_Model.R")
 
@@ -25,15 +29,14 @@ flows$Discharge <- flows$Discharge/85000
 
 # create sequence of hydropeaking intensities
 hydropeak <- seq(0.0, 0.7, by = 0.05)
-# makes some vectors for data to go into
-means <- vector()
-sd <- vector()
-sizemeans <- vector()
-sizesd <- vector()
-S3Yrprod <- vector()
-# cycle though hydropeaking scenarios
-for (hyd in 1:length(hydropeak)){
-  set.seed(123) # make reproducible
+# Detect available cores for parallel execution
+cores <- as.numeric(Sys.getenv("SLURM_CPUS_ON_NODE", 1)) # Default to 1 if not running under SLURM
+cl <- makeCluster(cores)
+registerDoParallel(cl)
+
+# Parallel computation for hydropeaking scenarios
+results <- foreach(hyd = 1:length(hydropeak), .combine = rbind) %dopar% {
+  set.seed(123 + hyd) # Ensure reproducibility
   # model sizes
   sizes <- CHIRmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.2, extinct = 50, iteration = 2, peaklist = hydropeak[hyd], peakeach = length(temps$Temperature), stage_output = "size")
   # model abundances
@@ -42,9 +45,9 @@ for (hyd in 1:length(hydropeak)){
   s2s <- mean(out[-c(1:260), 2,]) * (0.0018 * (mean(sizes[-c(1:260)]))^2.617)
   s3s <- mean(out[-c(1:260), 3,]) * (0.0018 * (mean(sizes[-c(1:260)]))^2.617)
   # sum the mean biomass of each stage to get mean timestep biomass
-  sizemeans[hyd] <- sum(c(s1s, s2s, s3s))
+  sizemean<- sum(c(s1s, s2s, s3s))
   # produce standard devation
-  sizesd[hyd] <- sd(c(s1s, s2s, s3s))
+  sizesd<- sd(c(s1s, s2s, s3s))
   
   
   # now instead of getting the mean, calculate biomass at every timestep
@@ -62,24 +65,35 @@ for (hyd in 1:length(hydropeak)){
   #Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
   
   # average annual biomass of only stage 3 (emergent adults)
-  S3Yrprod[hyd] <- mean(s3sYr$V1, na.rm = T)
-  
+  S3Yrprod <- mean(s3sYr$V1, na.rm = T)
+  S3Yrprodsd <- sd(s3sYr$V1, na.rm = T)
   # calculate mean abundances at each timestep
   means.list.CHIR <- mean.data.frame(out, burnin = 260, iteration = 2)
   # calculate the average of mean abundances at each hydropeaking intensity
-  means[hyd] <- mean(means.list.CHIR$mean.abund)
+  mean_abund <- mean(means.list.CHIR$mean.abund)
   # calculate the standard deviation of mean abundances at each hydropeaking intensity
-  sd[hyd] <- sd(means.list.CHIR$mean.abund, na.rm = T)
+  sd_abund  <- sd(means.list.CHIR$mean.abund, na.rm = T)
+  
+  c(hydropeak[hyd], mean_abund, sd_abund, sizemean, sizesd, S3Yrprod, S3Yrprodsd)
+  
 }
+#Stop the cluster
+stopCluster(cl)
+
+# Compile results into data frames
+results_df <- as.data.frame(results)
+colnames(results_df) <- c("Hydropeak", "MeanAbund", "SdAbund", "SizeMean", "SizeSd", "S3Yrprod", "S3Yrprodsd")
+# Save the results as a CSV file
+write.csv(results_df, file = "chir_hydropeaking_results.csv", row.names = FALSE)
 
 # compile abundance data
-CHIR_hyd_means <- as.data.frame(cbind(hydropeak, means, sd, rep("CHIR", length(means))))
+# CHIR_hyd_means <- as.data.frame(cbind(hydropeak, means, sd, rep("CHIR", length(means))))
 
 # compile timeseries biomass data
-CHIR_hyd_size <- as.data.frame(cbind(hydropeak, sizemeans, sizesd, rep("CHIR", length(sizemeans))))
+# CHIR_hyd_size <- as.data.frame(cbind(hydropeak, sizemeans, sizesd, rep("CHIR", length(sizemeans))))
 
 # compile annual production biomass data
-CHIR_hyd_yrprod <- as.data.frame(cbind(hydropeak, S3Yrprod, rep("CHIR", length(sizemeans))))
+# CHIR_hyd_yrprod <- as.data.frame(cbind(hydropeak, S3Yrprod, rep("CHIR", length(sizemeans))))
 # 
 # ggplot(data = CHIR_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "CHIR")) +
 #   geom_ribbon(aes(ymin = means - sd,
