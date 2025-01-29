@@ -22,7 +22,7 @@
 library(readxl)
 library(minpack.lm)
 library(tidyverse)
-library(car)
+#library(car)
 library(boot)
 library(data.table)
 HYOSVitalRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Mortality Rates")
