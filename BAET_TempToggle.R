@@ -24,7 +24,7 @@ flows$dts <- as.Date(temps$dts)
 flows$Discharge <- flows$Discharge/85000
 
 # create sequence of hydropeaking intensities
-temp_seq <- c(1, 1.1, 1.5)
+temp_seq <- seq(0, 10, by = 1)
 
 # makes some vectors for data to go into
 means <- vector()
@@ -33,62 +33,56 @@ sizemeans <- vector()
 sizesd <- vector()
 S3Yrprod <- vector()
 S3Yrprod_sd <- vector()
-BAET_temp_abund <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
-BAET_temp_biomass <- data.frame(biomass=numeric(), temperature = factor(), taxa = factor())
 # cycle though hydropeaking scenarios
 for (te in 1:length(temp_seq)){
   set.seed(123) # make reproducible
   # model sizes
-  temps$Temperature <- temps$Temperature * temp_seq[te]
+  temps$Temperature <- temps$Temperature + temp_seq[te]
   
-  sizes <- BAETmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 40000 , Qmin = 0.1, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temps$Temperature), stage_output = "size")
+  sizes <- BAETmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 40000 , Qmin = 0.1, extinct = 50, iteration = 2, peaklist = 0.17, peakeach = length(temps$Temperature), stage_output = "size")
   # model abundances
-  out <- BAETmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 40000 , Qmin = 0.1, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temps$Temperature))
-  temps$Temperature <- temps$Temperature / temp_seq[te]
+  out <- BAETmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 40000 , Qmin = 0.1, extinct = 50, iteration = 2, peaklist = 0.17, peakeach = length(temps$Temperature))
+  temps$Temperature <- temps$Temperature - temp_seq[te]
   
   # for each stage, calculate mean biomass
-  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.0053 * (mean(sizes[-c(1:260)])/2)^2.875)
-  s2s <- colMeans(out[-c(1:260), 2,]) * (0.0053 * (mean(sizes[-c(1:260)]))^2.875)
-  s3s <- colMeans(out[-c(1:260), 3,]) * (0.0053 * (mean(sizes[-c(1:260)]))^2.875)
+  s1s <- mean(out[-c(1:260), 1, ]) * (0.0053 * (mean(sizes[-c(1:260)])/2)^2.875)
+  s2s <- mean(out[-c(1:260), 2,]) * (0.0053 * (mean(sizes[-c(1:260)]))^2.875)
+  s3s <- mean(out[-c(1:260), 3,]) * (0.0053 * (mean(sizes[-c(1:260)]))^2.875)
   # sum the mean biomass of each stage to get mean timestep biomass
-  sizes_list <- as.vector(s1s + s2s + s3s)
-  average_size <- cbind(sizes_list, rep(temp_seq[te], times = length(sizes_list)), rep("BAET",times = length(sizes_list)))
-  colnames(average_size) <- colnames(BAET_temp_biomass)
+  sizemeans[te] <- sum(c(s1s, s2s, s3s))
+  # produce standard devation
+  sizesd[te] <- sd(c(s1s, s2s, s3s))
   
-  # # now instead of getting the mean, calculate biomass at every timestep
-  # s1ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 1, ]) * (0.0053 * ((sizes[-c(1:260)])/2)^2.875), year(temps$dts[-c(1:259)])))
-  # s2ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 2, ]) * (0.0053 * ((sizes[-c(1:260)]))^2.875), year(temps$dts[-c(1:259)])))
-  # s3ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 3, ]) * (0.0053 * ((sizes[-c(1:260)]))^2.875), year(temps$dts[-c(1:259)])))
-  # 
-  # # find annual stage specific biomass based on year
-  # s1sYr <- aggregate(V1 ~ V2, data = s1ss, FUN = sum, na.rm = TRUE)
-  # s2sYr <- aggregate(V1 ~ V2, data = s2ss, FUN = sum, na.rm = TRUE)
-  # s3sYr <- aggregate(V1 ~ V2, data = s3ss, FUN = sum, na.rm = TRUE)
+  # now instead of getting the mean, calculate biomass at every timestep
+  s1ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 1, ]) * (0.0053 * ((sizes[-c(1:260)])/2)^2.875), year(temps$dts[-c(1:259)])))
+  s2ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 2, ]) * (0.0053 * ((sizes[-c(1:260)]))^2.875), year(temps$dts[-c(1:259)])))
+  s3ss <- as.data.frame(cbind(rowMeans(out[-c(1:260), 3, ]) * (0.0053 * ((sizes[-c(1:260)]))^2.875), year(temps$dts[-c(1:259)])))
+  
+  # find annual stage specific biomass based on year
+  s1sYr <- aggregate(V1 ~ V2, data = s1ss, FUN = sum, na.rm = TRUE)
+  s2sYr <- aggregate(V1 ~ V2, data = s2ss, FUN = sum, na.rm = TRUE)
+  s3sYr <- aggregate(V1 ~ V2, data = s3ss, FUN = sum, na.rm = TRUE)
   
   # add all stages together to get average annual biomass (aka secondary production)
   #Yrprod[hyd] <- sum(mean(c(s1sYr$V1, s2sYr$V1, s3sYr$V1), na.rm = T))
-  # 
-  # # average annual biomass of only stage 3 (emergent adults)
-  # S3Yrprod[te] <- mean( s3sYr$V1, na.rm = T)
-  # S3Yrprod_sd[te] <- sd(s3sYr$V1, na.rm = T)
+  
+  # average annual biomass of only stage 3 (emergent adults)
+  S3Yrprod[te] <- mean( s3sYr$V1, na.rm = T)
+  S3Yrprod_sd[te] <- sd(s3sYr$V1, na.rm = T)
   # calculate mean abundances at each timestep
   means.list.BAET <- mean.data.frame(out, burnin = 260, iteration = 2)
   # calculate the average of mean abundances at each hydropeaking intensity
-  means <- means.list.BAET$mean.abund
-  average_means <- cbind(means, rep(temp_seq[te], times = length(means)), rep("BAET",times = length(means)))
-  colnames(average_means) <- colnames(BAET_temp_abund)
-  # # calculate the standard deviation of mean abundances at each hydropeaking intensity
-  # sd[te] <- sd(means.list.BAET$mean.abund, na.rm = T)
-  BAET_temp_abund <- rbind(BAET_temp_abund, average_means)
-  BAET_temp_biomass <- rbind(BAET_temp_biomass, average_size)
+  means[te] <- mean(means.list.BAET$mean.abund)  
+  # calculate the standard deviation of mean abundances at each hydropeaking intensity
+  sd[te] <- sd(means.list.BAET$mean.abund, na.rm = T)
 }
 
-# # compile abundance data
-# BAET_te_means <- as.data.frame(cbind(temp_seq, means, sd, rep("BAET", length(means))))
-# # compile timeseries biomass data
-# BAET_te_size <- as.data.frame(cbind(temp_seq, sizemeans, sizesd, rep("BAET", length(sizemeans))))
-# # compile annual biomass data
-# BAET_te_yrprod <- as.data.frame(cbind(temp_seq, S3Yrprod, S3Yrprod_sd, rep("BAET", length(sizemeans))))
+# compile abundance data
+BAET_te_means <- as.data.frame(cbind(temp_seq, means, sd, rep("BAET", length(means))))
+# compile timeseries biomass data
+BAET_te_size <- as.data.frame(cbind(temp_seq, sizemeans, sizesd, rep("BAET", length(sizemeans))))
+# compile annual biomass data
+BAET_te_yrprod <- as.data.frame(cbind(temp_seq, S3Yrprod, S3Yrprod_sd, rep("BAET", length(sizemeans))))
 
 
 # ggplot(data = BAET_hyd_means, aes(x = hydropeak,  y = means, group = 1, color = "BAET")) +

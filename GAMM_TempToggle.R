@@ -3,7 +3,7 @@
 #############################
 
 source("1spFunctions.R")
-source("GAMM_1sp_Model.R")
+source("GAMM_1sp_model.R")
 
 
 # read in Lees Ferry temp and discharge data from 2007 to 2023
