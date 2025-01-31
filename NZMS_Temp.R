@@ -28,7 +28,7 @@ flows$dts <- as.Date(temps$dts)
 flows$Discharge <- flows$Discharge/85000
 
 # create sequence of temperature modifiers
-temp_seq <- c(1, 1.1, 1.5)
+temp_seq <- c(1, 1.1, 1.2, 1.5)
 
 # makes some vectors for data to go into
 NZMS_temp_abund <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
@@ -37,7 +37,7 @@ results <- mclapply(temp_seq, function(te) {
   set.seed(123) # make reproducible
   # model sizes
   temps$Temperature <- temps$Temperature * te
-  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
+  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0, peakeach = length(temps$Temperature))
   temps$Temperature <- temps$Temperature / te
   # calculate mean abundances at each timestep
   means.list.NZMS <- mean.data.frame(out, burnin = 260, iteration = 1000)
@@ -69,3 +69,48 @@ NZMS_temp_biomass <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_biomass"))
 # Write results to CSV files
 write.csv(NZMS_temp_abund, "NZMS_temp_abund.csv", row.names = FALSE)
 write.csv(NZMS_temp_biomass, "NZMS_temp_biomass.csv", row.names = FALSE)
+
+
+
+# makes some vectors for data to go into
+NZMS_temp_abund_spike <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
+NZMS_temp_biomass_spike <- data.frame(biomass=numeric(), temperature = factor(), taxa = factor())
+results <- mclapply(temp_seq, function(te) {
+  set.seed(123) # make reproducible
+  # modify temperature regim
+  temps$Temperature <- temps$Temperature * te
+  # add temp spike in September
+  temps$Temperature[which(month(temps$dts) == 9 & day(temps$dts) == 15)] <- 26
+  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0, peakeach = length(temps$Temperature))
+  temps$Temperature <- temps$Temperature / te
+  # calculate mean abundances at each timestep
+  means.list.NZMS <- mean.data.frame(out, burnin = 260, iteration = 1000)
+  means <- means.list.NZMS$mean.abund
+  # Store abundance data in a dataframe
+  average_means <- cbind(means, rep(te, times = length(means)), rep("NZMS",times = length(means)))
+  colnames(average_means) <- colnames(NZMS_temp_abund_spike)
+  # for each stage, calculate mean biomass
+  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.02 * mean(c(0.5, 3.2))^2.4315)
+  s2s <- colMeans(out[-c(1:260), 2, ]) * (0.02 * mean(c(3.2, 4))^2.4315)
+  s3s <- colMeans(out[-c(1:260), 3, ]) * (0.02 * mean(c(4, 5.5))^2.4315)
+  # sum the mean biomass of each stage to get mean timestep biomass
+  sizes_list <- as.vector(s1s + s2s + s3s)
+  # Store biomass data in a dataframe
+  average_size <- cbind(sizes_list, rep(te, times = length(sizes_list)), rep("NZMS",times = length(sizes_list)))
+  colnames(average_size) <- colnames(NZMS_temp_biomass_spike)
+  
+  # Append results to the main data storage
+  NZMS_temp_abund_spike <- rbind(NZMS_temp_abund_spike, average_means)
+  NZMS_temp_biomass_spike <- rbind(NZMS_temp_biomass_spike, average_size)
+  # Return results as a list
+  return(list(NZMS_temp_abund_spike = average_means, NZMS_temp_biomass_spike = average_size))
+}, mc.cores = detectCores() - 1)
+
+# Combine results from all temperature scenarios into final dataframes
+NZMS_temp_abund <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_abund_spike"))
+NZMS_temp_biomass <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_biomass_spike"))
+
+# Write results to CSV files
+write.csv(NZMS_temp_abund_spike, "NZMS_temp_abund_spike.csv", row.names = FALSE)
+write.csv(NZMS_temp_biomass_spike, "NZMS_temp_biomass_spike.csv", row.names = FALSE)
+
