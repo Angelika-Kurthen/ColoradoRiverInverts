@@ -5,7 +5,7 @@
 library(readxl)
 library(minpack.lm)
 library(tidyverse)
-library(car)
+#library(car)
 library(boot)
 GAMMVitalRates <- read_excel("VitalRates.xlsx", sheet = "Gammarus Mortality Rates")
 GAMMVitalRates <- as.data.frame(GAMMVitalRates)
