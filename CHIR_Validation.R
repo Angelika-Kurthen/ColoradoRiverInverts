@@ -34,25 +34,25 @@ temps <- TimestepTemperature(temp)
 discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
 flow.magnitude <- TimestepDischarge(discharge, 85000)
 
-# drift.data.total <- foodbase::readDB(gear = "Drift", type = "Sample", updater = F)
-# # get drift data from between Lees Ferry and RM -6
-# drift.LF <- drift.data.total[which(drift.data.total$RiverMile >= -6 & drift.data.total$RiverMile <= 0),]
-# #specify
-# CHIR.samp.LF <- sampspec(samp = drift.LF, species = c("CHIL"), stats = T)
-# # pull stats and merge with sample info
-# CHIR.samp <- merge(CHIR.samp.LF$Statistics, CHIR.samp.LF$Samples, by = "BarcodeID", all = T)
-# # make sure we are using the same gear
-# CHIR.samp <- CHIR.samp[which(CHIR.samp$GearID == 4),] 
-# CHIR.samp <- CHIR.samp[which(CHIR.samp$FlagStrange == 0), ]
-# # calculate density
-# CHIR.samp$Density <- CHIR.samp$CountTotal/CHIR.samp$Volume
-# CHIR.samp <- merge(CHIR.samp, discharge[, 3:4], by = "Date")
-# 
-# CHIR.samp$Density <- (CHIR.samp$Density)/(1.3 *(CHIR.samp$X_00060_00003 * 0.0283168)^4.1)
-# CHIR.samp <- aggregate(CHIR.samp$Density, list(CHIR.samp$Date), FUN = mean)
+drift.data.total <- foodbase::readDB(gear = "Drift", type = "Sample", updater = F)
+# get drift data from between Lees Ferry and RM -6
+drift.LF <- drift.data.total[which(drift.data.total$RiverMile >= -6 & drift.data.total$RiverMile <= 0),]
+#specify
+CHIR.samp.LF <- sampspec(samp = drift.LF, species = c("CHIL"), stats = T)
+# pull stats and merge with sample info
+CHIR.samp <- merge(CHIR.samp.LF$Statistics, CHIR.samp.LF$Samples, by = "BarcodeID", all = T)
+# make sure we are using the same gear
+CHIR.samp <- CHIR.samp[which(CHIR.samp$GearID == 4),]
+CHIR.samp <- CHIR.samp[which(CHIR.samp$FlagStrange == 0), ]
+# calculate density
+CHIR.samp$Density <- CHIR.samp$CountTotal/CHIR.samp$Volume
+CHIR.samp <- merge(CHIR.samp, discharge[, 3:4], by = "Date")
+
+CHIR.samp$Density <- (CHIR.samp$Density)/(1.3 *(CHIR.samp$X_00060_00003 * 0.0283168)^4.1)
+CHIR.samp <- aggregate(CHIR.samp$Density, list(CHIR.samp$Date), FUN = mean)
 
 # write.csv2(CHIR.samp, file = "CHIR.samp.csv")
-CHIR.samp <- read.csv2("CHIR.samp.csv")
+# CHIR.samp <- read.csv2("CHIR.samp.csv")
 means <- vector()
 for (i in 1:length(temps$dts)){
   d <- CHIR.samp[which(CHIR.samp$Group.1 >= temps$dts[i] & CHIR.samp$Group.1 < temps$dts[i+1]),]
@@ -66,26 +66,6 @@ for (i in 1:length(temps$dts)){
 means <- as.data.frame(cbind(means, as.Date(temps$dts)))
 means$V2 <- as.Date(means$V2, origin = "1970-01-01")
 
-G1s <- seq(0.6, 0.76, by = 0.01)
-G2s <- seq(0.32, 0.72, by = 0.01)
-# Create combinations of G1s and G2s
-param_combinations <- expand.grid(G1s = G1s, G2s = G2s)
-
-# Create a directory for saving results
-output_dir <- "rho_results"
-if (!dir.exists(output_dir)) {
-  dir.create(output_dir)
-}
-
-# Run models in parallel and save results
-results <- foreach(idx = 1:nrow(param_combinations), .packages = c('dplyr', 'plyr', 'foodbase', 'lubridate')) %dopar% {
-  # Extract parameters for this iteration
-  g1s <- param_combinations$G1s[idx]
-  g2s <- param_combinations$G2s[idx]
-  
-  # Print progress (optional)
-  print(paste("Running for g1s =", g1s, "and g2s =", g2s))
-  
   # Run CHIR model
   set.seed(111)
   out <- CHIRmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, 
@@ -119,25 +99,6 @@ results <- foreach(idx = 1:nrow(param_combinations), .packages = c('dplyr', 'ply
   cor.df2 <- cor.df %>% slice(which(row_number() %% 2 == 1))
   rho2 <- cor.test(cor.df2$mean.abund, cor.df2$means, method = "spearman")
   rho <- mean(c(rho1$estimate, rho2$estimate))
-  
-  # Save each result
-  saveRDS(list(g1s = g1s, g2s = g2s, rho = rho), 
-          file = file.path(output_dir, paste0("rho_results_g1_", g1s, "_g2_", g2s, ".rds")))
-  
-  # Return rho (optional)
-  list(g1s = g1s, g2s = g2s, rho = rho)
-}
-
-# Stop the parallel backend
-stopCluster(cl)
-
-# Combine all results
-rho_summary <- do.call(rbind, lapply(results, function(res) {
-  data.frame(g1s = res$g1s, g2s = res$g2s, rho = res$rho)
-}))
-
-# Save summary to a CSV file
-
 
 
 rmse.chir<- sqrt(mean((cor.df$means - cor.df$mean.abund)^2))
@@ -171,9 +132,9 @@ CHIRts <- ggplot(data = means.list.CHIR, aes(x = Date,  y = scale(mean.abund), g
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
   #coord_cartesian(ylim = c(0,6000)) + S1 and S2 inds/m2
-  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5, label = paste('rho', "==", 0.03)), parse = T, color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5.5, label = paste("RMSE = 1.44")), color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =6,label = paste("Scaled Coverage = 94%")), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5, label = paste('rho', "==", 0.18)), parse = T, color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5.5, label = paste("RMSE = 1.21")), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =6,label = paste("Scaled Coverage = 92%")), color = "black", size = 4.5)+
   scale_linetype_manual(values = linetypes)+
   labs(y=expression(paste(italic("Chironomidae spp."), " Abund.")))+
   xlab("")+
@@ -222,19 +183,6 @@ CHIR.samp <- cbind(CHIR.samp, vals)
 CHIR.samp <- cbind(CHIR.samp, temps$Temperature[CHIR.samp$vals])
 CHIR.samp <- cbind(CHIR.samp, flow.magnitude$Discharge[CHIR.samp$vals])
 
-#CHIR.samp <- CHIR.samp[-which(CHIR.samp$Habitat == "Rock"), ]
-#CHIR.samp$Habitat <- as.character(CHIR.samp$Habitat)
-#CHIR.samp$Habitat[which(CHIR.samp$Habitat == "Sand")] <- 0
-#CHIR.samp$Habitat[which(CHIR.samp$Habitat == "Vegetation")] <- 1
-#CHIR.samp$Habitat <- as.numeric(CHIR.samp$Habitat)
-#CHIR.samp <- CHIR.samp[-which(CHIR.samp$Weather == "Rain"), ]
-
-# CHIR.samp$Weather <- as.character(CHIR.samp$Weather)
-# CHIR.samp$Weather[which(CHIR.samp$Weather == "Rain")] <- 1
-# CHIR.samp$Weather[which(CHIR.samp$Weather == "NoRain")] <- 0
-# CHIR.samp$Weather <- as.numeric(CHIR.samp$Weather)
-#
-# CHIR.samp <- CHIR.samp[-which(CHIR.samp$Bats == T), ]
 max_visits <- vector() # vector to put max obs per site
 means <- vector()
 for (i in 1:length(temps$dts)){  # cycle through all the 14 day timesteps that we have model output for
@@ -283,493 +231,496 @@ for (i in 1:length(temps$dts)){
 nodata <- which(is.na(site_mat[,1]))
 # first identify all the timsteps that don't have data (so we can match them up later)
 site_mat <- as.matrix(site_mat[-nodata,]) # count data
-#dens_mat <- as.matrix(dens_mat[-nodata, ]) # density data
 obs_intercept <- as.matrix(obs_intercept[-nodata,]) # intercept for obs cov
 
 flows <- as.data.frame(scale(flows[-nodata])) # site cov flow
 temperature <- as.data.frame(scale(temperature[-nodata])) # site cov temp
 circdate <- as.data.frame(df$circdate)
-#windspeed <- as.matrix((scale(windspeed[-nodata,])))
-##windspeed[is.na(windspeed)] <- mean(windspeed, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
-#habitat <- as.matrix(habitat[-nodata,])
-#Mode <- function(x) {
-#  ux <- unique(x)
-#  ux[which.max(tabulate(match(x, ux)))]
-#}
-#habitat[is.na(habitat)] <- Mode(na.omit(habitat)) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
-#weather <- as.matrix(weather[-nodata,])
-#weather[is.na(weather)] <- Mode(na.omit(weather))
+
 
 site_intercept <- rep(1, times = length(flows$V1))
 site_covs<- as.matrix(cbind(site_intercept, flows)) #flows,temperature, circdate)
 obs_covs <- array(data= NA, dim = c(length(flows$V1),J,1))
 obs_covs[,,1] <- obs_intercept
-#obs_covs[,,2] <- windspeed
-#obs_covs[,,3] <- windspeed
-#obs_covs[,,4] <- habitat
+
 #offset
 offset <- as.matrix(scale(log(volumes[-nodata, ])))
 offset[is.na(offset)] <- mean(offset, na.rm = TRUE) # replace NAs with mean duration time since NAs not allowed in predictors or offsets
 #
-# sink("N-mixturePoisCHIR.jags")
-# cat("
-# model{
-#     # Priors
-#     for(i in 1:nAlpha){ # nAlpha is the number of site predictor variables
-#       alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
-#     }
+sink("N-mixturePoisCHIR.jags")
+cat("
+model{
+    # Priors
+    for(i in 1:nAlpha){ # nAlpha is the number of site predictor variables
+      alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
+    }
+
+    for(i in 1:nBeta){ # nBeta is number of site x observation predictors
+      beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
+    }
+
+    # Likelihood
+    for(r in 1:R){
+     N[r] ~ dpois(lambda[r]) #start with pulling from Poisson
+     log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
+
+     for(j in 1:J){
+      y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
+      logit(p[r, j]) <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
+
+        ## Expected count at site r, sample j
+        exp[r,j] <- N[r] * p[r, j]
+
+        ## Discrepancy
+        ## (note small value added to denominator to avoid potential divide by zero)
+        ## This is the X2 + descrepancy
+        E[r, j] <- pow((y[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+
+        ## Simulate new count from model
+        y.rep[r, j] ~ dbinom(p[r, j], N[r])
+
+        ## X2
+        E.rep[r, j] <- pow((y.rep[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+     }
+    }
+     # chi-squared test statistics
+    fit <- sum(E[,])
+    fit.rep <- sum(E.rep[ , ])
+    } # End model
+", fill = TRUE)
+sink()
+
+jags_data <- list(y = (site_mat),
+                  XN = site_covs,
+                  Xp = (obs_covs),
+                  J = dim(site_mat)[2], #visits
+                  R = dim(site_mat)[1], #sites
+                  off = (offset), #obs offset
+                  nAlpha = dim(site_covs)[2],
+                  nBeta = dim(obs_covs)[3])
+
+nAlpha <- dim(site_covs)[2]
+nBeta <- dim(obs_covs)[3]
+jags_inits <- function(){
+  list(
+    N = apply(jags_data$y, 1, max, na.rm=TRUE),
+    alpha=runif(nAlpha,-1,1),
+    beta=runif(nBeta,-1,1))}
+
+parameters <- c("alpha", "beta", "lambda", "p", "N")
+
+
+nc <- 3
+ni <- 10000
+nb <- 2500
+nt <- 1
+
+Nmix_fit <- jags.model("N-mixturePoisCHIR.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
+
+update(Nmix_fit, n.iter = 1000)
+
+Nmix_fit_UI1 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisCHIR.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 #
-#     for(i in 1:nBeta){ # nBeta is number of site x observation predictors
-#       beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
-#     }
-#
-#     # Likelihood
-#     for(r in 1:R){
-#      N[r] ~ dpois(lambda[r]) #start with pulling from Poisson
-#      log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
-#
-#      for(j in 1:J){
-#       y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
-#       logit(p[r, j]) <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
-#
-#         ## Expected count at site r, sample j
-#         exp[r,j] <- N[r] * p[r, j]
-#
-#         ## Discrepancy
-#         ## (note small value added to denominator to avoid potential divide by zero)
-#         ## This is the X2 + descrepancy
-#         E[r, j] <- pow((y[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
-#
-#         ## Simulate new count from model
-#         y.rep[r, j] ~ dbinom(p[r, j], N[r])
-#
-#         ## X2
-#         E.rep[r, j] <- pow((y.rep[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
-#      }
-#     }
-#      # chi-squared test statistics
-#     fit <- sum(E[,])
-#     fit.rep <- sum(E.rep[ , ])
-#     } # End model
-# ", fill = TRUE)
-# sink()
-#
-# jags_data <- list(y = (site_mat),
-#                   XN = site_covs,
-#                   Xp = (obs_covs),
-#                   J = dim(site_mat)[2], #visits
-#                   R = dim(site_mat)[1], #sites
-#                   off = (offset), #obs offset
-#                   nAlpha = dim(site_covs)[2],
-#                   nBeta = dim(obs_covs)[3])
-#
-# nAlpha <- dim(site_covs)[2]
-# nBeta <- dim(obs_covs)[3]
-# jags_inits <- function(){
-#   list(
-#     N = apply(jags_data$y, 1, max, na.rm=TRUE),
-#     alpha=runif(nAlpha,-1,1),
-#     beta=runif(nBeta,-1,1))}
-#
-# parameters <- c("alpha", "beta", "lambda", "p", "N")
-#
-#
-# nc <- 3
-# ni <- 10000
-# nb <- 2500
-# nt <- 1
-#
-# Nmix_fit <- jags.model("N-mixturePoisCHIR.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
-#
-# update(Nmix_fit, n.iter = 1000)
-#
-# Nmix_fit_UI1 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisCHIR.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
-# #
-# print(Nmix_fit_UI1)
-#
-# zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp" , "fit", "fit.rep"), n.iter = ni, n.thin = nt)
-#
-#
-# lam <- MCMCpstr(zm, "lambda")
+#print(Nmix_fit_UI1)
+
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
+
+
+lam <- MCMCpstr(zm, "lambda")
 # N <- MCMCpstr(zm, "N")
 # N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
 # N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+
+
+lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
+lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
+
+# y.rep <- MCMCpstr(zm, "y.rep")
+# exp <- MCMCpstr(zm, "exp")
 #
+# plot(unlist(y.rep), unlist(site_mat))
 #
-# lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
-# lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
+# plot(unlist(y.rep), unlist(site_mat))
+# abline(0, 1)
 #
-# # y.rep <- MCMCpstr(zm, "y.rep")
-# # exp <- MCMCpstr(zm, "exp")
-# #
-# # plot(unlist(y.rep), unlist(site_mat))
-# #
-# # plot(unlist(y.rep), unlist(site_mat))
-# # abline(0, 1)
-# #
-# # fit <- MCMCchains(zm, "fit")
-# # fit.rep <- MCMCchains(zm, "fit.rep")
-# # # mean(fit > fit.rep) # close to 1 so bad fit?
-# # plot(fit.rep ~ fit)
-# # abline(0, 1) # 1 to 1 line not even there
-#
-#
-# # fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
-# #                      data = rep(c("Observed", "Simulated"), each = length(site_mat)))
-# # library(ggplot2)
-# # ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)# not getting all the 0s and missing the really high #s
-#
+# fit <- MCMCchains(zm, "fit")
+# fit.rep <- MCMCchains(zm, "fit.rep")
+# # mean(fit > fit.rep) # close to 1 so bad fit?
+# plot(fit.rep ~ fit)
+# abline(0, 1) # 1 to 1 line not even there
+
+
+# fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+#                      data = rep(c("Observed", "Simulated"), each = length(site_mat)))
+# library(ggplot2)
+# ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data)# not getting all the 0s and missing the really high #s
+
 # cor.df <- left_join(N, means.list.CHIR, by=c('V1'="Date"), copy = T)
 # #cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
 # PoisN <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
+
+cor.df <- left_join(lam, means.list.CHIR, by=c('V1'="Date"), copy = T)
+
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test(cor.df1$V2.x, cor.df1$means, method = "spearman")
+cor.df2 <- cor.df %>% slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$V2.x, cor.df2$means, method = "spearman")
+Poislam <- mean(c(rho1$estimate, rho2$estimate))
+
+
+#cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
+
+rm(zm)
+#rm(Nmix_fit_UI1)
+rm(Nmix_fit)
+
+
+sink("N-mixtureZIPCHIR.jags")
+cat("
+model{
+    # Priors
+    omega ~ dbeta(1,1)
+
+    for(i in 1:nAlpha){ # nAlpha is the number of site predictor         variables
+      alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
+    }
+
+    for(i in 1:nBeta){ # nBeta is number of site x observation predictors
+      beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
+    }
+
+    # Likelihood
+    for(r in 1:R){
+     z[r] ~ dbern(omega) # either there or not
+     N[r] ~ dpois(lambda[r] * z[r]) #start with pulling from Poisson with z variable
+     log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
+
+     for(j in 1:J){
+      y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
+      logit(p[r, j]) <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
+
+        ## Expected count at site r, sample j
+        exp[r,j] <- N[r] * p[r, j]
+
+        ## Discrepancy
+        ## (note small value added to denominator to avoid potential divide by zero)
+        ## This is the X2 + descrepancy
+        E[r, j] <- pow((y[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+
+        ## Simulate new count from model
+        y.rep[r, j] ~ dbinom(p[r, j], N[r])
+
+        ## X2
+        E.rep[r, j] <- pow((y.rep[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+     }
+    }
+     # chi-squared test statistics
+    fit <- sum(E[,])
+    fit.rep <- sum(E.rep[,])
+    } # End model
+", fill = TRUE)
+sink()
+
+jags_data <- list(y = (site_mat),
+                  XN = site_covs,
+                  Xp = (obs_covs),
+                  J = dim(site_mat)[2], #visits
+                  R = dim(site_mat)[1], #sites
+                  off = (offset), #obs offset
+                  nAlpha = dim(site_covs)[2],
+                  nBeta = dim(obs_covs)[3])
+
+nAlpha <- dim(site_covs)[2]
+nBeta <- dim(obs_covs)[3]
+jags_inits <- function(){
+  list(
+    omega = runif(1, 0.5, 0.7),
+    N = apply(jags_data$y, 1, max, na.rm=TRUE),
+    alpha=runif(nAlpha,-1,1),
+    beta=runif(nBeta,-1,1))}
+
+parameters <- c("omega", "alpha", "beta", "lambda", "p", "N")
+
+nc <- 3
+ni <- 10000
+nb <- 2500
+nt <- 1
+
+Nmix_fit <- jags.model("N-mixtureZIPCHIR.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
+
+update(Nmix_fit, n.iter = 1000)
+
+Nmix_fit_UI2 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureZIPCHIR.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
 #
-# cor.df <- left_join(lam, means.list.CHIR, by=c('V1'="Date"), copy = T)
-# #cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-# Poislam <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
-#
-# rm(zm)
-# rm(Nmix_fit_UI1)
-# rm(Nmix_fit)
-#
-#
-# sink("N-mixtureZIPCHIR.jags")
-# cat("
-# model{
-#     # Priors
-#     omega ~ dbeta(1,1)
-#
-#     for(i in 1:nAlpha){ # nAlpha is the number of site predictor         variables
-#       alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
-#     }
-#
-#     for(i in 1:nBeta){ # nBeta is number of site x observation predictors
-#       beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
-#     }
-#
-#     # Likelihood
-#     for(r in 1:R){
-#      z[r] ~ dbern(omega) # either there or not
-#      N[r] ~ dpois(lambda[r] * z[r]) #start with pulling from Poisson with z variable
-#      log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
-#
-#      for(j in 1:J){
-#       y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
-#       logit(p[r, j]) <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
-#
-#         ## Expected count at site r, sample j
-#         exp[r,j] <- N[r] * p[r, j]
-#
-#         ## Discrepancy
-#         ## (note small value added to denominator to avoid potential divide by zero)
-#         ## This is the X2 + descrepancy
-#         E[r, j] <- pow((y[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
-#
-#         ## Simulate new count from model
-#         y.rep[r, j] ~ dbinom(p[r, j], N[r])
-#
-#         ## X2
-#         E.rep[r, j] <- pow((y.rep[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
-#      }
-#     }
-#      # chi-squared test statistics
-#     fit <- sum(E[,])
-#     fit.rep <- sum(E.rep[,])
-#     } # End model
-# ", fill = TRUE)
-# sink()
-#
-# jags_data <- list(y = (site_mat),
-#                   XN = site_covs,
-#                   Xp = (obs_covs),
-#                   J = dim(site_mat)[2], #visits
-#                   R = dim(site_mat)[1], #sites
-#                   off = (offset), #obs offset
-#                   nAlpha = dim(site_covs)[2],
-#                   nBeta = dim(obs_covs)[3])
-#
-# nAlpha <- dim(site_covs)[2]
-# nBeta <- dim(obs_covs)[3]
-# jags_inits <- function(){
-#   list(
-#     omega = runif(1, 0.5, 0.7),
-#     N = apply(jags_data$y, 1, max, na.rm=TRUE),
-#     alpha=runif(nAlpha,-1,1),
-#     beta=runif(nBeta,-1,1))}
-#
-# parameters <- c("omega", "alpha", "beta", "lambda", "p", "N")
-#
-# nc <- 3
-# ni <- 10000
-# nb <- 2500
-# nt <- 1
-#
-# Nmix_fit <- jags.model("N-mixtureZIPCHIR.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
-#
-# update(Nmix_fit, n.iter = 1000)
-#
-# Nmix_fit_UI2 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureZIPCHIR.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
-# #
-# print(Nmix_fit_UI2)
-#
-# zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
-#
-#
-# lam <- MCMCpstr(zm, "lambda")
+print(Nmix_fit_UI2)
+
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
+
+
+lam <- MCMCpstr(zm, "lambda")
 # N <- MCMCpstr(zm, "N")
 # N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
 # N$V1 <- as.Date(N$V1, origin = "1970-01-01")
-#
-#
-# lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
-# lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
-#
-#
+# 
+
+lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
+lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
+
+
 # cor.df <- left_join(N, means.list.CHIR, by=c('V1'="Date"), copy = T)
 # cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
 # ZipN <-  cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
-#
-# cor.df <- left_join(lam, means.list.CHIR, by=c('V1'="Date"), copy = T)
+
+cor.df <- left_join(lam, means.list.CHIR, by=c('V1'="Date"), copy = T)
+
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test(cor.df1$V2.x, cor.df1$means, method = "spearman")
+cor.df2 <- cor.df %>% slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$V2.x, cor.df2$means, method = "spearman")
+Ziplam <- mean(c(rho1$estimate, rho2$estimate))
+
 # cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
 # Ziplam <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
-#
-# rm(zm)
-# rm(Nmix_fit)
-# rm(Nmix_fit_UI2)
-#
-#
-# sink("N-mixtureZIPoverdispCHIR.jags")
-# cat("
-# model{
-#     # Priors
-#     omega ~ dbeta(1,1)
-#
-#     tau.p <- pow(sd.p, -2)
-#     sd.p ~ dunif(0,3)
-#
-#     for(i in 1:nAlpha){ # nAlpha is the number of site predictor         variables
-#       alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
-#     }
-#
-#     for(i in 1:nBeta){ # nBeta is number of site x observation predictors
-#       beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
-#     }
-#
-#     # Likelihood
-#     for(r in 1:R){
-#      z[r] ~ dbern(omega) # either there or not
-#      N[r] ~ dpois(lambda[r] * z[r]) #start with pulling from Poisson with z variable
-#      log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
-#
-#      for(j in 1:J){
-#       y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
-#       logit(p[r, j]) <- lp[r,j]
-#       mu.lp[r, j] <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
-#       lp[r,j] ~ dnorm(mu.lp[r,j], tau.p) #sample effect based on mean p
-#
-#         ## Expected count at site r, sample j
-#         exp[r,j] <- N[r] * p[r, j]
-#
-#         ## Discrepancy
-#         ## (note small value added to denominator to avoid potential divide by zero)
-#         ## This is the X2 + descrepancy
-#         E[r, j] <- pow((y[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
-#
-#         ## Simulate new count from model
-#         y.rep[r, j] ~ dbinom(p[r, j], N[r])
-#
-#         ## X2
-#         E.rep[r, j] <- pow((y.rep[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
-#      }
-#     }
-#      # chi-squared test statistics
-#     fit <- sum(E[,])
-#     fit.rep <- sum(E.rep[,])
-#     } # End model
-# ", fill = TRUE)
-# sink()
-#
-# jags_data <- list(y = (site_mat),
-#                   XN = site_covs,
-#                   Xp = (obs_covs),
-#                   J = dim(site_mat)[2], #visits
-#                   R = dim(site_mat)[1], #sites
-#                   off = (offset), #obs offset
-#                   nAlpha = dim(site_covs)[2],
-#                   nBeta = dim(obs_covs)[3])
-#
-# nAlpha <- dim(site_covs)[2]
-# nBeta <- dim(obs_covs)[3]
-# jags_inits <- function(){
-#   list(
-#     omega = runif(1, 0.5, 0.7),
-#     sd.p = runif(1, 0.3, 0.7),
-#     N = apply(jags_data$y, 1, max, na.rm=TRUE),
-#     alpha=runif(nAlpha,-1,1),
-#     beta=runif(nBeta,-1,1))}
-#
-# parameters <- c("omega", "alpha", "beta", "lambda", "p", "N")
-#
-# nc <- 3
-# ni <- 10000
-# nb <- 2500
-# nt <- 1
-#
-# Nmix_fit <- jags.model("N-mixtureZIPoverdispCHIR.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
-#
-# update(Nmix_fit, n.iter = 1000)
-#
-# Nmix_fit_UI3 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureZIPoverdispCHIR.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
-#
-# print(Nmix_fit_UI3)
-#
-# zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "lambda", "N", "p", "y.rep", "exp", "fit", "fit.rep"), n.iter = ni, n.thin = nt)
-#
-#
-# lam <- MCMCpstr(zm, "lambda")
+
+rm(zm)
+rm(Nmix_fit)
+#rm(Nmix_fit_UI2)
+
+
+sink("N-mixtureZIPoverdispCHIR.jags")
+cat("
+model{
+    # Priors
+    omega ~ dbeta(1,1)
+
+    tau.p <- pow(sd.p, -2)
+    sd.p ~ dunif(0,3)
+
+    for(i in 1:nAlpha){ # nAlpha is the number of site predictor         variables
+      alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
+    }
+
+    for(i in 1:nBeta){ # nBeta is number of site x observation predictors
+      beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
+    }
+
+    # Likelihood
+    for(r in 1:R){
+     z[r] ~ dbern(omega) # either there or not
+     N[r] ~ dpois(lambda[r] * z[r]) #start with pulling from Poisson with z variable
+     log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
+
+     for(j in 1:J){
+      y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
+      logit(p[r, j]) <- lp[r,j]
+      mu.lp[r, j] <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
+      lp[r,j] ~ dnorm(mu.lp[r,j], tau.p) #sample effect based on mean p
+
+        ## Expected count at site r, sample j
+        exp[r,j] <- N[r] * p[r, j]
+
+        ## Discrepancy
+        ## (note small value added to denominator to avoid potential divide by zero)
+        ## This is the X2 + descrepancy
+        E[r, j] <- pow((y[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+
+        ## Simulate new count from model
+        y.rep[r, j] ~ dbinom(p[r, j], N[r])
+
+        ## X2
+        E.rep[r, j] <- pow((y.rep[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+     }
+    }
+     # chi-squared test statistics
+    fit <- sum(E[,])
+    fit.rep <- sum(E.rep[,])
+    } # End model
+", fill = TRUE)
+sink()
+
+jags_data <- list(y = (site_mat),
+                  XN = site_covs,
+                  Xp = (obs_covs),
+                  J = dim(site_mat)[2], #visits
+                  R = dim(site_mat)[1], #sites
+                  off = (offset), #obs offset
+                  nAlpha = dim(site_covs)[2],
+                  nBeta = dim(obs_covs)[3])
+
+nAlpha <- dim(site_covs)[2]
+nBeta <- dim(obs_covs)[3]
+jags_inits <- function(){
+  list(
+    omega = runif(1, 0.5, 0.7),
+    sd.p = runif(1, 0.3, 0.7),
+    N = apply(jags_data$y, 1, max, na.rm=TRUE),
+    alpha=runif(nAlpha,-1,1),
+    beta=runif(nBeta,-1,1))}
+
+parameters <- c("omega", "alpha", "beta", "lambda", "p", "N")
+
+nc <- 3
+ni <- 10000
+nb <- 2500
+nt <- 1
+
+Nmix_fit <- jags.model("N-mixtureZIPoverdispCHIR.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
+
+update(Nmix_fit, n.iter = 1000)
+
+Nmix_fit_UI3 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixtureZIPoverdispCHIR.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+
+print(Nmix_fit_UI3)
+
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
+
+
+lam <- MCMCpstr(zm, "lambda")
 # p <- MCMCpstr(zm, "p")
 # N <- MCMCpstr(zm, "N")
 # N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
 # N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+
+
+lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
+lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
+
+#plot(unlist(y.rep), unlist(site_mat))
+#abline(0, 1)
+
 #
-#
-# lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
-# lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
-#
-# #plot(unlist(y.rep), unlist(site_mat))
-# #abline(0, 1)
-#
-# #
-# # mean(fit > fit.rep) # close to 1 so bad fit?
-# # plot(fit.rep ~ fit)
-# # abline(0, 1) # 1 to 1 line not even there
-#
-#
-# # fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
-# #                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
-# # library(ggplot2)
-# # ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
-#
+# mean(fit > fit.rep) # close to 1 so bad fit?
+# plot(fit.rep ~ fit)
+# abline(0, 1) # 1 to 1 line not even there
+
+
+# fit_df <- data.frame(y = c(c(unlist(site_mat)), c(unlist(y.rep))),
+#                     data = rep(c("Observed", "Simulated"), each = length(site_mat)))
+# library(ggplot2)
+# ggplot(fit_df, aes(x = y, fill = data)) + geom_histogram() + facet_grid(.~data) #still not getting all the 0s and missing the really high #s
+
 # cor.df <- left_join(N, means.list.CHIR, by=c('V1'="Date"), copy = T)
 # cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
 # Zip_ovdN <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
-#
-# cor.df <- left_join(lam, means.list.CHIR, by=c('V1'="Date"), copy = T)
-# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-# Zip_ovdlam <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
-#
-# rm(zm)
-# rm(Nmix_fit_UI3)
-# rm(Nmix_fit)
-#
-# sink("N-mixturePoisoverdispCHIR.jags")
-# cat("
-# model{
-#     # Priors
-#     for(i in 1:nAlpha){ # nAlpha is the number of site predictor variables
-#       alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
-#     }
-#
-#     for(i in 1:nBeta){ # nBeta is number of site x observation predictors
-#       beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
-#     }
-#
-#     tau.p <- pow(sd.p, -2)
-#     sd.p ~ dunif(0,3)
-#
-#     # Likelihood
-#     for(r in 1:R){
-#      N[r] ~ dpois(lambda[r]) #start with pulling from Poisson
-#      log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
-#
-#      for(j in 1:J){
-#       y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
-#       logit(p[r, j]) <- lp[r,j]
-#       mu.lp[r, j] <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
-#       lp[r,j] ~ dnorm(mu.lp[r,j], tau.p) #sample effect based on mean p
-#
-#         ## Expected count at site r, sample j
-#         exp[r,j] <- N[r] * p[r, j]
-#
-#         ## Discrepancy
-#         ## (note small value added to denominator to avoid potential divide by zero)
-#         ## This is the X2 + descrepancy
-#         E[r, j] <- pow((y[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
-#
-#         ## Simulate new count from model
-#         y.rep[r, j] ~ dbinom(p[r, j], N[r])
-#
-#         ## X2
-#         E.rep[r, j] <- pow((y.rep[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
-#      }
-#     }
-#      # chi-squared test statistics
-#     fit <- sum(E[,])
-#     fit.rep <- sum(E.rep[,])
-#     } # End model
-# ", fill = TRUE)
-# sink()
-#
-# jags_data <- list(y = (site_mat),
-#                   XN = site_covs,
-#                   Xp = (obs_covs),
-#                   J = dim(site_mat)[2], #visits
-#                   R = dim(site_mat)[1], #sites
-#                   off = (offset), #obs offset
-#                   nAlpha = dim(site_covs)[2],
-#                   nBeta = dim(obs_covs)[3])
-#
-# nAlpha <- dim(site_covs)[2]
-# nBeta <- dim(obs_covs)[3]
-# jags_inits <- function(){
-#   list(
-#     sd.p = runif(1, 0.5, 0.8),
-#     N = apply(jags_data$y, 1, max, na.rm=TRUE),
-#     alpha=runif(nAlpha,-1,1),
-#     beta=runif(nBeta,-1,1))}
-#
-# parameters <- c("omega", "alpha", "beta", "lambda", "p", "N")
-#
-# nc <- 3
-# ni <- 10000
-# nb <- 2500
-# nt <- 1
-#
-# Nmix_fit <- jags.model("N-mixturePoisoverdispCHIR.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
-#
-# update(Nmix_fit, n.iter = 1000)
-#
-# Nmix_fit_UI4 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisoverdispCHIR.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
-#
-# print(Nmix_fit_UI4)
-#
-# zm = coda.samples(Nmix_fit, variable.names = c("alpha", "beta", "p", "lambda", "N", "y.rep", "fit", "fit.rep", "exp"), n.iter = ni, n.thin = nt)
-#
-# lam <- MCMCpstr(zm, "lambda")
+
+cor.df <- left_join(lam, means.list.CHIR, by=c('V1'="Date"), copy = T)
+
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test(cor.df1$V2.x, cor.df1$means, method = "spearman")
+cor.df2 <- cor.df %>% slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$V2.x, cor.df2$means, method = "spearman")
+Zip_ovdlam <- mean(c(rho1$estimate, rho2$estimate))
+
+
+rm(zm)
+#rm(Nmix_fit_UI3)
+rm(Nmix_fit)
+
+sink("N-mixturePoisoverdispCHIR.jags")
+cat("
+model{
+    # Priors
+    for(i in 1:nAlpha){ # nAlpha is the number of site predictor variables
+      alpha[i] ~ dnorm(0, 0.1) # alphas are the site covariates
+    }
+
+    for(i in 1:nBeta){ # nBeta is number of site x observation predictors
+      beta[i] ~ dnorm(0, 0.1) # betas are the observation covariates
+    }
+
+    tau.p <- pow(sd.p, -2)
+    sd.p ~ dunif(0,3)
+
+    # Likelihood
+    for(r in 1:R){
+     N[r] ~ dpois(lambda[r]) #start with pulling from Poisson
+     log(lambda[r]) <- sum(alpha * XN[r, ]) #XN is matrix of site covariates
+
+     for(j in 1:J){
+      y[r, j] ~ dbinom(p[r, j], N[r]) #binomial for observed counts
+      logit(p[r, j]) <- lp[r,j]
+      mu.lp[r, j] <- sum(off[r, j] + beta * Xp[r,j,]) #XP(obs covariates)
+      lp[r,j] ~ dnorm(mu.lp[r,j], tau.p) #sample effect based on mean p
+
+        ## Expected count at site r, sample j
+        exp[r,j] <- N[r] * p[r, j]
+
+        ## Discrepancy
+        ## (note small value added to denominator to avoid potential divide by zero)
+        ## This is the X2 + descrepancy
+        E[r, j] <- pow((y[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+
+        ## Simulate new count from model
+        y.rep[r, j] ~ dbinom(p[r, j], N[r])
+
+        ## X2
+        E.rep[r, j] <- pow((y.rep[r, j] - exp[r, j]), 2) / (exp[r, j] + 0.5)
+     }
+    }
+     # chi-squared test statistics
+    fit <- sum(E[,])
+    fit.rep <- sum(E.rep[,])
+    } # End model
+", fill = TRUE)
+sink()
+
+jags_data <- list(y = (site_mat),
+                  XN = site_covs,
+                  Xp = (obs_covs),
+                  J = dim(site_mat)[2], #visits
+                  R = dim(site_mat)[1], #sites
+                  off = (offset), #obs offset
+                  nAlpha = dim(site_covs)[2],
+                  nBeta = dim(obs_covs)[3])
+
+nAlpha <- dim(site_covs)[2]
+nBeta <- dim(obs_covs)[3]
+jags_inits <- function(){
+  list(
+    sd.p = runif(1, 0.5, 0.8),
+    N = apply(jags_data$y, 1, max, na.rm=TRUE),
+    alpha=runif(nAlpha,-1,1),
+    beta=runif(nBeta,-1,1))}
+
+parameters <- c("omega", "alpha", "beta", "lambda", "p", "N")
+
+nc <- 3
+ni <- 10000
+nb <- 2500
+nt <- 1
+
+Nmix_fit <- jags.model("N-mixturePoisoverdispCHIR.jags",data = jags_data, inits = jags_inits, n.chains = nc, n.adapt = 1000)
+
+update(Nmix_fit, n.iter = 1000)
+
+Nmix_fit_UI4 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to.save = parameters, model.file = "N-mixturePoisoverdispCHIR.jags",  n.chains = nc, n.iter = ni, n.burnin = nb, n.thin = nt, parallel = TRUE)
+
+print(Nmix_fit_UI4)
+
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
+
+lam <- MCMCpstr(zm, "lambda")
 # p <- MCMCpstr(zm, "p")
 # N <- MCMCpstr(zm, "N")
 # N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
 # N$V1 <- as.Date(N$V1, origin = "1970-01-01")
-#
-#
-# lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
-# lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
-#
-# # close to 1 so bad fit?
-# # plot(fit.rep ~ fit)
-# # abline(0, 1) # 1 to 1 line not even there
-#
-# cor.df <- left_join(N, means.list.CHIR, by=c('V1'="Date"), copy = T)
-# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-# Pois_ovdN <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
-#
-#
-# cor.df <- left_join(lam, means.list.CHIR, by=c('V1'="Date"), copy = T)
-# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-# Pois_ovdlam <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
-#
-# rm(zm)
-# rm(Nmix_fit)
-# rm(Nmix_fit_UI4)
+
+
+lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
+lam$V1 <- as.Date(lam$V1, origin = "1970-01-01")
+
+# close to 1 so bad fit?
+# plot(fit.rep ~ fit)
+# abline(0, 1) # 1 to 1 line not even there
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test(cor.df1$V2.x, cor.df1$means, method = "spearman")
+cor.df2 <- cor.df %>% slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$V2.x, cor.df2$means, method = "spearman")
+Pois_ovdlam <- mean(c(rho1$estimate, rho2$estimate))
+
+rm(zm)
+rm(Nmix_fit)
+#rm(Nmix_fit_UI4)
 
 sink("N-mixtureNBCHIR.jags")
 cat("
@@ -864,13 +815,13 @@ update(Nmix_fit, n.iter = 1000)
 
 
 
-zm = coda.samples(Nmix_fit, variable.names = c("lambda", "N"), n.iter = ni, n.thin = nt)
+zm = coda.samples(Nmix_fit, variable.names = c("lambda"), n.iter = ni, n.thin = nt)
 
 
 lam <- MCMCpstr(zm, "lambda")
-N <- MCMCpstr(zm, "N")
-N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
-N$V1 <- as.Date(N$V1, origin = "1970-01-01")
+# N <- MCMCpstr(zm, "N")
+# N <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(N)))
+# N$V1 <- as.Date(N$V1, origin = "1970-01-01")
 
 
 lam <- as.data.frame(cbind(as.Date(temps$dts[-nodata]), unlist(lam)))
@@ -882,75 +833,17 @@ Nmix_fit_UI5 <- jagsUI::jags(data = jags_data, inits = jags_inits, parameters.to
 print(Nmix_fit_UI5)
 
 cor.df <- left_join(lam, means.list.CHIR, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-nblam <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
+cor.df1 <- cor.df %>% slice(which(row_number() %% 2 == 0))
+rho1 <- cor.test(cor.df1$V2.x, cor.df1$means, method = "spearman")
+cor.df2 <- cor.df %>% slice(which(row_number() %% 2 == 1))
+rho2 <- cor.test(cor.df2$V2.x, cor.df2$means, method = "spearman")
+nblam <- mean(c(rho1$estimate, rho2$estimate))
 
 
-cor.df <- left_join(N, means.list.CHIR, by=c('V1'="Date"), copy = T)
-cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
-nbN <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
+# cor.df <- left_join(N, means.list.CHIR, by=c('V1'="Date"), copy = T)
+# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2.x)
+# nbN <- cor.test((cor.df$V2.x), (cor.df$mean.abund), method = "spearman")
 
 rm(zm)
 rm(Nmix_fit)
-rm(Nmix_fit_UI5)
-#######################
-# Using Anya's Data
-#######################
-#
-# Abundance.Data <- read.csv("~/ColoradoRiverInverts/Abundance Data.csv")
-# Abundance.Data <- Abundance.Data[which(Abundance.Data$Latitude >= 35.774119 & Abundance.Data$Latitude <= 35.846578 & Abundance.Data$Longitude <= -113.323281 & Abundance.Data$Longitude >= -113.361047),]
-#
-# drift.data.total <- readDB(gear = "LightTrap", type = "Sample", updater = F)
-#
-# drift.CR <- drift.data.total[which(drift.data.total$Region == "GrandCanyon" & drift.data.total$RiverMile >= 219 & drift.data.total$RiverMile <= 225),]
-#
-#
-# specieslist <- c("CHIR")
-# CHIR.samp.CR <- sampspec(samp = drift.CR, stats = T, species = specieslist)
-# CHIR.samp <- merge(CHIR.samp.CR$Statistics, CHIR.samp.CR$Samples, by = "BarcodeID", all = T)
-# CHIR.samp <- CHIR.samp[which(CHIR.samp$FlagStrange == F),]
-# CHIR.samp$Density <- CHIR.samp$CountTotal/CHIR.samp$TimeElapsed
-#
-# fullCHIR <- merge(Abundance.Data, CHIR.samp, by.x = "SampleID", by.y ="BarcodeID")
-#
-# CHIR.samp <- aggregate(fullCHIR$Density, list(fullCHIR$Date), FUN = mean)
-#
-# means <- vector()
-# for (i in 1:length(temps$dts)){
-#   d <- CHIR.samp[which(CHIR.samp$Group.1 >= temps$dts[i] & CHIR.samp$Group.1 < temps$dts[i+1]),]
-#   if (any(is.nan(mean(d$x))) == T || any(is.na((d$x) == T))) {
-#     s = NA
-#   } else {
-#     s<- mean(d$x)}
-#   means <- append(means, s)
-#   # we know the last value doesn't fit into interval and needs to be manually added
-# }
-# means[length(temps$dts)] <- CHIR.samp$x[length(CHIR.samp$x)]
-# #
-# # means.list.CHIR <- mean.data.frame(out, burnin = 286, iteration= 9)
-# # means.list.CHIR <- cbind(means.list.CHIR, temps$dts[286:last(means.list.CHIR$timesteps)])
-# # means.list.CHIR$`temps$dts` <- as.Date(means.list.CHIR$`temps$dts`)
-#
-# means.list.CHIR <- rowSums(out[,3,])/9
-# means.list.CHIR <- as.data.frame(cbind(means.list.CHIR[200:530], temps$dts[199:529]))
-# colnames(means.list.CHIR) <- c("mean.abund", "Date")
-# means.list.CHIR$Date <- as.Date(as.POSIXct(means.list.CHIR$Date, origin = "1970-01-01"))
-#
-#
-# CHIR.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.CHIR$Date), means[200:530])))
-# CHIR.samp.sum$V1 <- as.Date(CHIR.samp.sum$V1, origin = "1970-01-01")
-# cor.df <- left_join(CHIR.samp.sum, means.list.CHIR, by=c('V1'="Date"), copy = T)
-# cor.lm <- lm(cor.df$mean.abund ~ cor.df$V2)
-#
-# summary(cor.lm)
-# ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
-#   geom_point()+
-#   stat_smooth(method = "lm",
-#               formula = y ~ x,
-#               geom = "smooth")+
-#   geom_text(x = 3, y = 300, label = "y = 7.77e-11x, R^2 = 0.22")+
-#   labs(y = "Hydropsychidae Model Output", x = "Hydropsychidae Empirical Data")
-#
-# cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
-#
-#
+#rm(Nmix_fit_UI5)
