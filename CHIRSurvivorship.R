@@ -52,8 +52,8 @@ surv.df.CHIR <- flow.surv.rate(surv.fit.CHIR$m$getPars()[2] , surv.fit.CHIR$m$ge
 # fit <- nlsLM(logit(Survival) ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1))
 # inv.logit(predict(fit))
 # fit <- nlsLM(Survival ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a=1, b=1, c=1))
-#  TempSurv_CHIR <- function(n){
-#    a <- -0.03178*n^2+  1.20308*n -9.25551 
+TempSurv_CHIR <- function(n){
+    a <- -0.03178*n^2+  1.20308*n -9.25551 
 #    #a <- -0.001785*n^2+ 0.074341*n -0.154283
 #    #with 0,0
 # #    #a <- -0.02184*n^2 +0.92739*n -8.55032
@@ -71,8 +71,8 @@ surv.df.CHIR <- flow.surv.rate(surv.fit.CHIR$m$getPars()[2] , surv.fit.CHIR$m$ge
 # #    #a <- -0.0241*n^2 + 0.9536*n -7.7931
 # #    # wo stratmont
 # #    a <- -0.01954*n^2  + 0.81415*n -7.54678 
-#    return(inv.logit(a))
-#  }
+    return(inv.logit(a))
+ }
 
 
 #a = -1.016e-04  b = 9.412e-03 c = -3.121e-01 d = 4.317e+00 e =-2.032e+01 
@@ -80,7 +80,7 @@ surv.df.CHIR <- flow.surv.rate(surv.fit.CHIR$m$getPars()[2] , surv.fit.CHIR$m$ge
 
 #THIS IS THE ONE
 TempSurv_CHIR <- function(n){
-      a <- -2.164e-04*n^4 + 1.582e-02*n^3 -4.134e-01*n^2+  4.657*n -1.864e+01
+       a <- -2.164e-04*n^4 + 1.582e-02*n^3 -4.134e-01*n^2+  4.657*n -1.864e+01
 #    #a <-  4.011e-05*n^4 -2.260e-03*n^3 -6.379e-04*n^2 + 1.231e+00*n -1.096e+01   #with 0,0
 #    #a <- -2.481e-05*n^4 + 2.180e-03*n^3 -8.318e-02*n^2 +  1.494e+00*n -9.197e+00
 #    # with 0,0
@@ -97,8 +97,8 @@ TempSurv_CHIR <- function(n){
 #   #a <- -1.735e-05*n^4 +  1.254e-03*n^3 -5.321e-02*n^2 + 1.194*n -8.343
 #   # wo stratment
 #   a <- -3.742e-05*n^4 + 3.902e-03*n^3 -1.566e-01*n^2  + 2.655*n -1.495e+01
-return(inv.logit(a))
-      }
+  return(inv.logit(a))
+       }
 
 # TempSurv <- function(n){
 #   #a <- -0.02884*n^2+  1.12797*n -9.38446
