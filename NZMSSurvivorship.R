@@ -5,7 +5,7 @@
 library(readxl)
 library(minpack.lm)
 library(tidyverse)
-library(car)
+#library(car)
 library(boot)
 NZMSVitalRates <- read_excel("VitalRates.xlsx", sheet = "NZMS Mortality Rates")
 NZMSVitalRates <- as.data.frame(NZMSVitalRates)
