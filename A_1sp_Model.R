@@ -34,45 +34,6 @@ library(dataRetrieval)
 
 source("1spFunctions.R")
 
-#------------------------------------------------------------
-# Set up location specific data
-#-----------------------------------------------------------
-#if looking at ColRiver temps read in temperature data from USGS gauge at Lees Ferry, AZ between _ to the end of last water year
-# temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
-#-------------------------------------------------------------
-# create a series of average 2 weekly data
-#-------------------------------------------------------------
-# calculate mean temperature data for each timestep (2 week interval)
-# temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
-
-# Time <- c(1:1825)
-# Date <- rep(c(1:365), times = 5)
-# Day <- seq(as.Date("2022-01-01"), as.Date("2026-12-31"), by="days")
-# Day <- Day[-which(Day == "2024-02-29")]
-# 
-# Temperature <-  -7.374528  * (cos(((2*pi)/365)*Date))  +  (-1.649263* sin(2*pi/(365)*Date)) + 10.956243
-# 
-# temp <- as.data.frame(cbind(Time, Day, Date, Temperature))
-# peaklist <- 0
-# peakeach <- length(temp$Temperature)
-# iteration <- 1
-# baselineK <- 10000
-# disturbanceK <- 40000
-# peaklist <- 0
-# peakeach <- length(temp$Temperature)
-# iteration <- 10
-# baselineK <- 10000
-# disturbanceK <- 40000
-# extinct = 50
-# discharge <- rep(0.1, time = length(temp$dts))
-# flow.data <- discharge
-# temp.data <- temp
-# Qmin <- 0.25
-# fecundity <- 500
-# dds <- 1200
-# dens.dep = F
-# iter = 1
-
 Amodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 500, dds = 1200, stage_output = "all", dens.dep = T){
   
   # set up model
