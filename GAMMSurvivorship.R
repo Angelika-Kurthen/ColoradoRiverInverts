@@ -42,11 +42,14 @@ surv.df.GAMM <- flow.surv.rate(surv.fit.GAMM$m$getPars()[2] , surv.fit.GAMM$m$ge
 GAMMSurvRates <- read_excel("VitalRates.xlsx", sheet = "Gammarus Survival Rates")
 GAMMSurvRates <- as.data.frame(GAMMSurvRates)
 fit <- nlsLM(logit(Survival) ~ a*Temperature^4+ b*Temperature^3 + c*Temperature^2 + d*Temperature + e, data = GAMMSurvRates, start = c(a = 1, b = 1, c = 1, d= 1, e = 1))
+#fit1 <- nlsLM(logit(Survival)~ a*Temperature^2 + b*Temperature + c, data = GAMMSurvRates, start = c(a =1, b=1, c=1))
 TempSurv_GAMM <- function(x){
   #y = -0.05241*x^2 + 1.75693*x -10.20119 
   y = -2.489e-04*x^4 +1.689e-02*x^3 -4.211e-01*x^2 +4.5*x -1.449e+01 
   return(inv.logit(y))
 }
+tem <- seq(0, 40, by = 1)
+tempGamm <- as.data.frame(cbind(tem, TempSurv_GAMM(tem)))
 
 # based on the two fits we have neg binom and inv logit 2nd deg I think the neg inv. binom fits the best, based on 
 # 
@@ -54,7 +57,7 @@ TempSurv_GAMM <- function(x){
 
 # tem <- seq(0, 40, by = 1)
 # plot(GAMMSurvRates$Temperature, GAMMSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
-# lines(tem, TempSurv(tem))
+# lines(tem, TempSurv_GAMM(tem))
 # 
 # 
 

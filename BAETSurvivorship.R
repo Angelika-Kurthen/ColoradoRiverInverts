@@ -60,6 +60,8 @@ TempSurv_BAET <- function(n){
   return(inv.logit(a))
 }
 
+tem <- seq(0, 40, by = 1)
+tempBaet <- as.data.frame(cbind(tem, TempSurv_BAET(tem)))
 # TempSurv_BAET <- function(n){
 #   a <- -5.782e-04*n^4+ 4.425e-02*n^3 -1.200*n^2+ 1.348e+01*n -4.991e+01 
 #   return(inv.logit(a))

@@ -72,9 +72,11 @@ HYOSSurvRates <- as.data.frame(HYOSSurvRates)
 # fit <- nlsLM(logit(Survival)~ a*Temperature^2 + b*Temperature + c, data = HYOSSurvRates, start = c(a= 1, b=1, c = 1))
 # 
 TempSurv_HYOS <- function(x){
-  a <- -0.09934 *x^2 +3.44127*x -15.47038
+  a <- -0.09934*x^2 +3.44127*x -15.47038
   return(inv.logit(a))
 }
+tem <- seq(0, 40, by = 1)
+tempHyos <- as.data.frame(cbind(tem,TempSurv_HYOS(tem)))
 # min.RSS <- function(par){
 #   mod <- dnbinom(as.integer(-HYOSSurvRates$Temperature + 31), size = par[2], prob = par[1])
 #   a <- sum(HYOSSurvRates$Survival - (mod*(max(HYOSSurvRates$Survival)/max(mod))))^2
@@ -92,8 +94,8 @@ TempSurv_HYOS <- function(x){
 
 
 # 
-# tem <- seq(0, 40, by = 1)
-# temSurv <- unlist(lapply(tem, TempSurv))
-#  plot(HYOSSurvRates$Temperature, HYOSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
-#  lines(tem,  unlist(lapply(tem, TempSurv)))
-# # 
+tem <- seq(0, 40, by = 1)
+# temSurv <- unlist(lapply(tem, TempSurv_HYOS))
+# plot(HYOSSurvRates$Temperature, HYOSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+# lines(tem,  unlist(lapply(tem, TempSurv_HYOS)))
+# 

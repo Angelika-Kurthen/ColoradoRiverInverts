@@ -61,6 +61,10 @@ TempSurv_NZMS <- function(x){
   return(inv.logit(y))
 }
 
+
+tem <- seq(0, 40, by = 1)
+tempNZMS <- as.data.frame(cbind(TempSurv_NZMS(tem)))
+
 # based on the two fits we have neg binom and inv logit 2nd deg I think the neg inv. binom fits the best, based on 
 # 
 # min.RSS <- function(par){
@@ -84,6 +88,6 @@ TempSurv_NZMS <- function(x){
 # 
 # tem <- seq(0, 40, by = 1)
 # plot(NZMSSurvRates$Temperature, NZMSSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
-# lines(tem, TempSurv(tem))
-# 
+# lines(tem, TempSurv_NZMS(tem))
+
 # 

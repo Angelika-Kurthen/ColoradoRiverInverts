@@ -46,10 +46,10 @@ surv.df.CHIR <- flow.surv.rate(surv.fit.CHIR$m$getPars()[2] , surv.fit.CHIR$m$ge
 # }
 
 # Calculate Temperature Dependent Survival
-# CHIRSurvRate <- read_excel("VitalRates.xlsx", sheet = "Chiro Survival")
-# CHIRSurvRate <- as.data.frame(CHIRSurvRate)
-# fit <- nlsLM(logit(Survival) ~ a*Temp^4 + b*Temp^3 + c*Temp^2 + d*Temp + e, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1, d = 1, e = 1))
-# fit <- nlsLM(logit(Survival) ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1))
+CHIRSurvRate <- read_excel("VitalRates.xlsx", sheet = "Chiro Survival")
+CHIRSurvRate <- as.data.frame(CHIRSurvRate)
+#fit <- nlsLM(logit(Survival) ~ a*Temp^4 + b*Temp^3 + c*Temp^2 + d*Temp + e, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1, d = 1, e = 1))
+#fit1 <- nlsLM(logit(Survival) ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1))
 # inv.logit(predict(fit))
 # fit <- nlsLM(Survival ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a=1, b=1, c=1))
 TempSurv_CHIR <- function(n){
@@ -100,6 +100,8 @@ TempSurv_CHIR <- function(n){
   return(inv.logit(a))
        }
 
+tem <- seq(0, 40, by = 1)
+tempChir <- as.data.frame(cbind(tem, TempSurv_CHIR(tem)))
 # TempSurv <- function(n){
 #   #a <- -0.02884*n^2+  1.12797*n -9.38446
 #   a <- -1.016e-04*n^4 +  9.412e-03*n^3 -3.121e-01*n^2 + 4.317*n -2.032e+01
@@ -140,10 +142,10 @@ TempSurv_CHIR <- function(n){
 #   xlab('`Max Event Discharge/Bankfull Discharge`')
 
 # 
-# tem <- seq(0, 40, by = 1)#http://127.0.0.1:23003/graphics/ed0483c1-b811-4223-bfde-c3d3a3dceb62.png
-# plot(CHIRSurvRate$Temp, CHIRSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
-# # lines(tem, survs, col = "green")
-# lines(tem, TempSurv_CHIR(tem), col = "green")
+#tem <- seq(0, 40, by = 1)#http://127.0.0.1:23003/graphics/ed0483c1-b811-4223-bfde-c3d3a3dceb62.png
+#plot(CHIRSurvRate$Temp, CHIRSurvRate$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
+# lines(tem, survs, col = "green")
+#lines(tem, TempSurv_CHIR(tem), col = "green")
 # #lines(tem,  dnbinom(as.integer(-tem + 37.5), size = params$par[2] , prob = params$par[1])*(max(CHIRSurvRate$Survival)/max(dnbinom(as.integer(-CHIRSurvRate$Temp + 37.5), size =params$par[2], prob = params$par[1]))))
 # plot(temp, s, xlab = "Temperature C", ylab = "Survival", col = "red", pch = 16, cex = 1.5, xlim = c(0,40), ylim = c(0,1))
 # points(temp, predict(fit.betalogit), col = "blue", pch = 1)
