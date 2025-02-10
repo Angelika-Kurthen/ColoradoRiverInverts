@@ -26,7 +26,9 @@ peakeach <- length(temps$Temperature)
 peaklist <- 0.1
 stage_output <- "all"
 # discharge <temps# discharge <- rep(0.1, times = length(temps$Temperature))
-Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, stage_output = "all"){
+Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
+                     extinct, iteration, peaklist = NULL, peakeach = NULL, 
+                     stage_output = "all", modify_parameter = NULL, increment = NULL ){
 
   Q <- as.numeric(flow.data)
   temps <- temp.data
@@ -440,6 +442,17 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinc
       #-----------------------------------------------
       # Create Lefkovitch Matrix
       
+      # Code to run sensitivity if modify_parameter exists
+      if(!is.null(modify_parameter)){
+      sens <- checkpos(get(modify_parameter) + increment) # bounded by 0
+      ifelse(sens > 1, # and 1
+             sens <- 1,
+             sens <- sens)
+      assign(modify_parameter, get(modify_parameter) + increment)
+      param <- param + iter
+      }
+
+      # Compile matrices
       HYOS1 <- c(P1_HYOS, 0, F3_HYOS)
       HYOS2 <- c(G1_HYOS, P2_HYOS, 0)
       HYOS3 <- c(0, G2_HYOS, 0) 
@@ -470,6 +483,8 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinc
       GAMM3 <- c(0, G2_GAMM, P3_GAMM)
       
       A_GAMM <- rbind(GAMM1, GAMM2, GAMM3)
+      
+      
       
       #--------------------------------------
       # Calculate abundances for each stage
