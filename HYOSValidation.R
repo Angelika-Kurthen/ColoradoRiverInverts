@@ -101,7 +101,7 @@ means.list.HYOS$Date <- as.Date(as.POSIXct(means.list.HYOS$Date, origin = "1970-
 
 HYOS.samp.sum <- na.omit(as.data.frame(cbind(as.Date(means.list.HYOS$Date), means[200:530])))
 HYOS.samp.sum$V1 <- as.Date(HYOS.samp.sum$V1, origin = "1970-01-01")
-#HYOS.samp.sum <- HYOS.samp.sum[which(HYOS.samp.sum$V1 < "2022-01-01"),]
+HYOS.samp.sum <- HYOS.samp.sum[which(HYOS.samp.sum$V1 < "2022-01-01"),]
 
 #test for temporal autocorrelation
 #acf(na.omit(means)) # we have some
@@ -160,14 +160,13 @@ sd <- sd(c(rho1$estimate, rho2$estimate, rho3$estimate))
 #hist(cor.df$V2, xlab = "Hydropsychidae Adults (#/hour)", col = "#CADBD7")
 
 colors <- c("#AA3377", "black" )
-linetypes <- c("solid", "twodash")
 
 rmse.hyos <- sqrt(mean((cor.df$V2 - cor.df$mean.abund)^2))
 
 rmse.hyos.scale <- sqrt(mean((scale(cor.df$V2) - scale(cor.df$mean.abund))^2))
 coverage <- mean(scale(cor.df$V2) >= (scale(cor.df$mean.abund) - (1.96*rmse.hyos.scale)) & scale(cor.df$V2) <= (scale(cor.df$mean.abund) + (1.96*rmse.hyos.scale)))
 
-HYOSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
+HYOSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, color = "Model")) +
   geom_ribbon(aes(ymin = scale(mean.abund) - (1.96 * rmse.hyos.scale),
                   ymax = scale(mean.abund) + (1.96 * rmse.hyos.scale)), 
   alpha = .1,
@@ -175,28 +174,25 @@ HYOSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, co
   color = "transparent",
   show.legend = F) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data =cor.df, aes(x = V1, y = scale(V2), color = "Empirical", linetype = "Empirical"), linewidth = 1, alpha = 0.8,show.legend = T)+
+  geom_line(data =cor.df, aes(x = V1, y = scale(V2), color = "Hydropsyche spp."), linewidth = 1, alpha = 0.8,show.legend = T)+
   # geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = Discharge), color = "blue") +
   # geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*0.1), color = "green")+
   # #coord_cartesian(ylim = c(0,2000000)) +
   labs(y=expression(paste(italic("Hydropsyche spp."), " Abund.")))+
-  geom_text(mapping = aes(x = as.Date("2020-01-01"), y =5, label = paste('rho', "==", 0.69)), parse = T, color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2020-01-01"), y =5.5, label = paste('C = 93%')), color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2020-01-01"), y =6, label = paste('Scaled RMSE = 1.19')), color = "black", size = 4.5)+
-  
-  scale_linetype_manual(values = linetypes)+
-  #scale_y_continuous(
+  geom_text(mapping = aes(x = as.Date("2015-06-01"), y =5, label = paste('rho', "==", 0.48)), parse = T, color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2015-06-01"), y =5.75, label = paste('C = 93%')), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2015-06-01"), y =6.5, label = paste('Scaled RMSE = 1.19')), color = "black", size = 4.5)+
+    #scale_y_continuous(
     # Features of the first axis
     # Add a second axis and specify its features
   #   sec.axis = sec_axis(~., name="Hydropsychidae Adults (ind/hour)")
   # ) + 
   xlab(" ")+
-  #ylim(c(-3,7))+
+  ylim(c(-4,7))+
   labs(colour=" ")+
   theme_bw()+
-  guides(linetype=guide_legend(" "), color = "none", fill = "none")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), )+
+        axis.text.y = element_text(size = 13))+
   scale_x_date(date_labels="%Y")+
   scale_color_manual(values = colors)
 

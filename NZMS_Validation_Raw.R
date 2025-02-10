@@ -109,9 +109,9 @@ rmse.nzms<- sqrt(mean((cor.df$V2 - cor.df$mean.abund)^2))
 rmse.nzms.scale <- sqrt(mean((scale(cor.df$V2) - scale(cor.df$mean.abund))^2))
 # coverage 
 coverage <- mean(scale(cor.df$V2) >= (scale(cor.df$mean.abund) - (1.96*rmse.nzms.scale)) & scale(cor.df$V2) <= (scale(cor.df$mean.abund) + (1.96*rmse.nzms.scale)))
-colors <- c("#4477AA", "black")
-linetypes <- c("solid", "twodash")
-NZMSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
+colors <- c("black","#4477AA")
+linetypes <- c("solid", "solid")
+NZMSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, color = "Model")) +
   geom_ribbon(aes(ymin = scale(mean.abund) - 1.96 * rmse.nzms.scale,
                   ymax = scale(mean.abund) + 1.96 * rmse.nzms.scale),
               colour = 'transparent',
@@ -119,19 +119,17 @@ NZMSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, co
               fill = "black",
               show.legend = F)+
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data = cor.df, aes(x =V1, y = scale(V2), color = "Empirical", linetype = "Empirical"), linewidth = 1, alpha = 0.8, show.legend = T)+
+  geom_line(data = cor.df, aes(x =V1, y = scale(V2), color = "P. antipodarum"), linewidth = 1, alpha = 0.8, show.legend = T)+
   #geom_point(data = NZMS.samp.sum[125,], aes(x = V1, y = scale(means), color = "Empirical"), show.legend = T)+
   labs(y=expression(paste(italic("P. antipodarum"), " Abund.")))+
   ylim(c(-4,7))+
-  geom_text(mapping = aes(x = as.Date("2020-02-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2020-02-01"), y =5.5, label = paste('C = 94%')), color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2020-02-01"), y =6, label = paste('Scaled RMSE = 1.19')), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5.75, label = paste('C = 94%')), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =6.5, label = paste('Scaled RMSE = 1.19')), color = "black", size = 4.5)+
   xlab("")+
   labs(colour=" ")+
   theme_bw()+
   scale_color_manual(values = colors)+
-  scale_linetype_manual(values = linetypes)+
-  guides(linetype=guide_legend(" "), color = "none", fill = "none")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")

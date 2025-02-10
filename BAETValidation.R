@@ -64,7 +64,6 @@ cor.df <- left_join(BAET.samp.sum, means.list.BAET, by=c('V1'="temps$dts"), copy
 rho <- cor.test((cor.df$V2), (cor.df$mean.abund), method = "spearman")
 
 colors <- c("#66CCEE", "black")
-linetypes <- c("solid", "twodash")
 # ggplot(data = cor.df, aes(x = (V2) , y = (mean.abund)))+
 #   geom_point()+
 #   stat_smooth(method = "lm",
@@ -81,7 +80,7 @@ rmse.baet.scale <- sqrt(mean((scale(cor.df$V2) - scale(cor.df$mean.abund))^2))
 # coverage 
 coverage <- mean(scale(cor.df$V2) >= (scale(cor.df$mean.abund) - (1.96*rmse.baet.scale)) & scale(cor.df$V2) <= (scale(cor.df$mean.abund) + (1.96*rmse.baet.scale)))
 
-BAETts <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = scale(mean.abund), group = 1, color = "Model", linetype = "Model")) +
+BAETts <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = scale(mean.abund), group = 1, color = "Model")) +
   geom_ribbon(aes(ymin = scale(mean.abund) - 1.96 * rmse.baet.scale,
                   ymax = scale(mean.abund) + 1.96 * rmse.baet.scale),
               colour = 'transparent',
@@ -89,21 +88,19 @@ BAETts <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = scale(mean.ab
               alpha = .1,
               show.legend = F) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Empirical", linetype = "Empirical"), linewidth = 1,  show.legend = T, alpha = 0.8)+
+  geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Baetidae spp."), linewidth = 1,  show.legend = T, alpha = 0.8)+
   labs(y=expression(paste(italic("Baetidae spp."), " Abund.")))+
-  geom_text(mapping = aes(x = as.Date("1998-11-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("1998-11-01"), y =5.5, label = paste("C = 89%")), color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("1998-11-01"), y =6, label = paste("Scaled RMSE = 0.96")), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("1998-01-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("1998-01-01"), y =5.75, label = paste("C = 89%")), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("1998-01-01"), y =6.5, label = paste("Scaled RMSE = 0.96")), color = "black", size = 4.5)+
     xlab("")+
   ylim(c(-4,7))+
   labs(colour=" ")+
   theme_bw()+
   scale_color_manual(values = colors)+
-  scale_linetype_manual(values = linetypes)+
   #scale_y_continuous(
     # sec.axis = sec_axis(~., name="Baetidae Larvae (inds/m2)"
     # ))+
-  guides(linetype=guide_legend(" "), color = "none")+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), )+
   scale_x_date(date_labels="%Y")
