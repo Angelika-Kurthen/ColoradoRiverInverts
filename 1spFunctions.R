@@ -33,7 +33,7 @@ TimestepDischarge <- function(flow, bankfull_discharge){
   names(out)[1:2] <-c("dts","Discharge")
   # add the correct dates as the beginning of every period
   out$dts <- format(as.POSIXct(flow$Date[((out$dts*14) + 2)]), "%Y-%m-%d")
-                    # get mean Discharge data for every 14 days
+  # get mean Discharge data for every 14 days
   #out <- aggregate(out, by = list(out$dts), FUN = mean)
   out$Discharge <- out$Discharge/bankfull_discharge # standardize to disturbance magnitude by taking discharge/bankfull_discharge
   # order by date in chronological order
@@ -57,7 +57,7 @@ TimestepTemperature <- function(temp){
   outs$dts <- as.POSIXct(temp$Date[((outs$dts*14)+1)], origin = "1970-01-01")
   # order by date in chronological order
   temps <- outs[order(outs$dts),]
-
+  
   return(temps)
 }
 
@@ -128,8 +128,8 @@ back.count.degreedays <- function(time.now, criticaldegreedays, degreedays){
     #the timestep prior and check if it adds up to our threshold to emergence
     for (s in degseq) {
       if(vec <= criticaldegreedays) {
-      vec <- as.numeric(degreedays$DegreeDay[s]) + vec
-      emerg <- NA
+        vec <- as.numeric(degreedays$DegreeDay[s]) + vec
+        emerg <- NA
       }
       else {emerg <- time.now - s
       break
@@ -334,8 +334,8 @@ hydropeaking.mortality <- function(lower, upper, hp){
   int <- integrate(hydrofunction, lower = lower, upper = upper) 
   int$value <- int$value + 0.6
   if (lower < hp & hp < upper) {
-  hydro <- integrate(hydrofunction, lower = lower, upper = hp) 
-  int$value <- int$value - hydro$value
+    hydro <- integrate(hydrofunction, lower = lower, upper = hp) 
+    int$value <- int$value - hydro$value
   }
   if (hp >= upper){
     int$value <- 0
