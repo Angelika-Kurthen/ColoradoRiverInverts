@@ -75,7 +75,10 @@ TempSurv <- function(n){
   }
   return((a))
 }
-
+# TempSurv <- function(x){
+#   a <- -0.09934 *x^2 +3.44127*x -15.47038
+#   return(inv.logit(a))
+# }
 # tem <- seq(0, 40, by = 1)
 # temSurv <- unlist(lapply(tem, TempSurv))
 # tempsurvdf <- as.data.frame(cbind(tem, temSurv))
