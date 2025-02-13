@@ -1,7 +1,6 @@
 ####################
 ## Multispecies? 
 ####################
-
 library(dataRetrieval)
 
 source("1spFunctions.R")
@@ -11,21 +10,22 @@ source("NZMS_shell_length_fecundity.R")
 source("NZMSSurvivorship.R")
 source("CHIRSurvivorship.R")
 source("GAMMSurvivorship.R")
-temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
-temps <- TimestepTemperature(temp)
-discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
-flow.magnitude <- TimestepDischarge(discharge, 85000)
-flow.data <- flow.magnitude$Discharge
-temp.data <- temps
-baselineK <- 10000
-disturbanceK <- 40000
-Qmin <- 0.25
-extinct <- 50
-iteration <- 1
-peakeach <- length(temps$Temperature)
-peaklist <- 0.1
-stage_output <- "all"
+# temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
+# temps <- TimestepTemperature(temp)
+# discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")
+# flow.magnitude <- TimestepDischarge(discharge, 85000)
+# flow.data <- flow.magnitude$Discharge
+# temp.data <- temps
+# baselineK <- 10000
+# disturbanceK <- 40000
+# Qmin <- 0.25
+# extinct <- 50
+# iteration <- 1
+# peakeach <- length(temps$Temperature)
+# peaklist <- 0
+# stage_output <- "size"
 # discharge <temps# discharge <- rep(0.1, times = length(temps$Temperature))
+modify_paramter <- NULL
 Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
                      extinct, iteration, peaklist = NULL, peakeach = NULL, 
                      stage_output = "all", modify_parameter = NULL, increment = NULL ){
@@ -38,9 +38,20 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   degreedays$DegreeDay[degreedays$DegreeDay<0] <- 0
   degreedays$dts <- as.POSIXct(degreedays$dts, origin = "1970-01-01")
   
-  # need to make ramped increasing hydropeaking index 
+  # could do ramped hydropeaking, we do not - all
   hp <- c(rep(peaklist, each = peakeach))
   
+  # if multiple hydropeakings can call via unique then loop through sapply 
+  hydro.mort_HYOS <- hydropeaking.mortality(lower = 0.4, upper = 0.6, h = unique(hp))
+  hydro.mort_BAET <- hydropeaking.mortality(lower = 0.0, upper = 0.15, h = unique(hp))
+  hydro.mort_GAMM <- hydropeaking.mortality(lower = 0, upper = 1, h = unique(hp))
+  hydro.mort_NZMS <- hydropeaking.mortality(lower = 0, upper = 1, h = unique(hp))
+  hydro.mort_CHIR <- hydropeaking.mortality(lower = 0, upper = 0.6, unique(hp))
+  
+  # mortality_lookup <- sapply(unique_h, function(hp, lower, upper) {
+  #   hydropeaking.mortality(lower = X, upper = Y, h = h)
+  # })
+  # names(mortality_lookup) <- unique_h  # Name the vector for fast lookup
   # specify iterations
   iterations <- iteration
   
@@ -73,23 +84,50 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   g <- 1 # the same for all 
   
   # load h and k estimates for Negative Exp relationship between 
-  HYOS_h <- surv.fit.HYOS$m$getPars()[2]  
-  HYOS_k <- surv.fit.HYOS$m$getPars()[1] 
+  HYOS_h <- unname(surv.fit.HYOS$m$getPars()[2])
+  HYOS_k <- unname(surv.fit.HYOS$m$getPars()[1])
   
-  BAET_h <- surv.fit.BAET$m$getPars()[2]
-  BAET_k <- surv.fit.BAET$m$getPars()[2]
+  BAET_h <- unname(surv.fit.BAET$m$getPars()[2])
+  BAET_k <- unname(surv.fit.BAET$m$getPars()[2])
   
-  NZMS_h <- surv.fit.NZMS$m$getPars()[2]
-  NZMS_k <- surv.fit.NZMS$m$getPars()[1]
+  NZMS_h <- unname(surv.fit.NZMS$m$getPars()[2])
+  NZMS_k <- unname(surv.fit.NZMS$m$getPars()[1])
   
-  CHIR_h <- surv.fit.CHIR$m$getPars()[2]
-  CHIR_k <- surv.fit.CHIR$m$getPars()[1]
+  CHIR_h <- unname(surv.fit.CHIR$m$getPars()[2])
+  CHIR_k <- unname(surv.fit.CHIR$m$getPars()[1])
   
-  GAMM_h <- surv.fit.GAMM$m$getPars()[2]
-  GAMM_k <- surv.fit.GAMM$m$getPars()[1]
+  GAMM_h <- unname(surv.fit.GAMM$m$getPars()[2])
+  GAMM_k <- unname(surv.fit.GAMM$m$getPars()[1])
   
   extinction <- extinct # the same for all
-  #-------------------------
+  
+  flood.mort_HYOS <- sapply(Q, flood.mortality, N = 1, k = HYOS_k, h = HYOS_h, Qmin = Qmin)
+  flood.mort_BAET <- sapply(Q, flood.mortality, N = 1, k = BAET_k, h = BAET_h, Qmin = Qmin)
+  flood.mort_CHIR <- sapply(Q, flood.mortality, N = 1, k = CHIR_k, h = CHIR_h, Qmin = Qmin)
+  flood.mort_GAMM <- sapply(Q, flood.mortality, N = 1, k = GAMM_k, h = GAMM_h, Qmin = Qmin)
+  flood.mort_NZMS <- sapply(Q, flood.mortality, N = 1, k = NZMS_k, h = NZMS_h, Qmin = Qmin)
+  
+  # temperature dependent survival
+  TempSurvival_HYOS <- sapply(temps$Temperature, TempSurv_HYOS)
+  TempSurvival_BAET <- sapply(temps$Temperature, TempSurv_BAET)
+  TempSurvival_NZMS <- sapply(temps$Temperature, TempSurv_NZMS)
+  TempSurvival_CHIR <- sapply(temps$Temperature, TempSurv_CHIR)
+  TempSurvival_GAMM <- sapply(temps$Temperature, TempSurv_GAMM)
+  
+
+  # Calculate how many timesteps emerging adults have matured
+  emergetime_HYOS <- sapply(timestep, back.count.degreedays, criticaldegreedays = 1680, degreedays)
+  emergetime_BAET <- sapply(timestep, back.count.degreedays, criticaldegreedays = 250, degreedays)
+  emergetime_CHIR <- sapply(timestep, back.count.degreedays, criticaldegreedays = 600, degreedays) # value from Ali et al 1985
+  emergetime_GAMM <- sapply(timestep, back.count.degreedays, criticaldegreedays = 1000, degreedays) # value from Sweeney et al 2017
+  
+  # how big are those adults?
+  sizelist_HYOS <- emergetime_HYOS 
+  sizelist_BAET <- emergetime_BAET
+  sizelist_CHIR <- 3*emergetime_CHIR-6
+  sizelist_GAMM <- emergetime_GAMM
+  
+  #----------------------------------------------------------
   # Outer Loop of Iterations
   #--------------------------
   
@@ -111,9 +149,9 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
     output.Biomass.list[1,2, iter, "NZMS"] <- output.N.list[1,2, iter, "NZMS"]*(0.02 * mean(c(3.2, 4))^2.4315)
     output.Biomass.list[1,3, iter, "NZMS"] <- output.N.list[1,3, iter, "NZMS"]*(0.02 * mean(c(4, 5.5))^2.4315)
     
-    output.Biomass.list[1,1, iter, "GAMM"] * (0.063 * mean(c(2.5, 7))^2.46)
-    output.Biomass.list[1,2, iter, "GAMM"] * (0.063 * mean(c(7, 9))^2.46)
-    output.Biomass.list[1,3, iter, "GAMM"] * (0.063 * mean(c(9, 12))^2.46)
+    output.Biomass.list[1,1, iter, "GAMM"] <- output.N.list[1,1, iter, "GAMM"] *(0.063 * mean(c(2.5, 7))^2.46)
+    output.Biomass.list[1,2, iter, "GAMM"] <- output.N.list[1,1, iter, "GAMM"] *(0.063 * mean(c(7, 9))^2.46)
+    output.Biomass.list[1,3, iter, "GAMM"] <- output.N.list[1,1, iter, "GAMM"] *(0.063 * mean(c(9, 12))^2.46)
     
     # fill in first total.biomass
     Total.Biomass[1, iter] <- sum(output.Biomass.list[1,1:3, iter, ])
@@ -122,93 +160,41 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
     Klist[1] <- K
     
     # fecundity
-    Flist_HYOS <- vector()
-    Flist_BAET <- vector()
-    Flist_NZMS <- vector()
-    Flist_CHIR <- vector()
-    Flist_GAMM <- vector()
-    #time reach maturity
-    emergetime_HYOS <- vector()
-    emergetime_BAET <- vector()
-    emergetime_CHIR <- vector()
-    emergetime_GAMM <- vector()
-    #bodysize (not needed for size structured)
-    sizelist_HYOS <- vector()
-    sizelist_BAET <- vector()
-    sizelist_CHIR <- vector()
-    sizelist_GAMM <- vector()
-    # temperature dependent survival
-    TempSurvival_HYOS <- vector()
-    # need to cycle through all the temperatures and calculate
-    for(c in temps$Temperature){
-      b <- TempSurv_HYOS(c)
-      TempSurvival_HYOS <- append(TempSurvival_HYOS, b)
-    }
-    
-    TempSurvival_BAET <- vector()
-    for(c in temps$Temperature){
-      b <- TempSurv_BAET(c)
-      TempSurvival_BAET <- append(TempSurvival_BAET, b)
-    }
-    
-    TempSurvival_NZMS <- vector()
-    for(c in temps$Temperature){
-      b <- TempSurv_NZMS(c)
-      TempSurvival_NZMS <- append(TempSurvival_NZMS, b)
-    }
-    
-    TempSurvival_CHIR <- vector()
-    for(c in temps$Temperature){
-      b <- TempSurv_CHIR(c)
-      TempSurvival_CHIR <- append(TempSurvival_CHIR, b)
-    }
-    
-    TempSurvival_GAMM <- vector()
-    for(c in temps$Temperature){
-      b <- TempSurv_GAMM(c)
-      TempSurvival_GAMM <- append(TempSurvival_GAMM, b)
-    }
+    Flist_HYOS <- numeric(length(timestep) +1)
+    Flist_BAET <- numeric(length(timestep) +1)
+    Flist_NZMS <- numeric(length(timestep) +1)
+    Flist_CHIR <- numeric(length(timestep) +1)
+    Flist_GAMM <- numeric(length(timestep) +1)
+
     #-------------------------
     # Inner Loop of Timesteps
     #-------------------------
     
     for (t in timestep) {
-      
-      #----------------------------------------------------------
-      # Calculate how many timesteps emerging adults have matured
       t <- t
-      emergetime_HYOS <- append(emergetime_HYOS, back.count.degreedays(t, 1680, degreedays)) 
-      emergetime_BAET <- append(emergetime_BAET, back.count.degreedays(t, 250, degreedays))
-      emergetime_CHIR <- append(emergetime_CHIR, back.count.degreedays(t, 600, degreedays)) # value from Ali et al 1985
-      emergetime_GAMM <- append(emergetime_GAMM, back.count.degreedays(t, 1000, degreedays)) # value from Sweeney et al 2017
-      
       #---------------------------------------------------------
       # Calculate fecundity per adult
       # Hydropsyche spp.
-      F3_HYOS = 235.6 * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+      F3_HYOS = 235.6 * hydro.mort_HYOS
       #from Willis Jr & Hendricks* 0.5 assuming 50% female.
       # we can scale fecundity to size (based on emergetime) to fecundities
       if (t > 15) {
-        size_HYOS <- emergetime_HYOS[t-1]
-        sizelist_HYOS <- append(sizelist_HYOS, size_HYOS)
-        F3_HYOS <- ((7.219 * size_HYOS) + 180.4) * hydropeaking.mortality(lower = 0.4, upper = 0.6, h = hp[t-1])
+        F3_HYOS <- ((7.219 * sizelist_HYOS[t-1]) + 180.4) * hydro.mort_HYOS
       }
       
       #Baetidae spp.
-      F3_BAET = 1104.4 * hydropeaking.mortality(0.0, 0.15, h = hp[t-1])
+      F3_BAET = 1104.4 * hydro.mort_BAET
       #Baetidae egg maxima * 0.5 from Degrange, 1960, assuming 1:1 sex ratio and 50% egg mortality
       # fecundities estimated from McKenzie et al. 2013 - reduced fecundity above 24 C and below 9 C. 
       # optimal temp between 16 and 19 C, but we don't really have parameterization for that
       
       if (t > 19) {
-        size_BAET <- emergetime_BAET[t-1]
-        sizelist_BAET <- append(sizelist_BAET, size_BAET)
-        F3_BAET <- ((200*size_BAET)+200) * hydropeaking.mortality(0.0, 0.15, h = hp[t-1]) 
+        F3_BAET <- ((200*sizelist_BAET[t-1])+200) * hydro.mort_BAET
       }
       #NZMS
-      F2_NZMS <- 8.87473 * (-0.0001427 *(temps$Temperature[t-1] - 17.5)^4 + 1) *  hydropeaking.mortality(lower = 0, upper = 1, h = hp[t-1])
+      F2_NZMS <- 8.87473 * (-0.0001427 *(temps$Temperature[t-1] - 17.5)^4 + 1) *  hydro.mort_NZMS
 
-      F3_NZMS <-  27.89665 *(-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1) * hydropeaking.mortality(lower = 0, upper = 1, h = hp[t-1])
+      F3_NZMS <-  27.89665 *(-0.0001427 * (temps$Temperature[t-1] - 17.5)^4 + 1) * hydro.mort_NZMS
       # equation sometimes goes below 0, so make sure it doesn't
       if (F2_NZMS < 0){
         F2_NZMS <- 0
@@ -218,21 +204,19 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       }
   
       # CHIR
-      F3_CHIR = 300 * 0.5 * hydropeaking.mortality(0.0, 0.6, h = hp[t-1])
+      F3_CHIR = 300 * 0.5 * hydro.mort_CHIR
       #CHIR egg # and % mortality from Charles et al 
       # we can also relate fecundities to body size which is between 6 and 15 mm (also from Charles et al 2004)
       # we can "convert" emergetime to size by multiplying to get size between 6 and 15 mm and then convert to fecunity
       
       if (t > 19) {
-        size_CHIR <- 3*emergetime_CHIR[t-1]-6
-        sizelist_CHIR <- append(sizelist_CHIR, size_CHIR)
-        F3_CHIR <- (13.33*size_CHIR+180) * 0.5* hydropeaking.mortality(0.0, 0.6, h = hp[t-1])
+        F3_CHIR <- (13.33*sizelist_CHIR[t-1]+180) * 0.5* hydro.mort_CHIR
       }
       
       #GAMM
-      F2_GAMM <- 10.3 *0.5* hydropeaking.mortality(lower = 0, upper = 1, h = hp[t-1])
+      F2_GAMM <- 10.3 * 0.5 * hydro.mort_GAMM
       
-      F3_GAMM <-  23.3 *0.5*hydropeaking.mortality(lower = 0, upper = 1, h = hp[t-1])
+      F3_GAMM <-  23.3 * 0.5 * hydro.mort_GAMM
       # # #   
       if (F2_GAMM < 0){
         F2_GAMM <- 0
@@ -241,11 +225,9 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
         F3_GAMM <- 0
       }
       
-      if (t > 13) {
-        size_GAMM <- emergetime_GAMM[t-1]
-        sizelist_GAMM <- append(sizelist_GAMM, size_GAMM)
-        F2 <-  (1.934*(size_GAMM) - 4.67) *0.5* hydropeaking.mortality(0, 1, h = hp[t-1])
-        F3 <-  ( 2.812*(size_GAMM) + 2.94)*0.5* hydropeaking.mortality(0, 1, h = hp[t-1]) #* 0.78 * 0.65
+      if (t > 19) {
+        F2 <-  (1.934*(sizelist_GAMM[t-1]) - 4.67) *0.5* hydro.mort_GAMM
+        F3 <-  ( 2.812*(sizelist_GAMM[t-1]) + 2.94)*0.5* hydro.mort_GAMM #* 0.78 * 0.65
       }    
       #---------------------------------------------------
       # Calculate the disturbance magnitude-K relationship- this will be the same
@@ -266,10 +248,10 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       
       # Logistic via Rogosch et al. Fish Model
       F3_HYOS <- Logistic.Dens.Dependence(F3_HYOS, K, Total.Biomass[t-1, iter])
-      Flist_HYOS <- append(Flist_HYOS, F3_HYOS)
+      Flist_HYOS[t] <- F3_HYOS
       
       F3_BAET <- Logistic.Dens.Dependence(F3_BAET, K, Total.Biomass[t-1, iter]) 
-      Flist_BAET <- append(Flist_BAET, F3_BAET)
+      Flist_BAET[t] <-  F3_BAET
       
       
       F2_NZMS <- Logistic.Dens.Dependence(F2_NZMS, K, Total.Biomass[t-1, iter])  
@@ -282,13 +264,13 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
         F3_NZMS <- 0
       }
       
-      Flist_NZMS <- append(Flist_NZMS, (F2_NZMS + F3_NZMS))
+      Flist_NZMS[t] <- F2_NZMS + F3_NZMS
       
       # CHIR
       F3_CHIR <- Logistic.Dens.Dependence(F3_CHIR, K, Total.Biomass[t-1, iter])
       # 
       # add F_CHIR to list
-      Flist_CHIR <- append(Flist_CHIR, F3_CHIR)
+      Flist_CHIR[t] <- F3_CHIR
       
       #GAMM
       F2_GAMM <- Logistic.Dens.Dependence(F2_GAMM, K, Total.Biomass[t-1, iter])
@@ -301,7 +283,7 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
         F3_GAMM <- 0
       }
       # add F_BAET to list
-      Flist_GAMM <- append(Flist_GAMM, F3_GAMM+F2_GAMM)
+      Flist_GAMM[t] <- F3_GAMM+F2_GAMM
       #------------------------------------------------
        
       # Calculate new transition probabilities based on temperature
@@ -332,13 +314,13 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       
       # if within standard water temps, use stage duration
       # Stage 1 can vary from a few timesteps to many (saw Instar 2 last from 5 to 250 days)
-      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <=30 & is.na(emergetime_HYOS[t] == F)){
+      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <=30 & is.na(emergetime_HYOS[t-1] == F)){
         G1_HYOS <- 0.36/(emergetime_HYOS[t-1]) *TempSurvival_HYOS[t-1]
         P1_HYOS <- 1-(1/(emergetime_HYOS[t-1])) *TempSurvival_HYOS[t-1]
       }
       
       # if stage duration not available, approximate linearly 
-      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime_HYOS[t] == T)) {
+      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & is.na(emergetime_HYOS[t-1] == T)) {
         G1_HYOS <- 0.36/((-0.95 * temps$Temperature[t-1]) + 24.75) *TempSurvival_HYOS[t-1]
         P1_HYOS <- 1-(1/((-0.95 * temps$Temperature[t-1]) + 24.75))*TempSurvival_HYOS[t-1]
       }
@@ -412,7 +394,7 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
         P1_CHIR <- (1-(1/((emergetime_CHIR[t-1])/2))) * TempSurvival_CHIR[t-1]
         P2_CHIR <- P1_CHIR
       }
-      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime_CHIR[t-1]) == T)) {
+      if (5 <= temps$Temperature[t-1] & temps$Temperature[t-1] <= 30 & (is.na(emergetime_CHIR[t-1] == T))) {
         G1_CHIR <- (0.74*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival_CHIR[t-1]
         P1_CHIR <- (1-(1/((-0.136 * temps$Temperature[t-1]) + 5.088))) * TempSurvival_CHIR[t-1]
         G2_CHIR <- (0.66*((-0.136 * temps$Temperature[t-1]) + 5.088)) * TempSurvival_CHIR[t-1]
@@ -443,7 +425,7 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       # Create Lefkovitch Matrix
       
       # Code to run sensitivity if modify_parameter exists
-      if(!is.null(modify_parameter)){
+      if (!is.null(modify_parameter)){
       sens <- checkpos(get(modify_parameter) + increment) # bounded by 0
       ifelse(sens > 1, # and 1
              sens <- 1,
@@ -515,43 +497,39 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       #------------------------------------------------------------
       # Hydropsyche spp.
       #s1
-      output.N.list[t, 1, iter, "HYOS"] <- flood.mortality(output.N.list[t, 1, iter, "HYOS"], HYOS_k, HYOS_h, Q[t-1], Qmin)
+      output.N.list[t, 1, iter, "HYOS"] <- output.N.list[t, 1, iter, "HYOS"] * flood.mort_HYOS[t]
       #s2
-      output.N.list[t,2,iter, "HYOS"] <- flood.mortality(output.N.list[t,2,iter, "HYOS"], HYOS_k, HYOS_h, Q[t-1], Qmin)
+      output.N.list[t,2,iter, "HYOS"] <- output.N.list[t, 2, iter, "HYOS"] * flood.mort_HYOS[t]
       #3
       #output.N.list[t,3,iter, "HYOS"] <- flood.mortality(output.N.list[t,3,iter, "HYOS"], HYOS_k, HYOS_h, Q[t-1], Qmin)
       
       #Baetidae spp.
       #s1
-      output.N.list[t, 1, iter, "BAET"] <- flood.mortality(output.N.list[t, 1, iter, "BAET"], BAET_k, BAET_h, Q[t-1], Qmin)
+      output.N.list[t, 1, iter, "BAET"] <-  output.N.list[t, 1, iter, "BAET"] * flood.mort_BAET[t]
       #s2
-      output.N.list[t,2,iter, "BAET"] <- flood.mortality(output.N.list[t,2,iter, "BAET"], BAET_k, BAET_h, Q[t-1], Qmin)
-      #3 
-      #output.N.list[t,3,iter, "BAET"] <- flood.mortality(output.N.list[t,3,iter, "BAET"], BAET_k, BAET_h, Q[t-1], Qmin)
-      
+      output.N.list[t,2,iter, "BAET"] <- output.N.list[t,2,iter, "BAET"] * flood.mort_BAET[t]
+
       #NZMS
       #s1
-      output.N.list[t, 1, iter, "NZMS"] <- flood.mortality(output.N.list[t,1,iter, "NZMS"], NZMS_k, NZMS_h, Q[t-1], Qmin)
+      output.N.list[t, 1, iter, "NZMS"] <- output.N.list[t, 1, iter, "NZMS"] * flood.mort_NZMS[t]
       #s2
-      output.N.list[t,2,iter, "NZMS"] <- flood.mortality(output.N.list[t,2,iter, "NZMS"], NZMS_k, NZMS_h, Q[t-1], Qmin)
+      output.N.list[t,2,iter, "NZMS"] <- output.N.list[t,2,iter, "NZMS"] * flood.mort_NZMS[t]
       #3
-      output.N.list[t,3,iter, "NZMS"] <- flood.mortality(output.N.list[t,3,iter, "NZMS"], NZMS_k, NZMS_h, Q[t-1], Qmin)
+      output.N.list[t,3,iter, "NZMS"] <- output.N.list[t,3,iter, "NZMS"] * flood.mort_NZMS[t]
       
       # CHIR
       #s1
-      output.N.list[t, 1, iter, "CHIR"] <- flood.mortality(output.N.list[t, 1, iter, "CHIR"], CHIR_k, CHIR_h, Q[t-1], Qmin)
+      output.N.list[t, 1, iter, "CHIR"] <- output.N.list[t, 1, iter, "CHIR"] * flood.mort_CHIR[t]
       #s2
-      output.N.list[t,2,iter, "CHIR"] <- flood.mortality(output.N.list[t,2,iter, "CHIR"], CHIR_k, CHIR_h, Q[t-1], Qmin)
-      # no mortality for S3 but we can add it in 
-      #output.N.list[t,3,iter, "CHIR"] <- flood.mortality(output.N.list[t,3,iter, "CHIR"], CHIR_k, CHIR_h, Q[t-1], Qmin)
-      
+      output.N.list[t,2,iter, "CHIR"] <- output.N.list[t,2,iter, "CHIR"] * flood.mort_CHIR[t]
+
       #GAMM
       #s1
-      output.N.list[t, 1, iter, "GAMM"] <- flood.mortality(output.N.list[t, 1, iter, "GAMM"], GAMM_k, GAMM_h, Q[t-1], Qmin)
+      output.N.list[t, 1, iter, "GAMM"] <- output.N.list[t, 1, iter, "GAMM"] * flood.mort_GAMM[t]
       #s2Qt
-      output.N.list[t,2,iter, "GAMM"] <- flood.mortality(output.N.list[t,2,iter, "GAMM"], GAMM_k, GAMM_h, Q[t-1], Qmin)
+      output.N.list[t,2,iter, "GAMM"] <- output.N.list[t,2,iter, "GAMM"] * flood.mort_GAMM[t]
       
-      output.N.list[t,3,iter, "GAMM"] <- flood.mortality(output.N.list[t,3,iter, "GAMM"], GAMM_k, GAMM_h, Q[t-1], Qmin)
+      output.N.list[t,3,iter, "GAMM"] <- output.N.list[t,3,iter, "GAMM"] * flood.mort_GAMM[t]
       
       #check extinction threshold for each spp + add rescue effect
       # Hydrospyche spp. 
@@ -581,7 +559,7 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       
       # for hydropsyche spp.
       output.Biomass.list[t,1:3, iter, "HYOS"] <- output.N.list[t,1:3, iter, "HYOS"] * (0.0046 * 12.73^2.926) #mean size is around 12.73846
-      if (t > 14) {
+      if (t > 19) {
         #s1
         output.Biomass.list[t, 1, iter, "HYOS"] <- output.N.list[t,1, iter, "HYOS"] * (0.0046 * emergetime_HYOS[t-1]^2.926)
         #s2
@@ -612,11 +590,11 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
         output.Biomass.list[t,1:3, iter, "CHIR"] <- output.N.list[1,1:3, iter, "CHIR"] * (0.0018 * 10.795^2.617)
       
         if (t > 19){
-        output.Biomass.list[t,1, iter, "CHIR"] <- output.N.list[t,1, iter, "CHIR"] * (0.0018 * (size_CHIR/2)^2.617)
+        output.Biomass.list[t,1, iter, "CHIR"] <- output.N.list[t,1, iter, "CHIR"] * (0.0018 * (sizelist_CHIR[t-1]/2)^2.617)
         #S2
-        output.Biomass.list[t,2, iter, "CHIR"] <- output.N.list[t,2, iter, "CHIR"] * (0.0018 * (size_CHIR)^2.617)
+        output.Biomass.list[t,2, iter, "CHIR"] <- output.N.list[t,2, iter, "CHIR"] * (0.0018 * (sizelist_CHIR[t-1])^2.617)
         #S3
-        output.Biomass.list[t,3, iter, "CHIR"] <- output.N.list[t,3, iter, "CHIR"] * (0.0018 * (size_CHIR)^2.617)
+        output.Biomass.list[t,3, iter, "CHIR"] <- output.N.list[t,3, iter, "CHIR"] * (0.0018 * (sizelist_CHIR[t-1])^2.617)
       }
         
         output.Biomass.list[t,1, iter, "GAMM"] <- output.N.list[t,1, iter, "GAMM"]* (0.063 * mean(c(2.5, 7))^2.46)
@@ -632,22 +610,34 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   #----------------------
   # End Outer Loop
   #----------------------
-  if (stage_output == "larvae"){
-    return(output.N.list[ ,1:2, ,])
-  }
+  results <- list()
   
-  if (stage_output == "all"){
-    return(output.N.list[ , 1:3, ,])
-  }
-  if (stage_output == "3"){
-    return(output.N.list[ , 3, ,])
-  }
+  if ("larvae" %in% stage_output) {
+    results$N <- output.N.list[ ,1:2, ,]
+  }  
+  if ("all" %in% stage_output) {
+    results$N <- output.N.list[ , 1:3, ,]
+  }  
+  if ("3" %in% stage_output) {
+    results$N <- output.N.list[ , 3, ,]
+  }  
+  if ("size" %in% stage_output) {
+    results$size <- cbind(sizelist_HYOS, sizelist_BAET, sizelist_CHIR)
+  }  
+  if ("biomass" %in% stage_output) {
+    results$biomass <- output.Biomass.list[ ,1:3, ,]
+  }  
   
-  if (stage_output == "size"){
-    return(cbind(sizelist_HYOS, sizelist_BAET))
-  }
-  if (stage_output == "biomass"){
-    return(output.Biomass.list[ ,1:3, ,])
-  }
+  # Return the list
+  return(results)
 }
 
+
+out <- Multispp(flow.data = flow.data, temp.data = temp.data,
+                           baselineK =10000 , disturbanceK = 100000, Qmin = 0.25,
+                           extinct = 50, iteration = 1000, peaklist = 0.17,
+                           peakeach = length(temps$Temperature), stage_output = c("biomass", "size"))
+
+
+
+                     
