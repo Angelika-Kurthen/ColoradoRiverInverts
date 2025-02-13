@@ -217,6 +217,9 @@ flood.mortality <- function(N, k, h, Q, Qmin){
   } else {
     newN <- N * k * exp(-h * Q)
   }
+  if (newN > N){ #only mortality or no effect 
+    newN <- N
+  }
   return(newN)
 }
 
