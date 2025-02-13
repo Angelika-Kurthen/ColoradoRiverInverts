@@ -1,9 +1,10 @@
 ######################
-# Multivoltinism Sp D
+# Multivoltinism Sp A
 ######################
 
-source("D_1sp_Model.R")
+source("A_1sp_Model.R")
 source("NegExpSurv.R")
+
 
 Time <- c(1:36500)
 Date <- rep(1:365, times = 100)
@@ -28,13 +29,13 @@ discharge <- rep(0.1, time = length(temp$dts))
 
 # run model under different temp regimes
 
-runs <- c(-2, 6)
+runs <- c(-2,6)
 
 # for adults
 
 for (i in 1:length(runs)){
   temp$Temperature <- temp$Temperature + runs[i]
-  out <- Dmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
+  out <- Amodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature), stage_output = "3")
   m <- rowMeans(out)
   m <- cbind.data.frame(temp$dts, m[-1], rep(i, length(temp$dts)))
   assign(paste0("m",i), m)
@@ -43,15 +44,15 @@ for (i in 1:length(runs)){
 
 mlist <- rbind(m1, m2)
 colnames(mlist) <- c("Date", "Abund", "MeanTemp")
-D.oneyear <- mlist[which(mlist$Date >= "2035-01-01" & mlist$Date <= "2035-12-31"), ]
-peaks <- D.oneyear[c(16, 40, 46, 61, 66, 71, 80, 86, 91, 95, 100), ]
+A.oneyear <- mlist[which(mlist$Date >= "2035-01-01" & mlist$Date <= "2035-12-31"), ]
+peaks <- A.oneyear[c(19, 43, 71, 87, 98), ]
 arrows <- tibble(
   x1 = peaks$Date,
   x2 = peaks$Date,
-  y1 = c(8000, 16900, 14000, 6100, 14800, 11000, 4200, 8000 , 6300, 8500, 20200), 
-  y2 = c(6000, 14900, 12000, 4100, 12800, 9000, 2200, 6000 , 4300, 6500, 18200)
+  y1 = c(1650, 675, 1800, 475, 1350), 
+  y2 = c(1550, 575, 1700, 375, 1250)
 )
-arrowcols <- c("#4477AA", "#EE6677","#EE6677", "#228833","#228833","#228833","#CCBB44","#CCBB44","#CCBB44", "#CCBB44","#CCBB44")
+arrowcols <- c("#4477AA", "#EE6677", "#228833","#CCBB44","#CCBB44")
 
 
 arrows$x1 <- as.POSIXct(arrows$x1, format = "%Y-%m-%d")
@@ -59,5 +60,5 @@ arrows$x1 <- as.POSIXct(arrows$x1, format = "%Y-%m-%d")
 arrows$x1 <- as.Date(arrows$x1)
 arrows$x2 <- as.POSIXct(arrows$x2, fomrat = "%Y-%m_%d")
 arrows$x2 <- as.Date(arrows$x2)
-D.oneyear$Date <- as.Date(D.oneyear$Date)
-D.oneyear$Strategy <- rep("Slow", times = length(D.oneyear$Date))
+A.oneyear$Date <- as.Date(A.oneyear$Date)
+A.oneyear$Strategy <- rep("Moderate", times = length(A.oneyear$Date))
