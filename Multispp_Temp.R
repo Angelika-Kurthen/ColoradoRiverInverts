@@ -47,27 +47,17 @@ results <- mclapply(temp_seq, function(te) {
   
   # Run multispecies model for abundance under given hydropeaking intensity
   out <- Multispp(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, 
-                  disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 1000 , 
-                  peaklist = 0, peakeach = length(temps$Temperature), stage_output = "all")
+                  disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 10 , 
+                  peaklist = 0, peakeach = length(temps$Temperature), stage_output = c("all", "biomass"))
   
   # Calculate mean abundances at each timestep
-  means.abund <- multispp.data.frame(out, burnin = 260, iteration = 1000, value = "abund")
+  means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 10, value = "abund")
 
-  # Run multispecies model for biomass under given hydropeaking intensity
-  out <- Multispp(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, 
-                  disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 1000, 
-                  peaklist = 0, peakeach = length(temps$Temperature), stage_output = "biomass")
-  
-  # Calculate mean biomass at each timestep
-  means.biomass <- multispp.data.frame(out, burnin = 260, iteration = 1000, value = "biomass")
-  
-  # Run multispecies model again to extract stage 3 biomass (S3.biomass)
-  out <- Multispp(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, 
-                  disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 1000, 
-                  peaklist = 0, peakeach = length(temps$Temperature), stage_output = "biomass")
+    # Calculate mean biomass at each timestep
+  means.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 10, value = "biomass")
   
   # Extract mean S3 biomass
-  means.s3.biomass <- multispp.data.frame(out, burnin = 260, iteration = 1000, value = "S3.biomass")
+  means.s3.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 10, value = "S3.biomass")
   
   temps$Temperature <- temps$Temperature / te
   
@@ -79,8 +69,8 @@ results <- mclapply(temp_seq, function(te) {
   average_biomass <- cbind(means.biomass, rep(te, times = length(means.biomass$mean.rel.biomass)))
   colnames(average_biomass) <- colnames(Multispp_temp_biomass)
   
-  # Append hydropeaking intensity value to biomass data
-  s3biomass <- cbind(means.s3.biomass, rep(te, times = length(means.s3.biomass$S3biomass)))
+  # Append only stage 3s
+  s3biomass <- cbind(means.s3.biomass, rep(te, times = length(means.s3.biomass$mean.S3.biomass)))
   colnames(s3biomass) <- colnames(MultisppS3_temp_biomass)
   
 #   # Create a reference data frame to align time steps with actual years
@@ -104,11 +94,12 @@ results <- mclapply(temp_seq, function(te) {
 
   # Append results to the main data storage
   Multispp_temp_abund <- rbind(Multispp_temp_abund, average_means)
-  Multispp_temp_biomass <- rbind(Multispp_temp_biomass, average_size)
+  Multispp_temp_biomass <- rbind(Multispp_temp_biomass, average_biomass)
   MultisppS3_temp_biomass <- rbind(MultisppS3_temp_biomass, s3biomass)
   # Return results as a list
-  return(list(NZMS_temp_hyd_abund = average_means, NZMS_temp_hyd_biomass = average_size, MultisppS3_temp_biomass = s3biomass))
-}, mc.cores =  1)
+  return(list(Multispp_temp_hyd_abund = average_means, Multispp_temp_hyd_biomass = average_biomass, MultisppS3_temp_biomass = s3biomass))
+}, mc.cores =   1)
+#  }, mc.cores =  detectCores() - 1)
 
 # Combine results from all temperature scenarios into final dataframes
 Multispp_temp_abund <- do.call(rbind, lapply(results, `[[`, "Multispp_temp_abund"))
@@ -119,6 +110,19 @@ write.csv(Multispp_temp_abund, "Multispp_temp_abund.csv", row.names = FALSE)
 write.csv(Multispp_temp_biomass, "Multispp_temp_biomass.csv", row.names = FALSE)
 write.csv(MultisppS3_temp_biomass, "MultisppS3_temp_biomass.csv", row.names = FALSE)
 
+
+
+## Now we add the summer spike to temperatures 
+# read in LF temp and discharge data from 2007 to 2023
+temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
+# calculate average yearly temperatures
+temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
+# create summertime spike (up to 21 C, then scale from there)
+temps$Temperature[16:22] <- c(14, 16, 18, 21, 21, 18, 16, 14)
+
+# create a timeseries of average temperatures 100 years long
+temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
+
 # Initialize lists to store results for abundance, biomass, and annual biomass calculations
 Multispp_temp_abund_spike <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), sd.abund = numeric(), se.abund = numeric(), temperature=factor())
 Multispp_temp_biomass_spike <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(), sd.biomass = numeric(), se.biomass = numeric(), temperature=factor())
@@ -128,30 +132,19 @@ results <- mclapply(temp_seq, function(te) {
   set.seed(123) # make reproducible
   # model sizes
   temps$Temperature <- temps$Temperature * te
-  
   # Run multispecies model for abundance under given hydropeaking intensity
   out <- Multispp(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, 
                   disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 1000 , 
-                  peaklist = 0, peakeach = length(temps$Temperature), stage_output = "all")
+                  peaklist = 0, peakeach = length(temps$Temperature), stage_output = c("all", "biomass"))
   
   # Calculate mean abundances at each timestep
-  means.abund <- multispp.data.frame(out, burnin = 260, iteration = 1000, value = "abund")
-  
-  # Run multispecies model for biomass under given hydropeaking intensity
-  out <- Multispp(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, 
-                  disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 1000, 
-                  peaklist = 0, peakeach = length(temps$Temperature), stage_output = "biomass")
+  means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 1000, value = "abund")
   
   # Calculate mean biomass at each timestep
-  means.biomass <- multispp.data.frame(out, burnin = 260, iteration = 1000, value = "biomass")
-  
-  # Run multispecies model again to extract stage 3 biomass (S3.biomass)
-  out <- Multispp(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, 
-                  disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 1000, 
-                  peaklist = 0, peakeach = length(temps$Temperature), stage_output = "biomass")
+  means.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "biomass")
   
   # Extract mean S3 biomass
-  means.s3.biomass <- multispp.data.frame(out, burnin = 260, iteration = 1000, value = "S3.biomass")
+  means.s3.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "S3.biomass")
   
   temps$Temperature <- temps$Temperature / te
   
