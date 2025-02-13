@@ -237,7 +237,7 @@ circdate <- as.data.frame(df$circdate)
 
 
 site_intercept <- rep(1, times = length(flows$V1))
-site_covs<- as.matrix(cbind(site_intercept, flows)) #flows,temperature, circdate)
+site_covs<- as.matrix(cbind(site_intercept, temperature, circdate)) #flows,temperature, circdate)
 obs_covs <- array(data= NA, dim = c(length(flows$V1),J,1))
 obs_covs[,,1] <- obs_intercept
 
