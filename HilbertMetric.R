@@ -53,19 +53,32 @@ discharge <- rep(0.1, times = length(temp$dts))
 
 
 # 
-# install.packages("fNonlinear")
-# library(fNonlinear)
-# install.packages("nonlinearTseries")
-# install.packages("tseriesChaos")
-# library(nonlinearTseries)
-# library(tseriesChaos)
-# lyapun <- lyap_k(out, m=3, d=2, s=200, t=40, ref=1700, k=2, eps=4)
-# min(lyapun)
-# max(lyapun)
+install.packages("fNonlinear")
+library(fNonlinear)
+install.packages("nonlinearTseries")
+install.packages("tseriesChaos")
+library(nonlinearTseries)
+library(tseriesChaos)
+
+le <- vector()
+fecs <- seq(1200, 100000, by = 2000)
+for (fec in 1:length(fecs)){
+out1 <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature), fecundity = fecs[fec])
+out2 <- mean.data.frame(out1, 250, 2)
+out3 <- as.vector(out2$mean.abund)
+lyapun <- lyap_k(out3, m=1, d=2, s=200, t=40, ref=1700, k=2, eps=4)
+le[fec] <- max(lyapun)
+}
+
+# same results as chaos 0-1 test 
+
+# 
+# 
+# 
 # lyap(lyapun, -0.3131367,9.180819 )
-# maxLyapunov(time.series=out,
-#               min.embedding.dim=2,
-#               max.embedding.dim=5,
+# maxLyapunov(time.series=out$mean.abund,
+#               min.embedding.dim=1,
+#               max.embedding.dim=3,
 #               time.lag=1,
 #               radius=0.001,theiler.window=4,
 #               min.neighs=2,min.ref.points=500,
@@ -79,19 +92,43 @@ discharge <- rep(0.1, times = length(temp$dts))
 # library(DChaos)
 # 
 # le <- vector()
-# fecs <- seq(1200, 12000, by = 250)
+# fecs <- seq(1200, 100000, by = 2000)
+# 
 # for (fec in 1:length(fecs)){
 #   out1 <- Bmodel(discharge, temp, baselineK = 10000, disturbanceK = 40000, Qmin = 0.25, extinct = 50, iteration = 2, peaklist = 0, peakeach = length(temp$Temperature), fecundity = fecs[fec])
 #   out2 <- mean.data.frame(out1, 250, 2)
 #   out3 <- as.vector(out2$mean.abund)
-#   exponent <- DChaos::lyapunov(out3, timelapse="FIXED",
-#                                B=100, doplot=F)
 #   
-#   le[fec] <- exponent$exponent.median[1]
+#   # Check if out3 has enough data points
+#   if (length(out3) < 100) {
+#     warning(paste("Not enough data points for fecundity", fecs[fec], "Skipping..."))
+#     next
+#   }
+#   
+#   # Check for NA or infinite values
+#   if (any(is.na(out3)) || any(is.infinite(out3))) {
+#     warning(paste("NA or infinite values in out3 for fecundity", fecs[fec], "Skipping..."))
+#     next
+#   }
+#   
+#   # Compute Lyapunov exponent
+#   exponent <- tryCatch({
+#     DChaos::lyapunov(out3, timelapse="FIXED", B=100, doplot=T)
+#   }, error = function(e) {
+#     warning(paste("Error computing Lyapunov exponent for fecundity", fecs[fec], ":", e$message))
+#     return(NULL)
+#   })
+#   
+#   if (!is.null(exponent)) {
+#     le[fec] <- exponent$exponent.median[1]
+#   } else {
+#     le[fec] <- NA  # Assign NA if there was an error
+#   }
 # }
-
-install.packages("Chaos01")
-library(Chaos01)
+# 
+# plot(fecs, le)
+# install.packages("Chaos01")
+# library(Chaos01)
 
 chaos1 <- vector()
 fecs <- seq(1200, 100000, by = 2000)
