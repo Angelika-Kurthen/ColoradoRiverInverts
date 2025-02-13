@@ -34,6 +34,7 @@ temp_seq <- c(1, 1.1, 1.2, 1.5)
 # makes some vectors for data to go into
 CHIR_temp_abund <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
 CHIR_temp_biomass <- data.frame(biomass=numeric(), temperature = factor(), taxa = factor())
+CHIR_temp_percapita <- data.frame(percapita=numeric(), temperature = factor(), taxa = factor())
 
 results <- mclapply(temp_seq, function(te) {
   set.seed(123) # make reproducible
@@ -53,6 +54,17 @@ results <- mclapply(temp_seq, function(te) {
   # Store abundance data in a dataframe
   average_size <- cbind(sizes_list, rep(te, times = length(sizes_list)), rep("CHIR",times = length(sizes_list)))
   colnames(average_size) <- colnames(CHIR_temp_biomass)
+  # put the percapita biomass of each stage in a dataframe
+  s1pc <-(0.0018 * (mean((sizes[-c(1:260)])/2))^2.617)
+  s2pc <-(0.0018 * (mean(sizes[-c(1:260)]))^2.617)
+  s3pc <-  (0.0018 * (mean(sizes[-c(1:260)]))^2.617)
+  #percapita <- c(s1pc, s2pc, s3pc)
+  percapita <- c(s3pc)
+  
+  # store percapita biomass data in a dataframe
+  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("CHIR",times = length(sizes_list)))
+  colnames(percapita_biomass) <- colnames(CHIR_temp_percapita)
+  
   # calculate mean abundances at each timestep
   means.list.CHIR <- mean.data.frame(out, burnin = 260, iteration = 1000)
   means <- means.list.CHIR$mean.abund
@@ -62,22 +74,45 @@ results <- mclapply(temp_seq, function(te) {
   # Append results to the main data storage
   CHIR_temp_abund <- rbind(CHIR_temp_abund, average_means)
   CHIR_temp_biomass <- rbind(CHIR_temp_biomass, average_size)
+  CHIR_temp_percapita <- rbind(CHIR_temp_percapita, percapita_biomass)
+  
   # Return results as a list
-  return(list(CHIR_temp_abund = average_means, CHIR_temp_biomass = average_size))
+  return(list(CHIR_temp_abund = average_means, CHIR_temp_biomass = average_size, CHIR_temp_percapita = percapita_biomass))
 }, mc.cores = 1)  # Use all available cores minus one
 
 # Combine results from all temperature scenarios into final dataframes
 CHIR_temp_abund <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_abund"))
 CHIR_temp_biomass <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_biomass"))
-
+CHIR_temp_percapita <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_percapita"))
 
 # Write results to CSV files
 write.csv(CHIR_temp_abund, "CHIR_temp_abund.csv", row.names = FALSE)
 write.csv(CHIR_temp_biomass, "CHIR_temp_biomass.csv", row.names = FALSE)
+write.csv(CHIR_temp_percapita, "CHIR_temp_percapita.csv", row.names = FALSE)
+
+
+# tabula rasa
+rm(temp)
+rm(temps)
+rm(CHIR_temp_abund)
+rm(CHIR_temp_biomass)
+
+## Now we add the summer spike to temperatures 
+# read in LF temp and discharge data from 2007 to 2023
+temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
+# calculate average yearly temperatures
+temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
+# create summertime spike (up to 21 C, then scale from there)
+temps$Temperature[16:22] <- c(14, 16, 18, 21, 21, 18, 16, 14)
+
+# create a timeseries of average temperatures 100 years long
+temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
+
 # add temperature spike
 # makes some vectors for data to go into
 CHIR_temp_abund_spike <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
 CHIR_temp_biomass_spike <- data.frame(biomass=numeric(), temperature = factor(), taxa = factor())
+CHIR_temp_percapita_spike <- data.frame(percapita=numeric(), temperature = factor(), taxa = factor())
 
 results <- mclapply(temp_seq, function(te) {
   set.seed(123) # make reproducible
@@ -99,6 +134,18 @@ results <- mclapply(temp_seq, function(te) {
   # Store abundance data in a dataframe
   average_size <- cbind(sizes_list, rep(te, times = length(sizes_list)), rep("CHIR",times = length(sizes_list)))
   colnames(average_size) <- colnames(CHIR_temp_biomass_spike)
+  
+  # put the percapita biomass of each stage in a dataframe
+  s1pc <- (0.0018 * (mean((sizes[-c(1:260)])/2))^2.617)
+  s2pc <- (0.0018 * (mean(sizes[-c(1:260)]))^2.617)
+  s3pc <- (0.0018 * (mean(sizes[-c(1:260)]))^2.617)
+  #percapita <- c(s1pc, s2pc, s3pc)
+  percapita <- c(s3pc)
+  
+  # store percapita biomass data in a dataframe
+  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("CHIR",times = length(sizes_list)))
+  colnames(percapita_biomass) <- colnames(CHIR_temp_percapita_spike)
+  
   # calculate mean abundances at each timestep
   means.list.CHIR <- mean.data.frame(out, burnin = 260, iteration = 1000)
   means <- means.list.CHIR$mean.abund
@@ -108,14 +155,18 @@ results <- mclapply(temp_seq, function(te) {
   # Append results to the main data storage
   CHIR_temp_abund_spike <- rbind(CHIR_temp_abund_spike, average_means)
   CHIR_temp_biomass_spike <- rbind(CHIR_temp_biomass_spike, average_size)
+  CHIR_temp_percapita_spike <- rbind(CHIR_temp_percapita_spike, percapita_biomass)
+  
   # Return results as a list
-  return(list(CHIR_temp_abund_spike = average_means, CHIR_temp_biomass_spike = average_size))
+  return(list(CHIR_temp_abund_spike = average_means, CHIR_temp_biomass_spike = average_size, CHIR_temp_percapita_spike = percapita_biomass))
 }, mc.cores = detectCores() - 1)  # Use all available cores minus one
 
 # Combine results from all temperature scenarios into final dataframes
 CHIR_temp_abund_spike <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_abund_spike"))
 CHIR_temp_biomass_spike <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_biomass_spike"))
+CHIR_temp_percapita_spike <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_percapita_spike"))
 
 # Write results to CSV files
 write.csv(CHIR_temp_abund_spike, "CHIR_temp_abund_spike.csv", row.names = FALSE)
 write.csv(CHIR_temp_biomass_spike, "CHIR_temp_biomass_spike.csv", row.names = FALSE)
+write.csv(CHIR_temp_percapita_spike, "CHIR_temp_percapita_spike.csv", row.names = FALSE)

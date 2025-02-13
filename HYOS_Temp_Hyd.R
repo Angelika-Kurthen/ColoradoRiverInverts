@@ -28,6 +28,7 @@ flows$Discharge <- flows$Discharge/85000
 # create sequence of temperature modifiers
 temp_seq <- c(1, 1.1,1.2, 1.5)
 
+
 # makes some vectors for data to go into
 HYOS_temp_hyd_abund <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
 HYOS_temp_hyd_biomass <- data.frame(biomass=numeric(), temperature = factor(), taxa = factor())
@@ -65,6 +66,8 @@ results <- mclapply(temp_seq, function(te) {
   return(list(HYOS_temp_hyd_abund = average_means, HYOS_temp_hyd_biomass = average_size))
 }, mc.cores =  detectCores() - 1)
 
+
+temps$Temperature
 # Combine results from all temperature scenarios into final dataframes
 HYOS_temp_hyd_abund <- do.call(rbind, lapply(results, `[[`, "HYOS_temp_hyd_abund"))
 HYOS_temp_hyd_biomass <- do.call(rbind, lapply(results, `[[`, "HYOS_temp_hyd_biomass"))
@@ -72,6 +75,23 @@ HYOS_temp_hyd_biomass <- do.call(rbind, lapply(results, `[[`, "HYOS_temp_hyd_bio
 # Write results to CSV files
 write.csv(HYOS_temp_hyd_abund, "HYOS_temp_hyd_abund.csv", row.names = FALSE)
 write.csv(HYOS_temp_hyd_biomass, "HYOS_temp_hyd_biomass.csv", row.names = FALSE)
+
+# tabula rasa
+rm(temp)
+rm(temps)
+rm(HYOS_temp_hyd_abund)
+rm(HYOS_temp_hyd_biomass)
+
+## Now we add the summer spike to temperatures 
+# read in LF temp and discharge data from 2007 to 2023
+temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
+# calculate average yearly temperatures
+temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
+# create summertime spike (up to 21 C, then scale from there)
+temps$Temperature[16:22] <- c(14, 16, 18, 21, 21, 18, 16, 14)
+
+# create a timeseries of average temperatures 100 years long
+temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
 
 # with temperature spike
 # makes some vectors for data to go into
@@ -81,15 +101,12 @@ results <- mclapply(temp_seq, function(te) {
   set.seed(123) # make reproducible
   # model sizes
   temps$Temperature <- temps$Temperature * te
-  
   # model sizes
   sizes <- HYOSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature), stage_output = "size")
   # model abundances
   out <- HYOSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
   
   temps$Temperature <- temps$Temperature / te
-  #add temperature spike in September
-  temps$Temperature[which(month(temps$dts) == 9 & day(temps$dts) == 15)] <- 26
   # for each stage, calculate mean biomass
   s1s <- colMeans(out[-c(1:260), 1, ]) * (0.0046 * (mean(sizes[-c(1:260)]))^2.926)
   s2s <- colMeans(out[-c(1:260), 2, ]) * (0.0046 * (mean(sizes[-c(1:260)]+3))^2.926)

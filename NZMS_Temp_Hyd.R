@@ -70,6 +70,22 @@ NZMS_temp_hyd_biomass <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_bio
 write.csv(NZMS_temp_hyd_abund, "NZMS_temp_hyd_abund.csv", row.names = FALSE)
 write.csv(NZMS_temp_hyd_biomass, "NZMS_temp_hyd_biomass.csv", row.names = FALSE)
 
+# tabula rasa
+rm(temp)
+rm(temps)
+rm(NZMS_temp_hyd_abund)
+rm(NZMS_temp_hyd_biomass)
+
+## Now we add the summer spike to temperatures 
+# read in LF temp and discharge data from 2007 to 2023
+temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
+# calculate average yearly temperatures
+temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
+# create summertime spike (up to 21 C, then scale from there)
+temps$Temperature[16:22] <- c(14, 16, 18, 21, 21, 18, 16, 14)
+
+# create a timeseries of average temperatures 100 years long
+temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
 
 
 # makes some vectors for data to go into
@@ -80,7 +96,6 @@ results <- mclapply(temp_seq, function(te) {
   # modify temperature regim
   temps$Temperature <- temps$Temperature * te
   # add temp spike in September
-  temps$Temperature[which(month(temps$dts) == 9 & day(temps$dts) == 15)] <- 26
   out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0, peakeach = length(temps$Temperature))
   temps$Temperature <- temps$Temperature / te
   # calculate mean abundances at each timestep
