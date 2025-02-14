@@ -77,7 +77,7 @@ results <- mclapply(temp_seq, function(te) {
   return(list(Multispp_temp_abund = average_means, 
               Multispp_temp_biomass = average_biomass, 
               MultisppS3_temp_biomass = s3biomass))
-}, mc.cores = 1)
+}, mc.cores = detectCores()-1)
 #  }, mc.cores =  detectCores() - 1)
 
 # Combine results from all temperature scenarios into final dataframes
@@ -145,7 +145,7 @@ results <- mclapply(temp_seq, function(te) {
   return(list(Multispp_temp_abund_spike = average_means, 
               Multispp_temp_biomass_spike = average_biomass, 
               MultisppS3_temp_biomass_spike = s3biomass))
-}, mc.cores = 1)
+}, mc.cores = detectCores()-1)
 
 # Final binding
 Multispp_temp_abund_spike <- do.call(rbind, lapply(results, `[[`, "Multispp_temp_abund_spike"))
