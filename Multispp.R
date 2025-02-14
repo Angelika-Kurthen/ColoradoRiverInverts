@@ -430,8 +430,7 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       ifelse(sens > 1, # and 1
              sens <- 1,
              sens <- sens)
-      assign(modify_parameter, get(modify_parameter) + increment)
-      param <- param + inc
+      assign(modify_parameter, sens)
       }
 
       # Compile matrices
