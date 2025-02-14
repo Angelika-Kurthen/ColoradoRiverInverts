@@ -7,6 +7,10 @@ library(patchwork)
 #install.packages("svglite")
 library(svglite)
 library(dataRetrieval)
+library(cowplot)
+library(png)
+library(grid)
+
 source("1spFunctions.R")
 # source("CHIR_Validation.R")
 # soruce("HYOS_Validation.R") etc
@@ -516,7 +520,7 @@ n_pc_sp <-ggplot(data = nzms_pc_sp, aes(x = as.factor(temperature), y = (as.nume
   stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
   stat_summary(fun = mean, geom = "point", size = 2)+
   xlab("Temperature (with spike)")+
-  ylab("BIndividual Biomass (mg)")+
+  ylab("Individual Biomass (mg)")+
   theme_bw()+
   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
                             "1.2" = "+20%", "1.5" = "+50%"))+
@@ -533,7 +537,7 @@ wrap_plots(b_pc_sp, h_pc_sp, c_pc_sp, g_pc_sp, n_pc_sp, spikeregime)+
 
 
 hyos_biomass_sp <- read_csv("HYOS_temp_biomass_spike.csv")
-baet_biomass_sp <- read_csv("BAET_temp_biomass_spike.csv")http://127.0.0.1:22703/graphics/47ec494e-e4fc-49b7-8b94-cae9d2bf4801.png
+baet_biomass_sp <- read_csv("BAET_temp_biomass_spike.csv")
 chir_biomass_sp <- read_csv("CHIR_temp_biomass_spike.csv")
 gamm_biomass_sp <- read_csv("GAMM_temp_biomass_spike.csv")
 nzms_biomass_sp <- read_csv("NZMS_temp_biomass_spike.csv")
@@ -1401,4 +1405,241 @@ tempsurv_plot <- ggarrange(nzms_surv, baet_surv, gamm_surv, hyos_surv, chir_surv
 ggsave("TempSurvPlot.png", plot = tempsurv_plot, device = "png", width = 8, height = 8, dpi = "retina")
 # plot(GAMMSurvRates$Temperature, GAMMSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
 # lines(tem, TempSurv_GAMM(tem))
-http://127.0.0.1:35901/graphics/63814419-21c3-4b1a-a8b6-ed037422e6cd.png
+#http://127.0.0.1:35901/graphics/63814419-21c3-4b1a-a8b6-ed037422e6cd.png
+
+######
+# taxon by taxon 
+# Combine them with a new column to differentiate
+
+# hydropysche spp
+hyos_abund <- read_csv("HYOS_temp_abund.csv")
+hyos_pc <- read_csv("HYOS_temp_percapita.csv")
+hyos_biomass <- read_csv("HYOS_temp_biomass.csv")
+hyos_abund_sp <- read_csv("HYOS_temp_abund_spike.csv")
+hyos_pc_sp <- read_csv("HYOS_temp_percapita_spike.csv")
+hyos_biomass_sp <- read_csv("HYOS_temp_biomass_spike.csv")
+hyos_abund_t.h <- read_csv("HYOS_temp_hyd_abund.csv")
+hyos_biomass_t.h <- read_csv("HYOS_temp_hyd_biomass.csv")
+hyos_abund_t.h_spike <- read_csv("HYOS_temp_hyd_abund_spike.csv")
+hyos_biomass_t.h_spike <- read_csv("HYOS_temp_hyd_biomass_spike.csv")
+hyos_abund_HFE <- read_csv("HYOS_temp_abund_HFE.csv")
+hyos_biomass_HFE <- read_csv("HYOS_temp_biomass_HFE.csv")
+hyos_abund_HFE_sp <- read_csv("HYOS_temp_abund_HFE_spike.csv")
+hyos_abund_hyd_HFE <- read_csv("HYOS_temp_hyd_abund_HFE.csv")
+hyos_biomass_hyd_HFE <- read_csv("HYOS_temp_hyd_biomass_HFE.csv")
+hyos_abund_hyd_HFE.sp <- read_csv("HYOS_temp_hyd_abund_HFE_spike.csv")
+hyos_biomass_hyd_HFE.sp <- read_csv("HYOS_temp_hyd_biomass_HFE_spike.csv")
+
+# abundance
+
+hyos_abund_combo <- bind_rows(
+  hyos_abund %>% mutate(source = "Temperature"),
+  hyos_abund_sp %>% mutate(source = "Temperature & spike"),
+  hyos_abund_t.h %>% mutate(source = "Temperature & hydropeaking"),
+  hyos_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
+  hyos_abund_HFE %>% mutate(source = "Temperature & HFE"),
+  hyos_abund_HFE_sp %>% mutate(source = "Temperature & spike & HFE"),
+  hyos_abund_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
+  hyos_abund_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+)
+
+# biomass
+hyos_biomass_combo <- bind_rows(
+  hyos_biomass %>% mutate(source = "Temperature"),
+  hyos_biomass_sp %>% mutate(source = "Temperature & spike"),
+  hyos_biomass_t.h %>% mutate(source = "Temperature & hydropeaking"),
+  hyos_biomass_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
+  hyos_biomass_HFE %>% mutate(source = "Temperature & HFE"),
+  hyos_biomass_HFE_sp %>% mutate(source = "Temperature & spike & HFE"),
+  hyos_biomass_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
+  hyos_biomass_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+)
+
+hyos_pc_combo <- bind_rows(
+  hyos_pc %>% mutate(source = "Temperature"),
+  hyos_pc_sp %>% mutate(source = "Temperature & spike"),
+)
+#c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999")
+#"#440154FF" "#46337EFF" "#365C8DFF" "#277F8EFF" "#1FA187FF" "#4AC16DFF" "#9FDA3AFF","#FDE725FF"
+
+# "#A6CEE3","#1F78B4",
+# "#B2DF8A","#33A02C",
+# "#FDBF6F","#FF7F00", 
+# "#CAB2D6","#6A3D9A")
+# percapita
+
+paired.colors <- c("#56B4E9", "#365C8DFF",
+                   "#FDE725FF","#E69F00", 
+                   "#9FDA3AFF","#009E73", 
+                   "#CC79A7","#46337EFF")
+
+label.names <- c(
+  "Temperature", 
+  "Temperature +\nSpike", 
+  "Temperature +\nHydropeaking", 
+  "Temperature +\nSpike + Hydropeaking",
+  "Temperature +\nHFE", 
+  "Temperature +\nSpike + HFE", 
+  "Temperature +\nHydropeaking + HFE", 
+  "Temperature +\nSpike + Hydropeaking + HFE"
+)
+
+hyos_abund_combo$abundance <- scale(hyos_abund_combo$abundance)
+  
+h.abund <- ggplot(data = hyos_abund_combo, aes(y = abundance, x = as.factor(temperature), color = source, group = source)) +
+  stat_summary(fun.data = mean_sdl, geom = "errorbar", linewidth = 0.75, width = 0.2, 
+               position = position_dodge(0.5), show.legend = F) +
+  stat_summary(fun = mean, geom = "point", size = 3, position = position_dodge(0.5), show.legend = F) +
+  scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
+                            "1.2" = "+20%", "1.5" = "+50%"))+
+  theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
+  theme_bw()+
+  scale_color_manual(name = " ", labels=label.names, values=paired.colors)+
+  xlab("Temperature")+
+  labs(y=expression(paste(italic("Hydropsyche"), "  Scaled Abundance")))+
+  theme(text = element_text(size = 13), axis.text.x = element_text(hjust = 1, angle=45, size = 12), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# hyos biomass
+hyos_biomass_combo$biomass <- scale(hyos_biomass_combo$biomass)
+
+h.biomass <- ggplot(data = hyos_biomass_combo, aes(y = biomass, x = as.factor(temperature), color = source, group = source)) +
+  stat_summary(fun.data = mean_sdl, geom = "errorbar", linewidth = 0.75, width = 0.2, 
+               position = position_dodge(0.5)) +
+  stat_summary(fun = mean, geom = "point", size = 3, position = position_dodge(0.5)) +
+  stat_summary(fun = mean, geom = "line", size = 0.75, position = position_dodge(0.5)) +
+  scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
+                            "1.2" = "+20%", "1.5" = "+50%"))+
+  theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
+  theme_bw()+
+  scale_color_manual(name = " ", labels=label.names, values=paired.colors)+
+  xlab("Temperature")+
+  labs(y=expression(paste(italic("Hydropsyche"), " spp. Scaled Biomass")))+
+  theme(text = element_text(size = 13), axis.text.x = element_text(hjust = 1, angle=45, size = 11), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+h_plot <- wrap_plots(h.abund, h.biomass) +
+  plot_layout(guides = 'collect') &
+  theme(
+    legend.text = element_text(size = 11, lineheight = 0.9),
+    legend.spacing.y = unit(0.5, "cm"),
+    legend.key.height = unit(1.25, "cm")
+  )
+# Read the PNG image
+img <- readPNG("caddisfly.png")
+img_grob <- rasterGrob(img, x = 0.825, y = 0.92, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
+
+# Overlay the image on the plot
+ggdraw() +
+  draw_plot(h_plot) +
+  draw_grob(img_grob)
+
+
+
+
+hyos_pc_combo <- bind_rows(
+  hyos_pc %>% mutate(source = "Temperature"),
+  hyos_pc_sp %>% mutate(source = "Temperature & spike"),
+)
+
+baet_pc_combo <- bind_rows(
+  baet_pc %>% mutate(source = "Temperature"),
+  baet_pc_sp %>% mutate(source = "Temperature & spike"),
+)
+
+chir_pc_combo <- bind_rows(
+  chir_pc %>% mutate(source = "Temperature"),
+  chir_pc_sp %>% mutate(source = "Temperature & spike"),
+)
+
+gamm_pc_combo <- bind_rows(
+  gamm_pc %>% mutate(source = "Temperature"),
+  gamm_pc_sp %>% mutate(source = "Temperature & spike"),
+)
+  
+nzms_pc_combo <- bind_rows(
+  nzms_pc %>% mutate(source = "Temperature"),
+  nzms_pc_sp %>% mutate(source = "Temperature & spike"),
+)
+
+
+baet_abund <- read_csv("BAET_temp_abund.csv")
+chir_abund <- read_csv("CHIR_temp_abund.csv")
+gamm_abund <- read_csv("GAMM_temp_abund.csv")
+nzms_abund <- read_csv("NZMS_temp_abund.csv")
+baet_pc <- read_csv("BAET_temp_percapita.csv")
+chir_pc <- read_csv("CHIR_temp_percapita.csv")
+gamm_pc <- read_csv("GAMM_temp_percapita.csv")
+nzms_pc <- read_csv("NZMS_temp_percapita.csv")
+baet_biomass <- read_csv("BAET_temp_biomass.csv")
+chir_biomass <- read_csv("CHIR_temp_biomass.csv")
+gamm_biomass <- read_csv("GAMM_temp_biomass.csv")
+nzms_biomass <- read_csv("NZMS_temp_biomass.csv")
+baet_abund_sp <- read_csv("BAET_temp_abund_spike.csv")
+chir_abund_sp <- read_csv("CHIR_temp_abund_spike.csv")
+gamm_abund_sp <- read_csv("GAMM_temp_abund_spike.csv")
+nzms_abund_sp <- read_csv("NZMS_temp_abund_spike.csv")
+baet_pc_sp <- read_csv("BAET_temp_percapita_spike.csv")
+chir_pc_sp <- read_csv("CHIR_temp_percapita_spike.csv")
+gamm_pc_sp <- read_csv("GAMM_temp_percapita_spike.csv")
+nzms_pc_sp <- read_csv("NZMS_temp_percapita_spike.csv")
+baet_biomass_sp <- read_csv("BAET_temp_biomass_spike.csv")
+chir_biomass_sp <- read_csv("CHIR_temp_biomass_spike.csv")
+gamm_biomass_sp <- read_csv("GAMM_temp_biomass_spike.csv")
+nzms_biomass_sp <- read_csv("NZMS_temp_biomass_spike.csv")
+baet_abund_t.h <- read_csv("BAET_temp_hyd_abund.csv")
+chir_abund_t.h <- read_csv("CHIR_temp_hyd_abund.csv")
+gamm_abund_t.h <- read_csv("GAMM_temp_hyd_abund.csv")
+nzms_abund_t.h <- read_csv("NZMS_temp_hyd_abund.csv")
+baet_biomass_t.h <- read_csv("BAET_temp_hyd_biomass.csv")
+chir_biomass_t.h <- read_csv("CHIR_temp_hyd_biomass.csv")
+gamm_biomass_t.h <- read_csv("GAMM_temp_hyd_biomass.csv")
+nzms_biomass_t.h <- read_csv("NZMS_temp_hyd_biomass.csv")
+baet_abund_t.h_spike <- read_csv("BAET_temp_hyd_abund_spike.csv")
+chir_abund_t.h_spike <- read_csv("CHIR_temp_hyd_abund_spike.csv")
+gamm_abund_t.h_spike <- read_csv("GAMM_temp_hyd_abund_spike.csv")
+nzms_abund_t.h_spike <- read_csv("NZMS_temp_hyd_abund_spike.csv")
+baet_biomass_t.h_spike <- read_csv("BAET_temp_hyd_biomass_spike.csv")
+chir_biomass_t.h_spike <- read_csv("CHIR_temp_hyd_biomass_spike.csv")
+gamm_biomass_t.h_spike <- read_csv("GAMM_temp_hyd_biomass_spike.csv")
+nzms_biomass_t.h_spike <- read_csv("NZMS_temp_hyd_biomass_spike.csv")
+baet_abund_HFE <- read_csv("BAET_temp_abund_HFE.csv")
+chir_abund_HFE <- read_csv("CHIR_temp_abund_HFE.csv")
+gamm_abund_HFE <- read_csv("GAMM_temp_abund_HFE.csv")
+nzms_abund_HFE <- read_csv("NZMS_temp_abund_HFE.csv")
+baet_biomass_HFE <- read_csv("BAET_temp_biomass_HFE.csv")
+chir_biomass_HFE <- read_csv("CHIR_temp_biomass_HFE.csv")
+gamm_biomass_HFE <- read_csv("GAMM_temp_biomass_HFE.csv")
+nzms_biomass_HFE <- read_csv("NZMS_temp_biomass_HFE.csv")
+baet_abund_HFE_sp <- read_csv("BAET_temp_abund_HFE_spike.csv")
+chir_abund_HFE_sp <- read_csv("CHIR_temp_abund_HFE_spike.csv")
+gamm_abund_HFE_sp <- read_csv("GAMM_temp_abund_HFE_spike.csv")
+nzms_abund_HFE_sp<- read_csv("NZMS_temp_abund_HFE_spike.csv")
+hyos_biomass_HFE.sp <- read_csv("HYOS_temp_biomass_HFE_spike.csv")
+baet_biomass_HFE.sp <- read_csv("BAET_temp_biomass_HFE_spike.csv")
+chir_biomass_HFE.sp <- read_csv("CHIR_temp_biomass_HFE_spike.csv")
+gamm_biomass_HFE.sp <- read_csv("GAMM_temp_biomass_HFE_spike.csv")
+nzms_biomass_HFE.sp <- read_csv("NZMS_temp_biomass_HFE_spike.csv")
+baet_abund_HFE_sp <- read_csv("BAET_temp_abund_HFE_spike.csv")
+chir_abund_HFE_sp <- read_csv("CHIR_temp_abund_HFE_spike.csv")
+gamm_abund_HFE_sp <- read_csv("GAMM_temp_abund_HFE_spike.csv")
+nzms_abund_HFE_sp<- read_csv("NZMS_temp_abund_HFE_spike.csv")
+baet_abund_hyd_HFE <- read_csv("BAET_temp_hyd_abund_HFE.csv")
+chir_abund_hyd_HFE <- read_csv("CHIR_temp_hyd_abund_HFE.csv")
+gamm_abund_hyd_HFE <- read_csv("GAMM_temp_hyd_abund_HFE.csv")
+nzms_abund_hyd_HFE <- read_csv("NZMS_temp_hyd_abund_HFE.csv")
+baet_biomass_hyd_HFE <- read_csv("BAET_temp_hyd_biomass_HFE.csv")
+chir_biomass_hyd_HFE <- read_csv("CHIR_temp_hyd_biomass_HFE.csv")
+gamm_biomass_hyd_HFE <- read_csv("GAMM_temp_hyd_biomass_HFE.csv")
+nzms_biomass_hyd_HFE <- read_csv("NZMS_temp_hyd_biomass_HFE.csv")
+baet_abund_hyd_HFE.sp <- read_csv("BAET_temp_hyd_abund_HFE_spike.csv")
+chir_abund_hyd_HFE.sp <- read_csv("CHIR_temp_hyd_abund_HFE_spike.csv")
+gamm_abund_hyd_HFE.sp <- read_csv("GAMM_temp_hyd_abund_HFE_spike.csv")
+nzms_abund_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_abund_HFE_spike.csv")
+baet_biomass_hyd_HFE.sp <- read_csv("BAET_temp_hyd_biomass_HFE_spike.csv")
+chir_biomass_hyd_HFE.sp <- read_csv("CHIR_temp_hyd_biomass_HFE_spike.csv")
+gamm_biomass_hyd_HFE.sp <- read_csv("GAMM_temp_hyd_biomass_HFE_spike.csv")
+nzms_biomass_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_biomass_HFE_spike.csv")
+
+
+
+
