@@ -36,7 +36,10 @@ HFE_rows <- HFE_rows[seq(1, length(HFE_rows), by = 3)]  # Keep every 3rd occurre
 flows$Discharge[HFE_rows] <- 0.45
 
 # Expand to include the next 6 rows for each event
-expanded_HFE_rows <- unlist(lapply(HFE_rows, function(row) seq(row, row + 6)))
+#expanded_HFE_rows <- unlist(lapply(HFE_rows, function(row) seq(row, row + 6)))
+
+#if we want to look at everything
+expanded_HFE_rows <- seq(261, length(temps$dts))
 
 # Ensure we don't exceed the number of rows in the dataset
 expanded_HFE_rows <- expanded_HFE_rows[expanded_HFE_rows <= nrow(flows) & expanded_HFE_rows > 260]
