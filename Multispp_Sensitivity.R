@@ -4,6 +4,7 @@
 library(ggplot2)
 library(dplyr)
 library(dataRetrieval)
+library(parallel)
 
 source("1spFunctions.R")
 source("HYOSSurvivorship.R")
@@ -13,6 +14,7 @@ source("NZMSSurvivorship.R")
 source("CHIRSurvivorship.R")
 source("GAMMSurvivorship.R")
 source("MultisppFunctions.R")
+source("Multispp.R")
 
 # Read in Lees Ferry temperature and discharge data from 2007 to 2023
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")  # Water temperature data
@@ -58,7 +60,7 @@ run_model_with_modification <- function(param, inc) {
                             peakeach = length(temps$Temperature), stage_output = "all", 
                             modify_parameter = param, increment =inc)
 
-    average_abundance <- apply(modified_model[-c(1:199),,,], c(2, 4), function(x) mean(x, na.rm = TRUE))
+    average_abundance <- apply(modified_model$N[-c(1:199),,,], c(2, 4), function(x) mean(x, na.rm = TRUE))
     # Create a data frame from the average abundances
     average_abundance_df <- as.data.frame(as.table(average_abundance))
     # Combine stage and taxon into a single column
@@ -83,7 +85,7 @@ sensitivity_results_list <- mclapply(1:nrow(param_grid), function(i) {
   param <- as.character(param_grid$Parameter[i])
   inc <- param_grid$Increment[i]
   run_model_with_modification(param, inc)
-}, mc.cores = numCores)
+}, mc.cores = 1)
 
 # Combine the list into a data frame
 sensitivity_results <- do.call(rbind, sensitivity_results_list)
