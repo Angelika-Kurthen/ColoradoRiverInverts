@@ -25,7 +25,7 @@ source("GAMMSurvivorship.R")
 # peaklist <- 0
 # stage_output <- "size"
 # discharge <temps# discharge <- rep(0.1, times = length(temps$Temperature))
-modify_paramter <- NULL
+#modify_paramter <- NULL
 Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
                      extinct, iteration, peaklist = NULL, peakeach = NULL, 
                      stage_output = "all", modify_parameter = NULL, increment = NULL ){
@@ -497,39 +497,39 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       #------------------------------------------------------------
       # Hydropsyche spp.
       #s1
-      output.N.list[t, 1, iter, "HYOS"] <- output.N.list[t, 1, iter, "HYOS"] * flood.mort_HYOS[t]
+      output.N.list[t, 1, iter, "HYOS"] <- output.N.list[t, 1, iter, "HYOS"] * flood.mort_HYOS[t-1]
       #s2
-      output.N.list[t,2,iter, "HYOS"] <- output.N.list[t, 2, iter, "HYOS"] * flood.mort_HYOS[t]
+      output.N.list[t,2,iter, "HYOS"] <- output.N.list[t, 2, iter, "HYOS"] * flood.mort_HYOS[t-1]
       #3
       #output.N.list[t,3,iter, "HYOS"] <- flood.mortality(output.N.list[t,3,iter, "HYOS"], HYOS_k, HYOS_h, Q[t-1], Qmin)
       
       #Baetidae spp.
       #s1
-      output.N.list[t, 1, iter, "BAET"] <-  output.N.list[t, 1, iter, "BAET"] * flood.mort_BAET[t]
+      output.N.list[t, 1, iter, "BAET"] <-  output.N.list[t, 1, iter, "BAET"] * flood.mort_BAET[t-1]
       #s2
-      output.N.list[t,2,iter, "BAET"] <- output.N.list[t,2,iter, "BAET"] * flood.mort_BAET[t]
+      output.N.list[t,2,iter, "BAET"] <- output.N.list[t,2,iter, "BAET"] * flood.mort_BAET[t-1]
 
       #NZMS
       #s1
-      output.N.list[t, 1, iter, "NZMS"] <- output.N.list[t, 1, iter, "NZMS"] * flood.mort_NZMS[t]
+      output.N.list[t, 1, iter, "NZMS"] <- output.N.list[t, 1, iter, "NZMS"] * flood.mort_NZMS[t-1]
       #s2
-      output.N.list[t,2,iter, "NZMS"] <- output.N.list[t,2,iter, "NZMS"] * flood.mort_NZMS[t]
+      output.N.list[t,2,iter, "NZMS"] <- output.N.list[t,2,iter, "NZMS"] * flood.mort_NZMS[t-1]
       #3
-      output.N.list[t,3,iter, "NZMS"] <- output.N.list[t,3,iter, "NZMS"] * flood.mort_NZMS[t]
+      output.N.list[t,3,iter, "NZMS"] <- output.N.list[t,3,iter, "NZMS"] * flood.mort_NZMS[t-1]
       
       # CHIR
       #s1
-      output.N.list[t, 1, iter, "CHIR"] <- output.N.list[t, 1, iter, "CHIR"] * flood.mort_CHIR[t]
+      output.N.list[t, 1, iter, "CHIR"] <- output.N.list[t, 1, iter, "CHIR"] * flood.mort_CHIR[t-1]
       #s2
-      output.N.list[t,2,iter, "CHIR"] <- output.N.list[t,2,iter, "CHIR"] * flood.mort_CHIR[t]
+      output.N.list[t,2,iter, "CHIR"] <- output.N.list[t,2,iter, "CHIR"] * flood.mort_CHIR[t-1]
 
       #GAMM
       #s1
-      output.N.list[t, 1, iter, "GAMM"] <- output.N.list[t, 1, iter, "GAMM"] * flood.mort_GAMM[t]
+      output.N.list[t, 1, iter, "GAMM"] <- output.N.list[t, 1, iter, "GAMM"] * flood.mort_GAMM[t-1]
       #s2Qt
-      output.N.list[t,2,iter, "GAMM"] <- output.N.list[t,2,iter, "GAMM"] * flood.mort_GAMM[t]
+      output.N.list[t,2,iter, "GAMM"] <- output.N.list[t,2,iter, "GAMM"] * flood.mort_GAMM[t-1]
       
-      output.N.list[t,3,iter, "GAMM"] <- output.N.list[t,3,iter, "GAMM"] * flood.mort_GAMM[t]
+      output.N.list[t,3,iter, "GAMM"] <- output.N.list[t,3,iter, "GAMM"] * flood.mort_GAMM[t-1]
       
       #check extinction threshold for each spp + add rescue effect
       # Hydrospyche spp. 
@@ -633,11 +633,11 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
 }
 
 
-out <- Multispp(flow.data = flow.data, temp.data = temp.data,
-                           baselineK =10000 , disturbanceK = 100000, Qmin = 0.25,
-                           extinct = 50, iteration = 1000, peaklist = 0.17,
-                           peakeach = length(temps$Temperature), stage_output = c("biomass", "size"))
-
-
+# out <- Multispp(flow.data = flow.data, temp.data = temp.data,
+#                            baselineK =10000 , disturbanceK = 100000, Qmin = 0.25,
+#                            extinct = 50, iteration = 1000, peaklist = 0.17,
+#                            peakeach = length(temps$Temperature), stage_output = c("biomass", "size"))
+# 
+# 
 
                      
