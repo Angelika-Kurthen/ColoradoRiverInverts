@@ -62,9 +62,9 @@ results <- mclapply(temp_seq, function(te) {
   temps$Temperature <- temps$Temperature / te
   
   # for each stage, calculate mean biomass
-  s1s <- colMeans(out[expanded_HFE_rows, 1, ]) * (0.0053 * (mean(sizes[expanded_HFE_rows]/2, na.rm = T))^2.875)
-  s2s <- colMeans(out[expanded_HFE_rows, 2,]) * (0.0053 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.875)
-  s3s <- colMeans(out[expanded_HFE_rows, 3,]) * (0.0053 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.875)
+  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.0053 * (mean(sizes[-c(1:260)]/2, na.rm = T))^2.875)
+  s2s <- colMeans(out[-c(1:260), 2,]) * (0.0053 * (mean(sizes[-c(1:260)], na.rm = T))^2.875)
+  s3s <- colMeans(out[-c(1:260), 3,]) * (0.0053 * (mean(sizes[-c(1:260)], na.rm = T))^2.875)
   # sum the mean biomass of each stage to get mean timestep biomass
   sizes_list <- as.vector(s1s + s2s + s3s)
   # Store biomass data in a dataframe
@@ -73,7 +73,7 @@ results <- mclapply(temp_seq, function(te) {
   
   # calculate mean abundances at each timestep
   means.list.BAET <- mean.data.frame(out, burnin = 260, iteration = 1000)
-  means <- means.list.BAET$mean.abund[which(means.list.BAET$timesteps %in% expanded_HFE_rows)]
+  means <- means.list.BAET$mean.abund
   
   # Store abundance data in a dataframe
   average_means <- cbind(means, rep(te, times = length(means)), rep("BAET",times = length(means)))
@@ -106,7 +106,7 @@ temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 # calculate average yearly temperatures
 temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
 # create summertime spike (up to 21 C, then scale from there)
-temps$Temperature[16:22] <- c(14, 16, 18, 21, 21, 18, 16, 14)
+temps$Temperature[16:23] <- c(14, 16, 18, 21, 21, 18, 16, 14)
 
 # create a timeseries of average temperatures 100 years long
 temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
@@ -125,9 +125,9 @@ results <- mclapply(temp_seq, function(te) {
   temps$Temperature <- temps$Temperature / te
   
   # for each stage, calculate mean biomass
-  s1s <- colMeans(out[expanded_HFE_rows, 1, ]) * (0.0053 * (mean(sizes[expanded_HFE_rows]/2, na.rm = T))^2.875)
-  s2s <- colMeans(out[expanded_HFE_rows, 2,]) * (0.0053 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.875)
-  s3s <- colMeans(out[expanded_HFE_rows, 3,]) * (0.0053 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.875)
+  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.0053 * (mean(sizes[-c(1:260)]/2, na.rm = T))^2.875)
+  s2s <- colMeans(out[-c(1:260), 2,]) * (0.0053 * (mean(sizes[-c(1:260)], na.rm = T))^2.875)
+  s3s <- colMeans(out[-c(1:260), 3,]) * (0.0053 * (mean(sizes[-c(1:260)], na.rm = T))^2.875)
   # sum the mean biomass of each stage to get mean timestep biomass
   sizes_list <- as.vector(s1s + s2s + s3s)
   # Store biomass data in a dataframe
@@ -136,7 +136,7 @@ results <- mclapply(temp_seq, function(te) {
   
   # calculate mean abundances at each timestep
   means.list.BAET <- mean.data.frame(out, burnin = 260, iteration = 1000)
-  means <- means.list.BAET$mean.abund[which(means.list.BAET$timesteps %in% expanded_HFE_rows)]
+  means <- means.list.BAET$mean.abund
   
   # Store abundance data in a dataframe
   average_means <- cbind(means, rep(te, times = length(means)), rep("BAET",times = length(means)))

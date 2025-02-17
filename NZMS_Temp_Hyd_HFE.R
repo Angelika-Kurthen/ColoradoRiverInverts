@@ -50,44 +50,44 @@ expanded_HFE_rows <- expanded_HFE_rows[expanded_HFE_rows <= nrow(flows)]
 temp_seq <- c(1, 1.1, 1.2, 1.5)
 
 # makes some vectors for data to go into
-# NZMS_temp_hyd_abund_HFE <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
-# NZMS_temp_hyd_biomass_HFE <- data.frame(biomass=numeric(), temperature = factor(), taxa = factor())
-# results <- mclapply(temp_seq, function(te) {
-#   set.seed(123) # make reproducible
-#   # model sizes
-#   temps$Temperature <- temps$Temperature * te
-#   out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0, peakeach = length(temps$Temperature))
-#   temps$Temperature <- temps$Temperature / te
-#   # calculate mean abundances at each timestep
-#   means.list.NZMS <- mean.data.frame(out, burnin = 260, iteration = 1000)
-#   means <- means.list.NZMS$mean.abund[which(means.list.NZMS$timesteps %in% expanded_HFE_rows)]
-#   # Store abundance data in a dataframe
-#   average_means <- cbind(means, rep(te, times = length(means)), rep("NZMS",times = length(means)))
-#   colnames(average_means) <- colnames(NZMS_temp_hyd_abund_HFE)
-#   # for each stage, calculate mean biomass
-#   s1s <- colMeans(out[expanded_HFE_rows, 1, ]) * (0.02 * mean(c(0.5, 3.2))^2.4315)
-#   s2s <- colMeans(out[expanded_HFE_rows, 2, ]) * (0.02 * mean(c(3.2, 4))^2.4315)
-#   s3s <- colMeans(out[expanded_HFE_rows, 3, ]) * (0.02 * mean(c(4, 5.5))^2.4315)
-#   # sum the mean biomass of each stage to get mean timestep biomass
-#   sizes_list <- as.vector(s1s + s2s + s3s)
-#   # Store biomass data in a dataframe
-#   average_size <- cbind(sizes_list, rep(te, times = length(sizes_list)), rep("NZMS",times = length(sizes_list)))
-#   colnames(average_size) <- colnames(NZMS_temp_hyd_biomass_HFE)
-#   
-#   # Append results to the main data storage
-#   NZMS_temp_hyd_abund_HFE <- rbind(NZMS_temp_hyd_abund_HFE, average_means)
-#   NZMS_temp_hyd_biomass_HFE <- rbind(NZMS_temp_hyd_biomass_HFE, average_size)
-#   # Return results as a list
-#   return(list(NZMS_temp_hyd_abund_HFE = average_means, NZMS_temp_hyd_biomass_HFE = average_size))
-# }, mc.cores = detectCores() - 1)
-# 
-# # Combine results from all temperature scenarios into final dataframes
-# NZMS_temp_hyd_abund_HFE <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_abund_HFE"))
-# NZMS_temp_hyd_biomass_HFE <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_biomass_HFE"))
-# 
-# # Write results to CSV files
-# write.csv(NZMS_temp_hyd_abund_HFE, "NZMS_temp_hyd_abund_HFE.csv", row.names = FALSE)
-# write.csv(NZMS_temp_hyd_biomass_HFE, "NZMS_temp_hyd_biomass_HFE.csv", row.names = FALSE)
+NZMS_temp_hyd_abund_HFE <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
+NZMS_temp_hyd_biomass_HFE <- data.frame(biomass=numeric(), temperature = factor(), taxa = factor())
+results <- mclapply(temp_seq, function(te) {
+  set.seed(123) # make reproducible
+  # model sizes
+  temps$Temperature <- temps$Temperature * te
+  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0, peakeach = length(temps$Temperature))
+  temps$Temperature <- temps$Temperature / te
+  # calculate mean abundances at each timestep
+  means.list.NZMS <- mean.data.frame(out, burnin = 260, iteration = 1000)
+  means <- means.list.NZMS$mean.abund[which(means.list.NZMS$timesteps %in% expanded_HFE_rows)]
+  # Store abundance data in a dataframe
+  average_means <- cbind(means, rep(te, times = length(means)), rep("NZMS",times = length(means)))
+  colnames(average_means) <- colnames(NZMS_temp_hyd_abund_HFE)
+  # for each stage, calculate mean biomass
+  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.02 * mean(c(0.5, 3.2))^2.4315)
+  s2s <- colMeans(out[-c(1:260), 2, ]) * (0.02 * mean(c(3.2, 4))^2.4315)
+  s3s <- colMeans(out[-c(1:260), 3, ]) * (0.02 * mean(c(4, 5.5))^2.4315)
+  # sum the mean biomass of each stage to get mean timestep biomass
+  sizes_list <- as.vector(s1s + s2s + s3s)
+  # Store biomass data in a dataframe
+  average_size <- cbind(sizes_list, rep(te, times = length(sizes_list)), rep("NZMS",times = length(sizes_list)))
+  colnames(average_size) <- colnames(NZMS_temp_hyd_biomass_HFE)
+
+  # Append results to the main data storage
+  NZMS_temp_hyd_abund_HFE <- rbind(NZMS_temp_hyd_abund_HFE, average_means)
+  NZMS_temp_hyd_biomass_HFE <- rbind(NZMS_temp_hyd_biomass_HFE, average_size)
+  # Return results as a list
+  return(list(NZMS_temp_hyd_abund_HFE = average_means, NZMS_temp_hyd_biomass_HFE = average_size))
+}, mc.cores = detectCores() - 1)
+
+# Combine results from all temperature scenarios into final dataframes
+NZMS_temp_hyd_abund_HFE <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_abund_HFE"))
+NZMS_temp_hyd_biomass_HFE <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_biomass_HFE"))
+
+# Write results to CSV files
+write.csv(NZMS_temp_hyd_abund_HFE, "NZMS_temp_hyd_abund_HFE.csv", row.names = FALSE)
+write.csv(NZMS_temp_hyd_biomass_HFE, "NZMS_temp_hyd_biomass_HFE.csv", row.names = FALSE)
 
 # tabula rasa
 rm(temp)
@@ -124,9 +124,9 @@ results <- mclapply(temp_seq, function(te) {
   average_means <- cbind(means, rep(te, times = length(means)), rep("NZMS",times = length(means)))
   colnames(average_means) <- colnames(NZMS_temp_hyd_abund_HFE_spike)
   # for each stage, calculate mean biomass
-  s1s <- colMeans(out[expanded_HFE_rows, 1, ]) * (0.02 * mean(c(0.5, 3.2))^2.4315)
-  s2s <- colMeans(out[expanded_HFE_rows, 2, ]) * (0.02 * mean(c(3.2, 4))^2.4315)
-  s3s <- colMeans(out[expanded_HFE_rows, 3, ]) * (0.02 * mean(c(4, 5.5))^2.4315)
+  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.02 * mean(c(0.5, 3.2))^2.4315)
+  s2s <- colMeans(out[-c(1:260), 2, ]) * (0.02 * mean(c(3.2, 4))^2.4315)
+  s3s <- colMeans(out[-c(1:260), 3, ]) * (0.02 * mean(c(4, 5.5))^2.4315)
   # sum the mean biomass of each stage to get mean timestep biomass
   sizes_list <- as.vector(s1s + s2s + s3s)
   # Store biomass data in a dataframe
@@ -138,7 +138,7 @@ results <- mclapply(temp_seq, function(te) {
   NZMS_temp_hyd_biomass_HFE_spike <- rbind(NZMS_temp_hyd_biomass_HFE_spike, average_size)
   # Return results as a list
   return(list(NZMS_temp_hyd_abund_HFE_spike = average_means, NZMS_temp_hyd_biomass_HFE_spike = average_size))
-}, mc.cores =1)
+}, detectCores() -1 )
 
 # Combine results from all temperature scenarios into final dataframes
 NZMS_temp_hyd_abund_HFE_spike <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_abund_HFE_spike"))
