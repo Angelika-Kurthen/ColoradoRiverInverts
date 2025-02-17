@@ -54,14 +54,14 @@ results <- mclapply(temp_seq, function(te) {
   average_size <- cbind(sizes_list, rep(te, times = length(sizes_list)), rep("BAET",times = length(sizes_list)))
   colnames(average_size) <- colnames(BAET_temp_biomass)
   # put the percapita biomass of each stage in a dataframe
-  s1pc <- (0.0053 * (mean(sizes[-c(1:260)])/2)^2.875)
-  s2pc <-(0.0053 * (mean(sizes[-c(1:260)]))^2.875)
+  #s1pc <- (0.0053 * (mean(sizes[-c(1:260)])/2)^2.875)
+  #s2pc <-(0.0053 * (mean(sizes[-c(1:260)]))^2.875)
   s3pc <-  (0.0053 * (mean(sizes[-c(1:260)]))^2.875)
   #percapita <- c(s1pc, s2pc, s3pc)
   percapita <- c(s3pc)
   
   # store percapita biomass data in a dataframe
-  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("BAET",times = length(sizes_list)))
+  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("BAET",times = length(percapita)))
   colnames(percapita_biomass) <- colnames(BAET_temp_percapita)
   
   
@@ -103,7 +103,7 @@ temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 # calculate average yearly temperatures
 temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
 # create summertime spike (up to 21 C, then scale from there)
-temps$Temperature[16:22] <- c(14, 16, 18, 21, 21, 18, 16, 14)
+temps$Temperature[16:23] <- c(14, 16, 18, 21, 21, 18, 16, 14)
 
 # create a timeseries of average temperatures 100 years long
 temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
@@ -133,15 +133,15 @@ results <- mclapply(temp_seq, function(te) {
   average_size <- cbind(sizes_list, rep(te, times = length(sizes_list)), rep("BAET",times = length(sizes_list)))
   colnames(average_size) <- colnames(BAET_temp_biomass_spike)
   # put the percapita biomass of each stage in a dataframe
-  s1pc <-  (0.0053 * (mean(sizes[-c(1:260)])/2)^2.875)
-  s2pc <- (0.0053 * (mean(sizes[-c(1:260)]))^2.875)
+  #s1pc <-  (0.0053 * (mean(sizes[-c(1:260)])/2)^2.875)
+  #s2pc <- (0.0053 * (mean(sizes[-c(1:260)]))^2.875)
   s3pc <-(0.0053 * (mean(sizes[-c(1:260)]))^2.875)
   #percapita <- c(s1pc, s2pc, s3pc)
   percapita <- c(s3pc)
   
   
   # store percapita biomass data in a dataframe
-  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("BAET",times = length(sizes_list)))
+  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("BAET",times = length(percapita)))
   colnames(percapita_biomass) <- colnames(BAET_temp_percapita_spike)
   
   

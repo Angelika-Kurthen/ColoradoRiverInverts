@@ -58,7 +58,7 @@ results <- mclapply(temp_seq, function(te) {
   # s3pc <- (0.063 * mean(c(9, 12))^2.46)
   # percapita <- c(s1pc, s2pc, s3pc)
   
-  percapita <- (rowMeans(out[-c(1:260), 1, ]) + rowMeans(out[-c(1:260), 2, ])) / (rowMeans(out[-c(1:260), 1, ]) + rowMeans(out[-c(1:260),2,])+ rowMeans(out[-c(1:260), 3, ]))
+  percapita <- (rowMeans(out[-c(1:260), 2, ]) + rowMeans(out[-c(1:260), 3, ])) / (rowMeans(out[-c(1:260), 1, ]) + rowMeans(out[-c(1:260),2,])+ rowMeans(out[-c(1:260), 3, ]))
   # store percapita biomass data in a dataframe
   percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("GAMM",times = length(percapita)))
   colnames(percapita_biomass) <- colnames(GAMM_temp_percapita)
@@ -77,7 +77,7 @@ results <- mclapply(temp_seq, function(te) {
   
   # Return results as a list
   return(list(GAMM_temp_abund = average_means, GAMM_temp_biomass = average_size, GAMM_temp_percapita = percapita_biomass))
-}, mc.cores = 1)
+}, mc.cores = detectCores()-1)
 
 # Combine results from all temperature scenarios into final dataframes
 GAMM_temp_abund <- do.call(rbind, lapply(results, `[[`, "GAMM_temp_abund"))
@@ -133,7 +133,7 @@ results <- mclapply(temp_seq, function(te) {
   # s2pc <- (0.063 * mean(c(7, 9))^2.46)
   # s3pc <- (0.063 * mean(c(9, 12))^2.46)
   # percapita <- c(s1pc, s2pc, s3pc)
-  percapita <- (rowMeans(out[-c(1:260), 1, ]) + rowMeans(out[-c(1:260), 2, ])) / (rowMeans(out[-c(1:260), 1, ]) + rowMeans(out[-c(1:260),2,])+ rowMeans(out[-c(1:260), 3, ]))
+  percapita <- (rowMeans(out[-c(1:260), 2, ]) + rowMeans(out[-c(1:260), 3, ])) / (rowMeans(out[-c(1:260), 1, ]) + rowMeans(out[-c(1:260),2,])+ rowMeans(out[-c(1:260), 3, ]))
   # store percapita biomass data in a dataframe
   percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("GAMM",times = length(percapita)))
   colnames(percapita_biomass) <- colnames(GAMM_temp_percapita_spike)
