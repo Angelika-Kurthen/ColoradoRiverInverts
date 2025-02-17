@@ -85,7 +85,7 @@ sensitivity_results_list <- mclapply(1:nrow(param_grid), function(i) {
   param <- as.character(param_grid$Parameter[i])
   inc <- param_grid$Increment[i]
   run_model_with_modification(param, inc)
-}, mc.cores = 1)
+}, numCores)
 
 # Combine the list into a data frame
 sensitivity_results <- do.call(rbind, sensitivity_results_list)
