@@ -331,6 +331,7 @@ if (stage_output == "3"){
 
 if (stage_output == "size"){
   return(sizelist)
+  
 }
 
 }
