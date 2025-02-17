@@ -64,7 +64,7 @@ results <- mclapply(temp_seq, function(te) {
   CHIR_temp_hyd_biomass <- rbind(CHIR_temp_hyd_biomass, average_size)
   # Return results as a list
   return(list(CHIR_temp_hyd_abund = average_means, CHIR_temp_hyd_biomass = average_size))
-}, mc.cores = 1)  # Use all available cores minus one
+}, mc.cores = detectCores()-1)  # Use all available cores minus one
 
 # Combine results from all temperature scenarios into final dataframes
 CHIR_temp_hyd_abund <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_hyd_abund"))
@@ -88,7 +88,7 @@ temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 # calculate average yearly temperatures
 temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
 # create summertime spike (up to 21 C, then scale from there)
-temps$Temperature[16:22] <- c(14, 16, 18, 21, 21, 18, 16, 14)
+temps$Temperature[16:23] <- c(14, 16, 18, 21, 21, 18, 16, 14)
 
 # create a timeseries of average temperatures 100 years long
 temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
