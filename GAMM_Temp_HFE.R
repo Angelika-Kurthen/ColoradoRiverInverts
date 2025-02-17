@@ -62,9 +62,9 @@ results <- mclapply(temp_seq, function(te) {
   out <- GAMMmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.25, extinct = 50, iteration = 1000, peaklist = 0, peakeach = length(temps$Temperature))
   temps$Temperature <- temps$Temperature / te
    # for each stage, calculate mean biomass from Berezina
-  s1s <- colMeans(out[expanded_HFE_rows, 1, ]) * (0.063 * mean(c(2.5, 7))^2.46)
-  s2s <- colMeans(out[expanded_HFE_rows, 2,]) * (0.063 * mean(c(7, 9))^2.46)
-  s3s <- colMeans(out[expanded_HFE_rows, 3,]) * (0.063 * mean(c(9, 12))^2.46)
+  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.063 * mean(c(2.5, 7))^2.46)
+  s2s <- colMeans(out[-c(1:260), 2,]) * (0.063 * mean(c(7, 9))^2.46)
+  s3s <- colMeans(out[-c(1:260), 3,]) * (0.063 * mean(c(9, 12))^2.46)
   # sum the mean biomass of each stage to get mean timestep biomass
   sizes_list <- as.vector(s1s + s2s + s3s)
   # Store biomass data in a dataframe
@@ -78,12 +78,12 @@ results <- mclapply(temp_seq, function(te) {
   percapita <- c(s1pc, s2pc, s3pc)
   
   # store percapita biomass data in a dataframe
-  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("GAMM",times = length(sizes_list)))
+  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("GAMM",times = length(percapita)))
   colnames(percapita_biomass) <- colnames(GAMM_temp_percapita_HFE)
 
   # calculate mean abundances at each timestep
   means.list.GAMM <- mean.data.frame(out, burnin = 260, iteration = 1000)
-  means <- means.list.GAMM$mean.abund[which(means.list.GAMM$timesteps %in% expanded_HFE_rows)]
+  means <- means.list.GAMM$mean.abund
   
   # Store abundance data in a dataframe
   average_means <- cbind(means, rep(te, times = length(means)), rep("GAMM",times = length(means)))
@@ -138,9 +138,9 @@ results <- mclapply(temp_seq, function(te) {
   out <- GAMMmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.25, extinct = 50, iteration = 1000, peaklist = 0, peakeach = length(temps$Temperature))
   temps$Temperature <- temps$Temperature / te
   # for each stage, calculate mean biomass from Berezina
-  s1s <- colMeans(out[expanded_HFE_rows, 1, ]) * (0.063 * mean(c(2.5, 7))^2.46)
-  s2s <- colMeans(out[expanded_HFE_rows, 2,]) * (0.063 * mean(c(7, 9))^2.46)
-  s3s <- colMeans(out[expanded_HFE_rows, 3,]) * (0.063 * mean(c(9, 12))^2.46)
+  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.063 * mean(c(2.5, 7))^2.46)
+  s2s <- colMeans(out[-c(1:260), 2,]) * (0.063 * mean(c(7, 9))^2.46)
+  s3s <- colMeans(out[-c(1:260), 3,]) * (0.063 * mean(c(9, 12))^2.46)
   # sum the mean biomass of each stage to get mean timestep biomass
   sizes_list <- as.vector(s1s + s2s + s3s)
   # Store biomass data in a dataframe
@@ -153,12 +153,12 @@ results <- mclapply(temp_seq, function(te) {
   percapita <- c(s1pc, s2pc, s3pc)
   
   # store percapita biomass data in a dataframe
-  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("GAMM",times = length(sizes_list)))
+  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("GAMM",times = length(percapita)))
   colnames(percapita_biomass) <- colnames(GAMM_temp_percapita_HFE_spike)
   
   # calculate mean abundances at each timestep
   means.list.GAMM <- mean.data.frame(out, burnin = 260, iteration = 1000)
-  means <- means.list.GAMM$mean.abund[which(means.list.GAMM$timesteps %in% expanded_HFE_rows)]
+  means <- means.list.GAMM$mean.abund
   # Store abundance data in a dataframe
   average_means <- cbind(means, rep(te, times = length(means)), rep("GAMM",times = length(means)))
   colnames(average_means) <- colnames(GAMM_temp_abund_HFE_spike)

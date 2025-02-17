@@ -52,6 +52,7 @@ temp_seq <- c(1, 1.1,1.2, 1.5)
 HYOS_temp_abund_HFE <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
 HYOS_temp_biomass_HFE <- data.frame(biomass=numeric(), temperature = factor(), taxa = factor())
 HYOS_temp_percapita_HFE <- data.frame(percapita=numeric(), temperature = factor(), taxa = factor())
+HYOS_temp_propadult_HFE <- data.frame(propadult =numeric(), temperature = factor(), taxa = factor())
 
 results <- mclapply(temp_seq, function(te) {
   set.seed(123) # make reproducible
@@ -66,20 +67,28 @@ results <- mclapply(temp_seq, function(te) {
   temps$Temperature <- temps$Temperature / te
   
   # for each stage, calculate mean biomass
-  s1s <- colMeans(out[expanded_HFE_rows, 1, ]) * (0.0046 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.926)
-  s2s <- colMeans(out[expanded_HFE_rows, 2, ]) * (0.0046 * (mean(sizes[expanded_HFE_rows]+3, na.rm = T))^2.926)
-  s3s <- colMeans(out[expanded_HFE_rows, 3, ]) * (0.0046 * (mean(sizes[expanded_HFE_rows]+3, na.rm = T))^2.926)
+  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.0046 * (mean(sizes[-c(1:260)], na.rm = T))^2.926)
+  s2s <- colMeans(out[-c(1:260), 2, ]) * (0.0046 * (mean(sizes[-c(1:260)]+3, na.rm = T))^2.926)
+  s3s <- colMeans(out[-c(1:260), 3, ]) * (0.0046 * (mean(sizes[-c(1:260)]+3, na.rm = T))^2.926)
   # sum the mean biomass of each stage to get mean timestep biomass
   sizes_list <- as.vector(s1s + s2s + s3s)
   # put the percapita biomass of each stage in a dataframe
-  s1pc <-(0.0046 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.926)
-  s2pc <-(0.0046 * (mean(sizes[expanded_HFE_rows]+3, na.rm = T))^2.926)
-  s3pc <- (0.0046 * (mean(sizes[expanded_HFE_rows]+3, na.rm = T))^2.926)
-  percapita <- c(s1pc, s2pc, s3pc)
+  #s1pc <-(0.0046 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.926)
+  #s2pc <-(0.0046 * (mean(sizes[expanded_HFE_rows]+3, na.rm = T))^2.926)
+  s3pc <- (0.0046 * (mean(sizes[-c(1:260)]+3))^2.926)
+  percapita <- c(s3pc)
+  
   
   # store percapita biomass data in a dataframe
-  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("HYOS",times = length(sizes_list)))
+  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("HYOS",times = length(percapita)))
   colnames(percapita_biomass) <- colnames(HYOS_temp_percapita_HFE)
+  
+  
+  # calculate proportion of adults
+  propadult <- (rowMeans(out[-c(1:260), 3, ]) / (rowMeans(out[-c(1:260), 1, ]) + rowMeans(out[-c(1:260), 2, ])+ rowMeans(out[-c(1:260), 3, ])))
+  # store proportion adult biomass data in a dataframe
+  propadult <- cbind(propadult, rep(te, times = length(propadult)), rep("HYOS",times = length(propadult)))
+  colnames(propadult) <- colnames(HYOS_temp_propadult_HFE)
   
   # Store biomass data in a dataframe
   average_size <- cbind(sizes_list, rep(te, times = length(sizes_list)), rep("HYOS",times = length(sizes_list)))
@@ -95,20 +104,22 @@ results <- mclapply(temp_seq, function(te) {
   HYOS_temp_abund_HFE <- rbind(HYOS_temp_abund_HFE, average_means)
   HYOS_temp_biomass_HFE <- rbind(HYOS_temp_biomass_HFE, average_size)
   HYOS_temp_percapita_HFE <- rbind(HYOS_temp_percapita_HFE, percapita_biomass)
-  
+  HYOS_temp_propadult_HFE <- rbind(HYOS_temp_propadult_HFE, propadult)
   # Return results as a list
-  return(list(HYOS_temp_abund_HFE = average_means, HYOS_temp_biomass_HFE = average_size, HYOS_temp_percapita_HFE = percapita_biomass))
+  return(list(HYOS_temp_abund_HFE = average_means, HYOS_temp_biomass_HFE = average_size, HYOS_temp_percapita_HFE = percapita_biomass, HYOS_temp_propadult_HFE = propadult))
 }, mc.cores = detectCores() - 1)
 
 # Combine results from all temperature scenarios into final dataframes
 HYOS_temp_abund_HFE <- do.call(rbind, lapply(results, `[[`, "HYOS_temp_abund_HFE"))
 HYOS_temp_biomass_HFE <- do.call(rbind, lapply(results, `[[`, "HYOS_temp_biomass_HFE"))
 HYOS_temp_percapita_HFE <- do.call(rbind, lapply(results, `[[`, "HYOS_temp_percapita_HFE"))
+HYOS_temp_propadult_HFE <-  do.call(rbind, lapply(results, `[[`, "HYOS_temp_propadult_HFE"))
 
 # Write results to CSV files
 write.csv(HYOS_temp_abund_HFE, "HYOS_temp_abund_HFE.csv", row.names = FALSE)
 write.csv(HYOS_temp_biomass_HFE, "HYOS_temp_biomass_HFE.csv", row.names = FALSE)
 write.csv(HYOS_temp_percapita_HFE, "HYOS_temp_percapita_HFE.csv", row.names = FALSE)
+write.csv(HYOS_temp_propadult_HFE, "HYOS_temp_propadult_HFE.csv", row.names = FALSE)
 
 
 # tabula rasa
@@ -133,6 +144,8 @@ temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
 HYOS_temp_abund_HFE_spike <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
 HYOS_temp_biomass_HFE_spike <- data.frame(biomass=numeric(), temperature = factor(), taxa = factor())
 HYOS_temp_percapita_HFE_spike <- data.frame(percapita=numeric(), temperature = factor(), taxa = factor())
+HYOS_temp_propadult_HFE_spike <- data.frame(propadult =numeric(), temperature = factor(), taxa = factor())
+
 
 results <- mclapply(temp_seq, function(te) {
   set.seed(123) # make reproducible
@@ -146,9 +159,9 @@ results <- mclapply(temp_seq, function(te) {
   
   temps$Temperature <- temps$Temperature / te
   # for each stage, calculate mean biomass
-  s1s <- colMeans(out[expanded_HFE_rows, 1, ]) * (0.0046 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.926)
-  s2s <- colMeans(out[expanded_HFE_rows, 2, ]) * (0.0046 * (mean(sizes[expanded_HFE_rows]+3, na.rm = T))^2.926)
-  s3s <- colMeans(out[expanded_HFE_rows, 3, ]) * (0.0046 * (mean(sizes[expanded_HFE_rows]+3, na.rm = T))^2.926)
+  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.0046 * (mean(sizes[-c(1:260)], na.rm = T))^2.926)
+  s2s <- colMeans(out[-c(1:260), 2, ]) * (0.0046 * (mean(sizes[-c(1:260)]+3, na.rm = T))^2.926)
+  s3s <- colMeans(out[-c(1:260), 3, ]) * (0.0046 * (mean(sizes[-c(1:260)]+3, na.rm = T))^2.926)
   # sum the mean biomass of each stage to get mean timestep biomass
   sizes_list <- as.vector(s1s + s2s + s3s)
   # Store biomass data in a dataframe
@@ -156,19 +169,26 @@ results <- mclapply(temp_seq, function(te) {
   colnames(average_size) <- colnames(HYOS_temp_biomass_HFE_spike)
   
   # put the percapita biomass of each stage in a dataframe
-  s1pc <- (0.0046 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.926)
-  s2pc <- (0.0046 * (mean(sizes[expanded_HFE_rows]+3, na.rm = T))^2.926)
-  s3pc <- (0.0046 * (mean(sizes[expanded_HFE_rows]+3, na.rm = T))^2.926)
-  percapita <- c(s1pc, s2pc, s3pc)
+  #s1pc <- (0.0046 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.926)
+  #s2pc <- (0.0046 * (mean(sizes[expanded_HFE_rows]+3, na.rm = T))^2.926)
+  s3pc <- (0.0046 * (mean(sizes[-c(1:260)]+3))^2.926)
+
+  percapita <- c(s3pc)
   
   # store percapita biomass data in a dataframe
-  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("HYOS",times = length(sizes_list)))
+  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("HYOS",times = length(percapita)))
   colnames(percapita_biomass) <- colnames(HYOS_temp_percapita_HFE_spike)
+  
+  # calculate proportion of adults
+  propadult <- (rowMeans(out[-c(1:260), 3, ])) / (rowMeans(out[-c(1:260), 1, ]) + rowMeans(out[-c(1:260), 2, ])+ rowMeans(out[-c(1:260), 3, ]))
+  # store proportion adult biomass data in a dataframe
+  propadult <- cbind(propadult, rep(te, times = length(propadult)), rep("HYOS",times = length(propadult)))
+  colnames(propadult) <- colnames(HYOS_temp_propadult_HFE_spike)
   
   # calculate mean abundances at each timestep
   means.list.HYOS <- mean.data.frame(out, burnin = 260, iteration = 1000)
-  means <- means.list.HYOS$mean.abund[which(means.list.HYOS$timesteps %in% expanded_HFE_rows)]
-
+  means <- means.list.HYOS$mean.abund
+  
   # Store abundance data in a dataframe
   average_means <- cbind(means, rep(te, times = length(means)), rep("HYOS",times = length(means)))
   colnames(average_means) <- colnames(HYOS_temp_abund_HFE_spike)
@@ -176,17 +196,20 @@ results <- mclapply(temp_seq, function(te) {
   HYOS_temp_abund_HFE_spike <- rbind(HYOS_temp_abund_HFE_spike, average_means)
   HYOS_temp_biomass_HFE_spike <- rbind(HYOS_temp_biomass_HFE_spike, average_size)
   HYOS_temp_percapita_HFE_spike <- rbind(HYOS_temp_percapita_HFE_spike, percapita_biomass)
+  HYOS_temp_propadult_HFE_spike <- rbind(HYOS_temp_propadult_HFE_spike, propadult)
   
   # Return results as a list
-  return(list(HYOS_temp_abund_HFE_spike = average_means, HYOS_temp_biomass_HFE_spike = average_size, HYOS_temp_percapita_HFE_spike = percapita_biomass))
+  return(list(HYOS_temp_abund_HFE_spike = average_means, HYOS_temp_biomass_HFE_spike = average_size, HYOS_temp_percapita_HFE_spike = percapita_biomass, HYOS_temp_propadult_HFE_spike = propadult))
 }, mc.cores = detectCores() - 1)
 
 # Combine results from all temperature scenarios into final dataframes
 HYOS_temp_abund_HFE_spike <- do.call(rbind, lapply(results, `[[`, "HYOS_temp_abund_HFE_spike"))
 HYOS_temp_biomass_HFE_spike <- do.call(rbind, lapply(results, `[[`, "HYOS_temp_biomass_HFE_spike"))
 HYOS_temp_percapita_HFE_spike <- do.call(rbind, lapply(results, `[[`, "HYOS_temp_percapita_HFE_spike"))
+HYOS_temp_propadult_HFE_spike <-  do.call(rbind, lapply(results, `[[`, "HYOS_temp_propadult_HFE_spike"))
 
 # Write results to CSV files
 write.csv(HYOS_temp_abund_HFE_spike, "HYOS_temp_abund_HFE_spike.csv", row.names = FALSE)
 write.csv(HYOS_temp_biomass_HFE_spike, "HYOS_temp_biomass_HFE_spike.csv", row.names = FALSE)
 write.csv(HYOS_temp_percapita_HFE_spike, "HYOS_temp_percapita_HFE_spike.csv", row.names = FALSE)
+write.csv(HYOS_temp_propadult_HFE_spike, "HYOS_temp_propadult_HFE_spike.csv", row.names = FALSE)

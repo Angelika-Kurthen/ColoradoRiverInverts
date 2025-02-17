@@ -61,38 +61,45 @@ temp_seq <- c(1, 1.1, 1.2, 1.5)
 CHIR_temp_abund_HFE <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
 CHIR_temp_biomass_HFE <- data.frame(biomass=numeric(), temperature = factor(), taxa = factor())
 CHIR_temp_percapita_HFE <- data.frame(percapita=numeric(), temperature = factor(), taxa = factor())
-
+CHIR_temp_propadult_HFE <- data.frame(propadult=numeric(), temperature = factor(), taxa = factor())
 results <- mclapply(temp_seq, function(te) {
   set.seed(123) # make reproducible
   # model sizes
   temps$Temperature <- temps$Temperature * te
-  sizes <- CHIRmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.2, extinct = 50, iteration = 1000, peaklist = 0, peakeach = length(temps$Temperature), stage_output = "size")
+  sizes <- CHIRmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.2, extinct = 50, iteration = 10, peaklist = 0, peakeach = length(temps$Temperature), stage_output = "size")
   # model abundances
-  out <- CHIRmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.2, extinct = 50, iteration = 1000, peaklist = 0, peakeach = length(temps$Temperature))
+  out <- CHIRmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, disturbanceK = 40000 , Qmin = 0.2, extinct = 50, iteration = 10, peaklist = 0, peakeach = length(temps$Temperature))
 
   temps$Temperature <- temps$Temperature / te
 
-  s1s <- colMeans(out[expanded_HFE_rows, 1, ]) * (0.0018 * (mean((sizes[expanded_HFE_rows])/2, na.rm = T))^2.617)
-  s2s <- colMeans(out[expanded_HFE_rows, 2,]) * (0.0018 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.617)
-  s3s <- colMeans(out[expanded_HFE_rows, 3,]) * (0.0018 * (mean(sizes[expanded_HFE_rows], na.rm = T))^2.617)
+  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.0018 * (mean((sizes[-c(1:260)])/2, na.rm = T))^2.617)
+  s2s <- colMeans(out[-c(1:260), 2, ]) * (0.0018 * (mean(sizes[-c(1:260)], na.rm = T))^2.617)
+  s3s <- colMeans(out[-c(1:260), 3, ]) * (0.0018 * (mean(sizes[-c(1:260)], na.rm = T))^2.617)
   # sum the mean biomass of each stage to get mean timestep biomass
   sizes_list <- as.vector(s1s + s2s + s3s)
   # Store abundance data in a dataframe
   average_size <- cbind(sizes_list, rep(te, times = length(sizes_list)), rep("CHIR",times = length(sizes_list)))
   colnames(average_size) <- colnames(CHIR_temp_biomass_HFE)
   # put the percapita biomass of each stage in a dataframe
-  s1pc <-(0.0018 * (mean((sizes[expanded_HFE_rows])/2, na.rm = T)^2.617))
-  s2pc <-(0.0018 * (mean(sizes[expanded_HFE_rows], na.rm = T)^2.617))
-  s3pc <-  (0.0018 * (mean(sizes[expanded_HFE_rows], na.rm =T))^2.617)
-  percapita <- c(s1pc, s2pc, s3pc)
+  #s1pc <-(0.0018 * (mean((sizes[expanded_HFE_rows])/2, na.rm = T)^2.617))
+  #s2pc <-(0.0018 * (mean(sizes[expanded_HFE_rows], na.rm = T)^2.617))
+  s3pc <-  (0.0018 * (mean(sizes[-c(1:260)], na.rm =T))^2.617)
+  percapita <- c(s3pc)
 
   # store percapita biomass data in a dataframe
-  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("CHIR",times = length(sizes_list)))
+  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("CHIR",times = length(percapita)))
   colnames(percapita_biomass) <- colnames(CHIR_temp_percapita_HFE)
+
+  # calculate proportion of adults
+  propadult <- (rowMeans(out[-c(1:260), 3, ])) / (rowMeans(out[-c(1:260), 1, ]) + rowMeans(out[-c(1:260), 2, ])+ rowMeans(out[-c(1:260), 3, ]))
+  # store proportion adult biomass data in a dataframe
+  propadult <- cbind(propadult, rep(te, times = length(propadult)), rep("CHIR",times = length(propadult)))
+  colnames(propadult) <- colnames(CHIR_temp_propadult_HFE)
+
 
   # calculate mean abundances at each timestep
   means.list.CHIR <- mean.data.frame(out, burnin = 260, iteration = 1000)
-  means <- means.list.CHIR$mean.abund[which(means.list.CHIR$timesteps %in% expanded_HFE_rows)]
+  means <- means.list.CHIR$mean.abund
   #Store abundance data in a dataframe
   average_means <- cbind(means, rep(te, times = length(means)), rep("CHIR",times = length(means)))
   colnames(average_means) <- colnames(CHIR_temp_abund_HFE)
@@ -100,21 +107,26 @@ results <- mclapply(temp_seq, function(te) {
   CHIR_temp_abund_HFE <- rbind(CHIR_temp_abund_HFE, average_means)
   CHIR_temp_biomass_HFE <- rbind(CHIR_temp_biomass_HFE, average_size)
   CHIR_temp_percapita_HFE <- rbind(CHIR_temp_percapita_HFE, percapita_biomass)
+  CHIR_temp_propadult_HFE <- rbind(CHIR_temp_propadult_HFE, propadult)
+
 
   # Return results as a list
-  return(list(CHIR_temp_abund_HFE = average_means, CHIR_temp_biomass_HFE = average_size, CHIR_temp_percapita_HFE = percapita_biomass))
-}, mc.cores = detectCores() - 1)  # Use all available cores minus one
+  return(list(CHIR_temp_abund_HFE = average_means, CHIR_temp_biomass_HFE = average_size, CHIR_temp_percapita_HFE = percapita_biomass, CHIR_temp_propadult_HFE = propadult))
+}, mc.cores = detectCores()-1)
+
+#  }, mc.cores = detectCores() - 1)  # Use all available cores minus one
 
 # Combine results from all temperature scenarios into final dataframes
 CHIR_temp_abund_HFE <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_abund_HFE"))
 CHIR_temp_biomass_HFE <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_biomass_HFE"))
 CHIR_temp_percapita_HFE <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_percapita_HFE"))
+CHIR_temp_propadult_HFE <-  do.call(rbind, lapply(results, `[[`, "CHIR_temp_propadult_HFE"))
 
 # Write results to CSV files
 write.csv(CHIR_temp_abund_HFE, "CHIR_temp_abund_HFE.csv", row.names = FALSE)
 write.csv(CHIR_temp_biomass_HFE, "CHIR_temp_biomass_HFE.csv", row.names = FALSE)
 write.csv(CHIR_temp_percapita_HFE, "CHIR_temp_percapita_HFE.csv", row.names = FALSE)
-
+write.csv(CHIR_temp_propadult_HFE, "CHIR_temp_propadult_HFE.csv", row.names = FALSE)
 
 # tabula rasa
 rm(temp)
@@ -128,7 +140,7 @@ temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 # calculate average yearly temperatures
 temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
 # create summertime spike (up to 21 C, then scale from there)
-temps$Temperature[16:22] <- c(14, 16, 18, 21, 21, 18, 16, 14)
+temps$Temperature[16:23] <- c(14, 16, 18, 21, 21, 18, 16, 14)
 
 # create a timeseries of average temperatures 100 years long
 temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
@@ -137,6 +149,7 @@ temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
 CHIR_temp_abund_HFE_spike <- data.frame(abundance=numeric(), temperature=factor(), taxa=factor())
 CHIR_temp_biomass_HFE_spike <- data.frame(biomass=numeric(), temperature = factor(), taxa = factor())
 CHIR_temp_percapita_HFE_spike <- data.frame(percapita=numeric(), temperature = factor(), taxa = factor())
+CHIR_temp_propadult_HFE_spike <- data.frame(propadult =numeric(), temperature = factor(), taxa = factor())
 
 results <- mclapply(temp_seq, function(te) {
   set.seed(123) # make reproducible
@@ -150,28 +163,33 @@ results <- mclapply(temp_seq, function(te) {
   
   temps$Temperature <- temps$Temperature / te
   
-  s1s <- colMeans(out[expanded_HFE_rows, 1, ]) * (0.0018 * (mean((sizes[expanded_HFE_rows/2]), na.rm = T)^2.617))
-  s2s <- colMeans(out[expanded_HFE_rows, 2,]) * (0.0018 * (mean(sizes[expanded_HFE_rows], na.rm  =T))^2.617)
-  s3s <- colMeans(out[expanded_HFE_rows, 3,]) * (0.0018 * (mean(sizes[-expanded_HFE_rows], na.rm = T))^2.617)
+  s1s <- colMeans(out[-c(1:260), 1, ]) * (0.0018 * (mean((sizes[-c(1:260)])/2, na.rm = T))^2.617)
+  s2s <- colMeans(out[-c(1:260), 2, ]) * (0.0018 * (mean(sizes[-c(1:260)], na.rm = T))^2.617)
+  s3s <- colMeans(out[-c(1:260), 3, ]) * (0.0018 * (mean(sizes[-c(1:260)], na.rm = T))^2.617)
   # sum the mean biomass of each stage to get mean timestep biomass
   sizes_list <- as.vector(s1s + s2s + s3s)
   # Store abundance data in a dataframe
   average_size <- cbind(sizes_list, rep(te, times = length(sizes_list)), rep("CHIR",times = length(sizes_list)))
   colnames(average_size) <- colnames(CHIR_temp_biomass_HFE_spike)
-  
   # put the percapita biomass of each stage in a dataframe
-  s1pc <- (0.0018 * (mean((sizes[expanded_HFE_rows])/2, na.rm = T)^2.617))
-  s2pc <- (0.0018 * (mean(sizes[expanded_HFE_rows], na.rm= T)^2.617))
-  s3pc <- (0.0018 * (mean(sizes[expanded_HFE_rows], na.rm = T)^2.617))
-  percapita <- c(s1pc, s2pc, s3pc)
+  #s1pc <-(0.0018 * (mean((sizes[expanded_HFE_rows])/2, na.rm = T)^2.617))
+  #s2pc <-(0.0018 * (mean(sizes[expanded_HFE_rows], na.rm = T)^2.617))
+  s3pc <-  (0.0018 * (mean(sizes[-c(1:260)], na.rm =T))^2.617)
+  percapita <- c(s3pc)
   
   # store percapita biomass data in a dataframe
-  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("CHIR",times = length(sizes_list)))
+  percapita_biomass <- cbind(percapita, rep(te, times = length(percapita)), rep("CHIR",times = length(percapita)))
   colnames(percapita_biomass) <- colnames(CHIR_temp_percapita_HFE_spike)
+  
+  # calculate proportion of adults
+  propadult <- (rowMeans(out[-c(1:260), 3, ])) / (rowMeans(out[-c(1:260), 1, ]) + rowMeans(out[-c(1:260), 2, ])+ rowMeans(out[-c(1:260), 3, ]))
+  # store proportion adult biomass data in a dataframe
+  propadult <- cbind(propadult, rep(te, times = length(propadult)), rep("CHIR",times = length(propadult)))
+  colnames(propadult) <- colnames(CHIR_temp_propadult_HFE_spike)
   
   # calculate mean abundances at each timestep
   means.list.CHIR <- mean.data.frame(out, burnin = 260, iteration = 1000)
-  means <- means.list.CHIR$mean.abund[which(means.list.CHIR$timesteps %in% expanded_HFE_rows)]
+  means <- means.list.CHIR$mean.abund
   # Store abundance data in a dataframe
   average_means <- cbind(means, rep(te, times = length(means)), rep("CHIR",times = length(means)))
   colnames(average_means) <- colnames(CHIR_temp_abund_HFE_spike)
@@ -179,17 +197,20 @@ results <- mclapply(temp_seq, function(te) {
   CHIR_temp_abund_HFE_spike <- rbind(CHIR_temp_abund_HFE_spike, average_means)
   CHIR_temp_biomass_HFE_spike <- rbind(CHIR_temp_biomass_HFE_spike, average_size)
   CHIR_temp_percapita_HFE_spike <- rbind(CHIR_temp_percapita_HFE_spike, percapita_biomass)
+  CHIR_temp_propadult_HFE_spike <- rbind(CHIR_temp_propadult_HFE_spike, propadult)
   
   # Return results as a list
-  return(list(CHIR_temp_abund_HFE_spike = average_means, CHIR_temp_biomass_HFE_spike = average_size, CHIR_temp_percapita_HFE_spike = percapita_biomass))
-}, mc.cores = detectCores() - 1)  # Use all available cores minus one
+  return(list(CHIR_temp_abund_HFE_spike = average_means, CHIR_temp_biomass_HFE_spike = average_size, CHIR_temp_percapita_HFE_spike = percapita_biomass, CHIR_temp_propadult_HFE_spike = propadult))
+}, mc.cores = detectCores()-1) 
 
 # Combine results from all temperature scenarios into final dataframes
 CHIR_temp_abund_HFE_spike <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_abund_HFE_spike"))
 CHIR_temp_biomass_HFE_spike <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_biomass_HFE_spike"))
 CHIR_temp_percapita_HFE_spike <- do.call(rbind, lapply(results, `[[`, "CHIR_temp_percapita_HFE_spike"))
+CHIR_temp_propadult_HFE_spike <-  do.call(rbind, lapply(results, `[[`, "CHIR_temp_propadult_HFE_spike"))
 
 # Write results to CSV files
 write.csv(CHIR_temp_abund_HFE_spike, "CHIR_temp_abund_HFE_spike.csv", row.names = FALSE)
 write.csv(CHIR_temp_biomass_HFE_spike, "CHIR_temp_biomass_HFE_spike.csv", row.names = FALSE)
 write.csv(CHIR_temp_percapita_HFE_spike, "CHIR_temp_percapita_HFE_spike.csv", row.names = FALSE)
+write.csv(CHIR_temp_propadult_HFE_spike, "CHIR_temp_propadult_HFE_spike.csv", row.names = FALSE)
