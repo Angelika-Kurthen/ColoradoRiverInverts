@@ -34,12 +34,13 @@ flows$Discharge <- flows$Discharge / 85000
 
 # Create a sequence of hydropeaking intensity levels from 0.00 to 0.70 in increments of 0.05
 temp_seq <- c(1,1.1,1.2,1.5)
-
+temp_seq <- 1
 # Initialize lists to store results for abundance, biomass, and annual biomass calculations
 Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), sd.abund = numeric(), se.abund = numeric(), temperature=factor())
 Multispp_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(), sd.biomass = numeric(), se.biomass = numeric(), temperature=factor())
 MultisppS3_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), S3biomass=numeric(), sd.biomass = numeric(), se.biomass = numeric(), temperature=factor())
 
+start <- Sys.time()
 results <- mclapply(temp_seq, function(te) {
   set.seed(123)
   temps$Temperature <- temps$Temperature * te
@@ -47,8 +48,8 @@ results <- mclapply(temp_seq, function(te) {
   out <- Multispp(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, 
                   disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 1000, 
                   peaklist = 0, peakeach = length(temps$Temperature), stage_output = c("all", "biomass"))
-  
-  means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 1000, value = "abund")
+  sys.time(
+  means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 1000, value = "abund"))
   means.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "biomass")
   means.s3.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "S3.biomass")
   
@@ -77,14 +78,17 @@ results <- mclapply(temp_seq, function(te) {
   return(list(Multispp_temp_abund = average_means, 
               Multispp_temp_biomass = average_biomass, 
               MultisppS3_temp_biomass = s3biomass))
-}, mc.cores = detectCores()-1)
-#  }, mc.cores =  detectCores() - 1)
+#}, mc.cores = detectCores()-1)
+  }, mc.cores = 1)
 
 # Combine results from all temperature scenarios into final dataframes
+
 Multispp_temp_abund <- do.call(rbind, lapply(results, `[[`, "Multispp_temp_abund"))
 Multispp_temp_biomass <- do.call(rbind, lapply(results, `[[`, "Multispp_temp_biomass"))
 MultisppS3_temp_biomass <- do.call(rbind, lapply(results, `[[`, "MultisppS3_temp_biomass"))
-
+end <- Sys.time()
+run <- end - start
+print(run)
 # Write results to CSV files
 write.csv(Multispp_temp_abund, "Multispp_temp_abund.csv", row.names = FALSE)
 write.csv(Multispp_temp_biomass, "Multispp_temp_biomass.csv", row.names = FALSE)
