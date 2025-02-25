@@ -5,6 +5,10 @@ library(ggpubr)
 library(patchwork)
 #install.packages("svglite")
 library(svglite)
+library(igraph)
+library(ggraph)
+library(dplyr)
+library(broom) 
 
 #source("Multispp.R")
 source("MultisppHydropeak.R")
@@ -86,3 +90,150 @@ ggarrange(hyd_abund_multi, hyd_ts_multi , hyd_yr_multi,
           ncol = 3, nrow = 1, common.legend = T)
 
 
+
+
+
+
+
+Multispp_sensitivity_vitalrates <- read_csv("Multispp_sensitivity_vitalrates.csv")
+
+sensgrid1 <- ggplot(Multispp_sensitivity_vitalrates, aes(x = SensitivityIncrement, y = Abundance, color = StageGroup)) +
+  geom_point(size = 1) +  # Alternatively, you can add geom_line() for smoother trends.
+  facet_grid(StageGroup ~ Parameter, scales = "free_y") +  # Facet by both StageGroup & Parameter
+  theme_bw() +
+  labs(
+    x = "Sensitivity Increment",
+    y = "Abundance",
+    title = "Sensitivity Analysis by StageGroup and Parameter"
+  ) +
+  theme(
+    strip.text = element_text(size = 8, face = "bold"),  # Adjust facet label size
+    axis.text.x = element_text(angle = 90, hjust = 1),
+    legend.position = "none"  # Hide legend (since color is redundant with facet_grid)
+  )
+
+ggsave("sensgrid1.png", sensgrid1, device = "png", width = 8, height = 11.5, units= c("in"), dpi = "retina")
+# Fit a linear model for each StageGroup × Parameter combination
+interaction_results <- Multispp_sensitivity_vitalrates %>%
+  group_by(StageGroup, Parameter) %>%
+  do({
+    model <- lm(Abundance ~ SensitivityIncrement, data = .)  # Fit linear model
+    model_summary <- summary(model)
+    
+    # Extract key values
+    tibble(
+      Slope = coef(model)[2],  # Extract slope
+      P_value = coef(summary(model))["SensitivityIncrement", "Pr(>|t|)"],  # Get p-value for slope
+      R2 = model_summary$r.squared  # Get R²
+    )
+  }) %>%
+  ungroup() %>%
+  # Filter results based on criteria
+  filter(R2 > 0.3, P_value < 0.01)
+
+# Print the filtered results
+print(interaction_results)
+
+library(igraph)
+library(ggraph)
+library(dplyr)
+library(igraph)
+library(ggraph)
+library(dplyr)
+library(stringr)
+
+
+# Rename parameters: Change "G1" to "S1", "G2" to "S2"
+interaction_results <- interaction_results %>%
+  mutate(Parameter = case_when(
+    grepl("G1_HYOS", Parameter) ~ "S1_HYOS",
+    grepl("G2_HYOS", Parameter) ~ "S2_HYOS",
+    grepl("G1_BAET", Parameter) ~ "S1_BAET",
+    grepl("G2_BAET", Parameter) ~ "S2_BAET",
+    grepl("G1_NZMS", Parameter) ~ "S1_NZMS",
+    grepl("G2_NZMS", Parameter) ~ "S2_NZMS",
+    grepl("G1_GAMM", Parameter) ~ "S1_GAMM",
+    grepl("G2_GAMM", Parameter) ~ "S2_GAMM",
+    grepl("G1_CHIR", Parameter) ~ "S1_CHIR",
+    grepl("G2_CHIR", Parameter) ~ "S2_CHIR",
+    TRUE ~ Parameter
+  ))
+
+# Extract the taxon type from parameter names
+interaction_results <- interaction_results %>%
+  mutate(Taxon = case_when(
+    grepl("HYOS", Parameter) ~ "HYOS",
+    grepl("GAMM", Parameter) ~ "GAMM",
+    grepl("NZMS", Parameter) ~ "NZMS",
+    grepl("CHIR", Parameter) ~ "CHIR",
+    grepl("BAET", Parameter) ~ "BAET",
+    TRUE ~ "Other"
+  ))
+
+# Create an edge list
+edges <- interaction_results %>%
+  select(Parameter, StageGroup, Slope, Taxon)
+
+colnames(edges) <- c("from", "to", "weight", "taxon")  # Rename for igraph format
+
+# Create a list of unique nodes (StageGroups & Parameters)
+nodes <- data.frame(name = unique(c(edges$from, edges$to)))
+
+# Extract taxon type for coloring
+nodes <- nodes %>%
+  mutate(
+    Taxon = str_extract(name, "(HYOS|GAMM|NZMS|CHIR|BAET)"),
+    Stage = str_extract(name, "S\\d+"),
+    type = ifelse(is.na(Stage), "Parameter", "StageGroup"),
+    label = ifelse(type == "StageGroup", Stage, name)  # Keep only "S1", "S2", "S3" for StageGroups
+  )
+
+# Ensure StageGroups are ordered correctly (S1 → S2 → S3)
+nodes <- nodes %>%
+  arrange(Taxon, Stage)
+
+# Count total StageGroups
+n_stagegroups <- sum(nodes$type == "StageGroup")
+
+# Assign evenly spaced circular coordinates for StageGroups
+nodes <- nodes %>%
+  mutate(
+    x = ifelse(type == "StageGroup", cos(seq(0, 2 * pi, length.out = n_stagegroups + 1))[1:n_stagegroups], NA),
+    y = ifelse(type == "StageGroup", sin(seq(0, 2 * pi, length.out = n_stagegroups + 1))[1:n_stagegroups], NA)
+  )
+
+# Create igraph object
+network_graph <- graph_from_data_frame(d = edges, vertices = nodes, directed = TRUE)
+# Define color palette for taxon-based nodes (matching arrows)
+taxon_colors <- c(
+  "HYOS" = "#AA3377",
+  "GAMM" = "#CCBB44",
+  "NZMS" = "#4477AA",
+  "CHIR" = "#228833",
+  "BAET" = "#66CCEE"
+)
+
+
+# Ensure `Taxon` exists in `network_layout`
+network_layout <- create_layout(network_graph, layout = "nicely") %>%
+  left_join(nodes, by = "name") %>%
+  mutate(
+    x = ifelse(!is.na(x.x), x.x, x.y),  # Use manually assigned x if available
+    y = ifelse(!is.na(y.x), y.x, y.y)   # Use manually assigned y if available
+  ) %>%
+  select(name, x, y, Taxon, type, label, everything())  # Ensure `Taxon` is included
+ggraph(network_layout) +
+  geom_edge_arc(aes(edge_width = weight, color = taxon),
+                arrow = arrow(length = unit(4, "mm")),
+                end_cap = circle(4, "mm"),
+                start_cap = circle(4, "mm"),
+                alpha = 0.8,  # 80% transparency
+                curvature = 0.2, 
+                show.legend = F) +  #Curved edges
+  geom_node_point(size = 8, aes(color = Taxon.x)) +  # Fix: Use `Taxon` from network_layout
+  geom_node_text(aes(label = label.x), repel = F, size = 4, fontface = "bold") +  # Use short labels (S1, S2, S3)
+  scale_edge_width(range = c(0.5, 3)) +  # Edge thickness based on R2
+  scale_edge_color_manual(values = taxon_colors) +  # Taxon-based colors for edges
+  scale_color_manual(labels =c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values = taxon_colors)+
+  theme_void()+
+  labs(title = " ", color = "Taxon", edge_width = "R² Strength")
