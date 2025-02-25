@@ -88,8 +88,8 @@ BAETts <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = scale(mean.ab
               alpha = .1,
               show.legend = F) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Baetidae spp."), linewidth = 1,  show.legend = T, alpha = 0.8)+
-  labs(y=expression(paste(italic("Baetidae spp."), " Abund.")))+
+  geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Empirical"), linewidth = 1,  show.legend = T, alpha = 0.8)+
+  labs(y= "Scaled Abundance", title = expression(paste(italic("Baetidae"), " spp.") ))+
   geom_text(mapping = aes(x = as.Date("1998-01-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 4.5)+
   geom_text(mapping = aes(x = as.Date("1998-01-01"), y =5.75, label = paste("C = 89%")), color = "black", size = 4.5)+
   geom_text(mapping = aes(x = as.Date("1998-01-01"), y =6.5, label = paste("Scaled RMSE = 0.96")), color = "black", size = 4.5)+

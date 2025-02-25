@@ -174,11 +174,11 @@ HYOSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, co
   color = "transparent",
   show.legend = F) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data =cor.df, aes(x = V1, y = scale(V2), color = "Hydropsyche spp."), linewidth = 1, alpha = 0.8,show.legend = T)+
+  geom_line(data =cor.df, aes(x = V1, y = scale(V2), color = "Empirical"), linewidth = 1, alpha = 0.8,show.legend = T)+
   # geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = Discharge), color = "blue") +
   # geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*0.1), color = "green")+
   # #coord_cartesian(ylim = c(0,2000000)) +
-  labs(y=expression(paste(italic("Hydropsyche spp."), " Abund.")))+
+  labs(y="Scaled Abundance")+
   geom_text(mapping = aes(x = as.Date("2015-06-01"), y =5, label = paste('rho', "==", 0.48)), parse = T, color = "black", size = 4.5)+
   geom_text(mapping = aes(x = as.Date("2015-06-01"), y =5.75, label = paste('C = 93%')), color = "black", size = 4.5)+
   geom_text(mapping = aes(x = as.Date("2015-06-01"), y =6.5, label = paste('Scaled RMSE = 1.19')), color = "black", size = 4.5)+
@@ -189,7 +189,7 @@ HYOSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, co
   # ) + 
   xlab(" ")+
   ylim(c(-4,7))+
-  labs(colour=" ")+
+  labs(colour=" ", title = expression(paste(italic("Hydropsyche"), " spp.")))+
   theme_bw()+
   theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13))+

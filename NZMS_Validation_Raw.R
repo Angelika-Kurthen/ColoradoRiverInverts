@@ -119,9 +119,9 @@ NZMSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, co
               fill = "black",
               show.legend = F)+
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data = cor.df, aes(x =V1, y = scale(V2), color = "P. antipodarum"), linewidth = 1, alpha = 0.8, show.legend = T)+
+  geom_line(data = cor.df, aes(x =V1, y = scale(V2), color = "Empirical"), linewidth = 1, alpha = 0.8, show.legend = T)+
   #geom_point(data = NZMS.samp.sum[125,], aes(x = V1, y = scale(means), color = "Empirical"), show.legend = T)+
-  labs(y=expression(paste(italic("P. antipodarum"), " Abund.")))+
+  labs(y= "Scaled Abundance", title = expression(paste(italic("P. antipodarum"))))+
   ylim(c(-4,7))+
   geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 4.5)+
   geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5.75, label = paste('C = 94%')), color = "black", size = 4.5)+

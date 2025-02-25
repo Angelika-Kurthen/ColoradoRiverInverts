@@ -114,7 +114,7 @@ GAMMts <- ggplot(data = means.list.GAMMnonas, aes(x = Date,  y = scale(mean.abun
               fill = "black",
               show.legend = F) +
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(aes(x = Date, y = scale(means), color = "G. lacustris"), linewidth = 1, show.legend = T, alpha = 0.8)+
+  geom_line(aes(x = Date, y = scale(means), color = "Empirical"), linewidth = 1, show.legend = T, alpha = 0.8)+
   #geom_point(aes(x = Date, y = scale(means), color = "Empirical"))+
   #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
   #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
@@ -123,7 +123,7 @@ GAMMts <- ggplot(data = means.list.GAMMnonas, aes(x = Date,  y = scale(mean.abun
   geom_text(mapping = aes(x = as.Date("2018-12-01"), y =5.75, label = paste('C = 98%')), color = "black", size = 4.5)+
   geom_text(mapping = aes(x = as.Date("2018-12-01"), y =6.5, label = paste('Scaled RMSE = 1.21')), color = "black", size = 4.5)+
   #labs(y = expression(~italic(G. lacustris)~ 'Abund.')) +
-  labs(y=expression(paste(italic("G. lacustris"), " Abund.")))+
+  labs(y= "Scaled Abundance", title = expression(paste(italic("G. lacustris"))))+
   xlab("")+
   labs(colour=" ")+
   theme_bw()+
