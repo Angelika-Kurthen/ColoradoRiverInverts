@@ -34,11 +34,10 @@ flows$Discharge <- flows$Discharge / 85000
 
 # Create a sequence of hydropeaking intensity levels from 0.00 to 0.70 in increments of 0.05
 temp_seq <- c(1,1.1,1.2,1.5)
-temp_seq <- 1
 # Initialize lists to store results for abundance, biomass, and annual biomass calculations
-Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), sd.abund = numeric(), se.abund = numeric(), temperature=factor())
-Multispp_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(), sd.biomass = numeric(), se.biomass = numeric(), temperature=factor())
-MultisppS3_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), S3biomass=numeric(), sd.biomass = numeric(), se.biomass = numeric(), temperature=factor())
+Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), sd.abund = numeric(), temperature=factor())
+Multispp_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(), sd.biomass = numeric(), temperature=factor())
+MultisppS3_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), S3biomass=numeric(), sd.biomass = numeric(), temperature=factor())
 
 start <- Sys.time()
 results <- mclapply(temp_seq, function(te) {
@@ -48,8 +47,8 @@ results <- mclapply(temp_seq, function(te) {
   out <- Multispp(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, 
                   disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 1000, 
                   peaklist = 0, peakeach = length(temps$Temperature), stage_output = c("all", "biomass"))
-  sys.time(
-  means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 1000, value = "abund"))
+ 
+  means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 1000, value = "abund")
   means.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "biomass")
   means.s3.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "S3.biomass")
   
@@ -79,7 +78,7 @@ results <- mclapply(temp_seq, function(te) {
               Multispp_temp_biomass = average_biomass, 
               MultisppS3_temp_biomass = s3biomass))
 #}, mc.cores = detectCores()-1)
-  }, mc.cores = 1)
+  }, mc.cores = detectCores() - 1)
 
 # Combine results from all temperature scenarios into final dataframes
 
@@ -101,15 +100,15 @@ temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 # calculate average yearly temperatures
 temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
 # create summertime spike (up to 21 C, then scale from there)
-temps$Temperature[16:22] <- c(14, 16, 18, 21, 21, 18, 16, 14)
+temps$Temperature[16:24] <- c(14, 16, 18, 21, 21, 18, 16, 14)
 
 # create a timeseries of average temperatures 100 years long
 temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
 
 # Initialize lists to store results for abundance, biomass, and annual biomass calculations
-Multispp_temp_abund_spike <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), sd.abund = numeric(), se.abund = numeric(), temperature=factor())
-Multispp_temp_biomass_spike <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(), sd.biomass = numeric(), se.biomass = numeric(), temperature=factor())
-MultisppS3_temp_biomass_spike <- data.frame(timesteps= numeric(), taxa = factor(), S3biomass=numeric(), sd.biomass = numeric(), se.biomass = numeric(), temperature=factor())
+Multispp_temp_abund_spike <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), sd.abund = numeric(), temperature=factor())
+Multispp_temp_biomass_spike <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(), sd.biomass = numeric(), temperature=factor())
+MultisppS3_temp_biomass_spike <- data.frame(timesteps= numeric(), taxa = factor(), S3biomass=numeric(), sd.biomass = numeric(), temperature=factor())
 
 # Combine results from all temperature scenarios into final dataframes
 results <- mclapply(temp_seq, function(te) {
@@ -149,7 +148,7 @@ results <- mclapply(temp_seq, function(te) {
   return(list(Multispp_temp_abund_spike = average_means, 
               Multispp_temp_biomass_spike = average_biomass, 
               MultisppS3_temp_biomass_spike = s3biomass))
-}, mc.cores = detectCores()-1)
+}, mc.cores = detectCores() -1)
 
 # Final binding
 Multispp_temp_abund_spike <- do.call(rbind, lapply(results, `[[`, "Multispp_temp_abund_spike"))
@@ -159,3 +158,4 @@ MultisppS3_temp_biomass_spike <- do.call(rbind, lapply(results, `[[`, "MultisppS
 write.csv(Multispp_temp_abund_spike, "Multispp_temp_abund_spike.csv", row.names = FALSE)
 write.csv(Multispp_temp_biomass_spike, "Multispp_temp_biomass_spike.csv", row.names = FALSE)
 write.csv(MultisppS3_temp_biomass_spike, "MultisppS3_temp_biomass_spike.csv", row.names = FALSE)
+
