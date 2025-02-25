@@ -14,13 +14,27 @@ library(grid)
 source("1spFunctions.R")
 # source("CHIR_Validation.R")
 # soruce("HYOS_Validation.R") etc
+temp <- readNWISdv("09380000", "00010", "2015-10-01", "2022-05-01")
 
+temperature <-ggplot(temp, aes(x = as.Date(Date), y = X_00010_00003)) +
+  geom_line(aes(color = "Colorado \n River at \n Lee's \n Ferry"), linewidth = 1) +  # Correct legend mapping
+  labs(x = " ", y = "Temperature", title = "Water Temperature", color = " ") +  # Legend title
+  theme_bw() +
+  scale_color_manual(values = c("Colorado \n River at \n Lee's \n Ferry" = "black")) +  # Assign legend color
+  scale_x_date(date_labels = "%Y") +
+  theme(
+    text = element_text(size = 13),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12.5), 
+    axis.text.y = element_text(size = 13)
+  )
+
+  
 # correlation plots
 x11()
-Fig1 <- ggarrange(NZMSts, BAETts, GAMMts, HYOSts, CHIRts,  
-          labels = c("a", "b", "c", "d", "e"),
-          ncol = 3, nrow = 2, common.legend =F)
-ggsave(filename = "fig3.1.png", Fig1, device = "png", dpi = "retina", height = 7, width = 15)
+Fig1 <- ggarrange(NZMSts, BAETts, GAMMts, HYOSts, CHIRts, temperature, 
+          labels = c("a", "b", "c", "d", "e", "f"),
+          ncol = 2, nrow = 3, common.legend =F)
+ggsave(filename = "fig3.1.png", Fig1, device = "png", dpi = "retina", height = 15, width = 10)
 # hydropeaking intensity 
 source("BAET_Hydropeaking.R")
 source("HYOS_Hydropeaking.R")
@@ -1552,6 +1566,7 @@ h.biomass <- ggplot(data = hyos_biomass_combo, aes(y = biomass, x = as.factor(te
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 h_plot <- wrap_plots(h.abund, h.biomass) +
+  plot_annotation(tag_levels = 'a')+
   plot_layout(guides = 'collect') &
   theme(
     legend.text = element_text(size = 11, lineheight = 0.9),
@@ -1581,7 +1596,7 @@ h.pc <- ggplot(data = hyos_pc_combo, aes(x = as.factor(temperature), y = percapi
                                            "Temperature +\nSpike"), values= c("#56B4E9", "#365C8DFF"))+
   xlab("Temperature")+
   guides(color=guide_legend(title="Scenario"))+
-  labs(y="Mean Adult Biomass", title = expression(paste(italic("Hydropsyche"), " spp.")))+
+  labs(y="Adult Biomass (mg)", title = expression(paste(italic("Hydropsyche"), " spp.")))+
   theme(text = element_text(size = 11), axis.text.x = element_text(hjust = 1, angle=45, size = 10), 
         axis.text.y = element_text(size = 11), legend.key = element_rect(fill = "transparent"))
 
@@ -1686,6 +1701,7 @@ b.biomass <- ggplot(data = baet_biomass_combo, aes(y = biomass, x = as.factor(te
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 b_plot <- wrap_plots(b.abund, b.biomass) +
+  plot_annotation(tag_levels = 'a')+
   plot_layout(guides = 'collect') &
   theme(
     legend.text = element_text(size = 11, lineheight = 0.9),
@@ -1719,7 +1735,7 @@ b.pc <- ggplot(data = baet_pc_combo, aes(x = as.factor(temperature), y = percapi
   scale_color_manual(name = " ", labels= c("Temperature", 
                                            "Temperature +\nSpike"), values= c("#56B4E9", "#365C8DFF"))+
   xlab("Temperature")+
-  labs(y="Mean Adult Biomass (mg)", title = expression(paste(italic("Baetidae"), " spp.")))+
+  labs(y="Adult Biomass (mg)", title = expression(paste(italic("Baetidae"), " spp.")))+
   theme(text = element_text(size = 11), axis.text.x = element_text(hjust = 1, angle=45, size = 10), 
         axis.text.y = element_text(size = 11), legend.key = element_rect(fill = "transparent"))
 
@@ -1776,7 +1792,7 @@ chir_pc_combo <- bind_rows(
 )
 
 chir_abund_combo$abundance <- scale(chir_abund_combo$abundance) 
-chir_abund_combo$source <- ordered(chir_abundance_combo$source, levels = c(
+chir_abund_combo$source <- ordered(chir_abund_combo$source, levels = c(
   "Temperature", 
   "Temperature & spike", 
   "Temperature & hydropeaking", 
@@ -1825,6 +1841,7 @@ c.biomass <- ggplot(data = chir_biomass_combo, aes(y = biomass, x = as.factor(te
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 c_plot <- wrap_plots(c.abund, c.biomass) +
+  plot_annotation(tag_levels = 'a')+
   plot_layout(guides = 'collect') &
   theme(
     legend.text = element_text(size = 11, lineheight = 0.9),
@@ -1836,9 +1853,10 @@ chiro <- readPNG("chironomidae.png")
 chiro_grob <- rasterGrob(chiro, x = 0.825, y = 0.92, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
 
 # Overlay the image on the plot
-ggdraw() +
+c.fig <- ggdraw() +
   draw_plot(c_plot) +
   draw_grob(chiro_grob)
+ggsave("cfig.png", plot = c.fig, device = "png", width = 8.44, height = 6, units = c("in"), dpi = "retina")
 
 
 chir_pc_combo <- bind_rows(
@@ -1857,7 +1875,7 @@ c.pc <- ggplot(data = chir_pc_combo, aes(x = as.factor(temperature), y = percapi
   scale_color_manual(name = " ", labels= c("Temperature", 
                                            "Temperature +\nSpike"), values= c("#56B4E9", "#365C8DFF"))+
   xlab("Temperature")+
-  labs(y="Mean Adult Biomass (mg)", title = expression(paste(italic("Chironomidae"), " spp.")))+
+  labs(y="Adult Biomass (mg)", title = expression(paste(italic("Chironomidae"), " spp.")))+
   theme(text = element_text(size = 11), axis.text.x = element_text(hjust = 1, angle=45, size = 10), 
         axis.text.y = element_text(size = 11), legend.key = element_rect(fill = "transparent"))
 
@@ -1964,6 +1982,7 @@ g.biomass <- ggplot(data = gamm_biomass_combo, aes(y = biomass, x = as.factor(te
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 g_plot <- wrap_plots(g.abund, g.biomass) +
+  plot_annotation(tag_levels = 'a')+
   plot_layout(guides = 'collect') &
   theme(
     legend.text = element_text(size = 11, lineheight = 0.9),
@@ -2023,7 +2042,7 @@ nzms_abund_combo <- bind_rows(
   nzms_abund %>% mutate(source = "Temperature"),
   nzms_abund_sp %>% mutate(source = "Temperature & spike"),
   nzms_abund_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  #nzms_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
+  nzms_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
   nzms_abund_HFE %>% mutate(source = "Temperature & HFE"),
   nzms_abund_HFE_sp %>% mutate(source = "Temperature & spike & HFE"),
   nzms_abund_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
@@ -2035,7 +2054,7 @@ nzms_biomass_combo <- bind_rows(
   nzms_biomass %>% mutate(source = "Temperature"),
   nzms_biomass_sp %>% mutate(source = "Temperature & spike"),
   nzms_biomass_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  #nzms_biomass_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
+  nzms_biomass_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
   nzms_biomass_HFE %>% mutate(source = "Temperature & HFE"),
   nzms_biomass_HFE.sp %>% mutate(source = "Temperature & spike & HFE"),
   nzms_biomass_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
@@ -2100,6 +2119,7 @@ n.biomass <- ggplot(data = nzms_biomass_combo, aes(y = biomass, x = as.factor(te
         axis.text.y = element_text(size = 11), legend.key = element_rect(fill = "transparent"))
 
 n_plot <- wrap_plots(n.abund, n.biomass) +
+  plot_annotation(tag_levels = 'a')+
   plot_layout(guides = 'collect') &
   theme(
     legend.text = element_text(size = 11, lineheight = 0.9),
@@ -2218,6 +2238,11 @@ Fig2.2 <- wrap_plots(b.pc, h.pc, c.pc, g.pc, n.pc, regimes)+
    plot_layout(guides = 'collect', nrow = 3)+
   plot_annotation(tag_levels = 'a')
 
+ggsave("fig2.2.png", Fig2.2, device = "png", height = 11, width = 8.5, unit = c("in"), dpi = "retina")
+
+
+
+
 # Load necessary libraries
 library(ggplot2)
 library(dplyr)
@@ -2259,3 +2284,9 @@ df <- data.frame(
 # Generate heatmap
 plot_means_heatmap(df, "value", "category")
 
+a <- subset(nzms_abund, temperature ==1) 
+b <- subset(nzms_pc, temperature ==1)
+mean(a$abundance - (a$abundance * b$percapita))
+a <- subset(nzms_abund, temperature ==1.5) 
+b <- subset(nzms_pc, temperature ==1.5)
+mean(a$abundance - (a$abundance * b$percapita))
