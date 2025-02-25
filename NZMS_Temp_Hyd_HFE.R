@@ -56,7 +56,7 @@ results <- mclapply(temp_seq, function(te) {
   set.seed(123) # make reproducible
   # model sizes
   temps$Temperature <- temps$Temperature * te
-  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0, peakeach = length(temps$Temperature))
+  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
   temps$Temperature <- temps$Temperature / te
   # calculate mean abundances at each timestep
   means.list.NZMS <- mean.data.frame(out, burnin = 260, iteration = 1000)
@@ -115,7 +115,7 @@ results <- mclapply(temp_seq, function(te) {
   # modify temperature regim
   temps$Temperature <- temps$Temperature * te
   # add temp spike in September
-  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0, peakeach = length(temps$Temperature))
+  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
   temps$Temperature <- temps$Temperature / te
   # calculate mean abundances at each timestep
   means.list.NZMS <- mean.data.frame(out, burnin = 260, iteration = 1000)
