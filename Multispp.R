@@ -41,13 +41,26 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   # could do ramped hydropeaking, we do not - all
   hp <- c(rep(peaklist, each = peakeach))
   
-  # if multiple hydropeakings can call via unique then loop through sapply 
+  # Compute hydropeaking mortality for different taxa
   hydro.mort_HYOS <- hydropeaking.mortality(lower = 0.4, upper = 0.6, h = unique(hp))
   hydro.mort_BAET <- hydropeaking.mortality(lower = 0.0, upper = 0.15, h = unique(hp))
   hydro.mort_GAMM <- hydropeaking.mortality(lower = 0, upper = 1, h = unique(hp))
   hydro.mort_NZMS <- hydropeaking.mortality(lower = 0, upper = 1, h = unique(hp))
-  hydro.mort_CHIR <- hydropeaking.mortality(lower = 0, upper = 0.6, unique(hp))
+  hydro.mort_CHIR <- hydropeaking.mortality(lower = 0, upper = 0.6, h = unique(hp))  # Fixed h = unique(hp)
   
+  
+  if (!is.null(modify_parameter) && nzchar(modify_parameter)) {
+    # List of valid parameter names
+    valid_parameters <- c("hydro.mort_HYOS", "hydro.mort_BAET", "hydro.mort_GAMM", "hydro.mort_NZMS", "hydro.mort_CHIR")
+    
+    # Check if modify_parameter is a valid parameter name
+    if (modify_parameter %in% valid_parameters) {
+      current_value <- get(modify_parameter)
+      sens <- checkpos(current_value + increment)
+      sens <- ifelse(sens > 1, 1, sens)
+      assign(modify_parameter, sens, envir = .GlobalEnv)  
+      
+    }}
   # mortality_lookup <- sapply(unique_h, function(hp, lower, upper) {
   #   hydropeaking.mortality(lower = X, upper = Y, h = h)
   # })
@@ -107,6 +120,19 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   flood.mort_GAMM <- sapply(Q, flood.mortality, N = 1, k = GAMM_k, h = GAMM_h, Qmin = Qmin)
   flood.mort_NZMS <- sapply(Q, flood.mortality, N = 1, k = NZMS_k, h = NZMS_h, Qmin = Qmin)
   
+  if (!is.null(modify_parameter) && nzchar(modify_parameter)) {
+    # List of valid parameter names
+  valid_parameters <- c("flood.mort_HYOS", "flood.mort_BAET", "flood.mort_GAMM", "flood.mort_NZMS", "flood.mort_CHIR")
+  
+  # Check if modify_parameter is a valid parameter name
+  if (modify_parameter %in% valid_parameters) {
+        current_value <- get(modify_parameter)
+        sens <- checkpos(current_value + increment)
+       sens <- ifelse(sens > 1, 1, sens)
+        assign(modify_parameter, sens, envir = .GlobalEnv)  
+    
+  }}
+  
   # temperature dependent survival
   TempSurvival_HYOS <- sapply(temps$Temperature, TempSurv_HYOS)
   TempSurvival_BAET <- sapply(temps$Temperature, TempSurv_BAET)
@@ -114,7 +140,17 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   TempSurvival_CHIR <- sapply(temps$Temperature, TempSurv_CHIR)
   TempSurvival_GAMM <- sapply(temps$Temperature, TempSurv_GAMM)
   
-
+  if (!is.null(modify_parameter) && nzchar(modify_parameter)) {
+    # List of valid parameter names
+    valid_parameters <- c("TempSurvival_HYOS", "TempSurvival_BAET", "TempSurvival_NZMS", "TempSurvival_CHIR", "TempSurvival_GAMM")
+    
+    # Check if modify_parameter is a valid parameter name
+    if (modify_parameter %in% valid_parameters) {
+      current_value <- get(modify_parameter)
+      sens <- checkpos(current_value + increment)
+      sens <- ifelse(sens > 1, 1, sens)
+      assign(modify_parameter, sens, envir = .GlobalEnv)  
+    }}
   # Calculate how many timesteps emerging adults have matured
   emergetime_HYOS <- sapply(timestep, back.count.degreedays, criticaldegreedays = 1680, degreedays)
   emergetime_BAET <- sapply(timestep, back.count.degreedays, criticaldegreedays = 250, degreedays)
@@ -423,15 +459,22 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       
       #-----------------------------------------------
       # Create Lefkovitch Matrix
+      if (!is.null(modify_parameter) && nzchar(modify_parameter)) {
       
-      # Code to run sensitivity if modify_parameter exists
-      if (!is.null(modify_parameter)){
-      sens <- checkpos(get(modify_parameter) + increment) # bounded by 0
-      ifelse(sens > 1, # and 1
-             sens <- 1,
-             sens <- sens)
-      assign(modify_parameter, sens)
-      }
+      # List of valid parameter names
+      valid_parameters <- c("G1_HYOS", "G2_HYOS", "G1_BAET", "G2_BAET", 
+                            "G1_CHIR", "G2_CHIR", "G1_GAMM", "G2_GAMM", 
+                            "G1_NZMS", "G2_NZMS")
+      
+      # Check if modify_parameter is a valid parameter name
+      if (modify_parameter %in% valid_parameters) {
+        current_value <- get(modify_parameter)
+        sens <- checkpos(current_value + increment)
+        sens <- ifelse(sens > 1, 1, sens)
+        assign(modify_parameter, sens)  
+        
+      }}
+      
 
       # Compile matrices
       HYOS1 <- c(P1_HYOS, 0, F3_HYOS)
@@ -634,9 +677,9 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
 
 # out <- Multispp(flow.data = flow.data, temp.data = temp.data,
 #                            baselineK =10000 , disturbanceK = 100000, Qmin = 0.25,
-#                            extinct = 50, iteration = 1000, peaklist = 0.17,
-#                            peakeach = length(temps$Temperature), stage_output = c("biomass", "size"))
-# 
-# 
+#                            extinct = 50, iteration = 2, peaklist = 0.17,
+#                            peakeach = length(temps$Temperature), stage_output = c("biomass", "size"), modify_parameter = "TempSurvival_HYOS", increment = 0.001)
+
+
 
                      
