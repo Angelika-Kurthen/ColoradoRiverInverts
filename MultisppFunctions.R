@@ -1,71 +1,75 @@
 ###############
 #Multispp Functions
 ###############
-multispp.data.frame <- function(data, burnin, iteration, value = "biomass"){
-  
-  repdf <- plyr::adply(data, c(1,2,3,4))
-  #repdf <- plyr::adply(data, c(1,2))
-  names(repdf) <- c('timesteps', 'stage', 'rep', "taxa", value)
-  repdf$timesteps <- as.numeric(as.character(repdf$timesteps))
-  
-  if (value == "biomass"){
-  # joining totn and repdf together
-  # repdf <- dplyr::left_join(totn, repdf)
-  tot.biomass <- rowSums(data)/iteration
-  ## calculating relative abundance
-  repdf <- mutate(repdf, rel.biomass = biomass/tot.biomass)
-  repdf$timesteps <- as.factor(repdf$timesteps)
-  ## Taking mean results to cf w/ observed data'
-  
-  means.list<- repdf %>%
-    # select(-tot.abund) %>%
-    dplyr::group_by(timesteps, rep, taxa) %>% # combining stages and taxa
-    dplyr::summarise(rel.biomass = sum(rel.biomass)) %>%
-    ungroup() %>%
-    dplyr::group_by(timesteps, taxa) %>%
-    dplyr::summarise(mean.rel.biomass = mean(rel.biomass),
-                     sd.abund = sd(rel.biomass),
-                     se.abund = sd(rel.biomass)/sqrt(iteration)) %>%
-    ungroup()
-  }
-  
-  if (value == "abund"){
-    # repdf <- dplyr::left_join(totn, repdf)
-    tot.n <- rowSums(data)/iteration
-    ## calculating relative abundance
-    repdf <- mutate(repdf, rel.n = abund/tot.n)
-    repdf$timesteps <- as.factor(repdf$timesteps)
-    ## Taking mean results to cf w/ observed data'
-    
-    means.list<- repdf %>%
-      # select(-tot.abund) %>%
-      dplyr::group_by(timesteps, rep, taxa) %>% # combining stages and taxa
-      dplyr::summarise(rel.n = sum(rel.n)) %>%
-      ungroup() %>%
-      dplyr::group_by(timesteps, taxa) %>%
-      dplyr::summarise(mean.rel.abund = mean(rel.n),
-                       sd.abund = sd(rel.n),
-                       se.abund = sd(rel.n)/sqrt(iteration)) %>%
-      ungroup()
-  }
-    if (value == "S3.biomass"){
 
-      ## subset stage 3s
-      repdf3 <- subset(repdf, stage == "S3")
-      repdf3$timesteps <- as.factor(repdf3$timesteps)
-      ## Taking mean results to cf w/ observed data'
-      
-      means.list<- repdf3 %>%
-        dplyr::group_by(timesteps, taxa) %>% # combining taxa, reps
-        dplyr::summarise(mean.S3.biomass = mean(S3.biomass),
-                         sd.abund = sd(S3.biomass),
-                         se.abund = sd(S3.biomass)/sqrt(iteration)) %>%
-        ungroup()
-      
-    }
-  
-  if (is.null(burnin)== F){
-    means.list <- means.list[burnin:length(means.list$timesteps), ]
+library(data.table)
+
+multispp.data.frame <- function(data, burnin = NULL, iteration, value) {
+  # Check if the input data is a 4D array
+  if (length(dim(data)) != 4) {
+    stop("Input data must be a 4-dimensional array.")
   }
+  
+  # Extract dimensions
+  dims <- dim(data)
+  n_timesteps <- dims[1]
+  n_stages <- dims[2]
+  n_reps <- dims[3]
+  n_taxa <- dims[4]
+  
+  # Reshape the 4D array into a 2D matrix
+  data_matrix <- matrix(data, nrow = n_timesteps * n_stages * n_reps, ncol = n_taxa)
+  
+  # Create a data.table from the matrix
+  dt <- as.data.table(data_matrix)
+  
+  # Add identifier columns
+  dt[, timesteps := rep(1:n_timesteps, each = n_stages * n_reps)]
+  dt[, stage := rep(rep(1:n_stages, each = n_reps), times = n_timesteps)]
+  dt[, rep := rep(1:n_reps, times = n_timesteps * n_stages)]
+
+  # Melt the data.table to long format
+  dt_long <- melt(dt, id.vars = c("timesteps", "stage", "rep"), variable.name = "taxa", value.name = "value")
+  
+  
+  # Assign the desired taxa names
+  dt_long[, taxa := factor(taxa, levels = paste0("V", 1:n_taxa), labels = c("HYOS", "BAET", "NZMS", "CHIR", "GAMM"))]
+  # Calculate total biomass for each combination of timesteps, stage, and rep
+  dt_long[, total := sum(value), by = .(timesteps, rep)]
+  
+  # Calculate relative biomass
+  dt_long[, rel.value := value / total]
+  
+  # Apply burnin if specified
+  if (!is.null(burnin)) {
+    dt_long <- dt_long[timesteps > burnin]
+  }
+  
+  # Calculate mean and standard deviation of relative biomass by timesteps and taxa
+  if (value == "biomass") {
+  means.list <- dt_long[, .(
+    mean.rel.biomass = mean(rel.value, na.rm = TRUE), #mean
+    sd.rel.biomass = sd(rel.value, na.rm = TRUE) #sd
+  ), by = .(timesteps, taxa)]
+  
+  } else if (value == "abund") {
+    means.list <- dt_long[, .(
+      mean.rel.abund = mean(rel.value, na.rm = TRUE), #mean
+      sd.rel.abund = sd(rel.value, na.rm = TRUE) #sd
+    ), by = .(timesteps, taxa)]
+    
+  } else if (value == "S3.biomass") {
+    # Filter for stage 3
+    dt3 <- dt_long[stage == "3"]
+    
+      means.list <- dt3[, .(
+      mean.S3.biomass = mean(rel.value, na.rm = TRUE), #mean
+      sd.abund = sd(rel.value, na.rm = TRUE) #sd
+      ), by = .(timesteps, taxa)]
+  }
+
   return(means.list)
 }
+
+
+#dat <- multispp.data.frame(out$biomass, burnin = 260, 1000, value = "S3.biomass")
