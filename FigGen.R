@@ -699,6 +699,29 @@ source("SPD_Multivolt.R")
 
 oneyear <- rbind(B.oneyear, C.oneyear, A.oneyear, D.oneyear)
 
+
+# Define arrow positions
+arrow_data <- data.frame(
+  Strategy = c("Boom", "Boom", "Boom", "Boom", "Boom", "Boom", "Boom", "Boom",
+               "Fast", "Fast", "Fast", "Fast", "Fast", "Fast",
+               "Moderate","Moderate","Moderate", "Slow","Slow", "Slow"),  # Adjust these to match your facet variable levels
+  MeanTemp = c(1,1,1, 2, 2,2,2,2,
+               1,1,2,2,2,2, 
+               1,2,2,1,2,2),
+  x_start = as.Date(c("2035-07-17", "2035-08-28", "2035-10-23", "2035-02-27", "2035-05-22", "2035-07-31", "2035-09-25", "2035-12-28",
+                      "2035-08-14", "2035-06-19", "2035-01-16", "2035-05-08", "2035-07-17", "2035-09-11",
+                      "2035-09-11", "2035-04-24", "2035-10-09", "2035-08-28", "2035-05-08","2035-10-09")),  
+  y_end = c(9.5, 9.5, 9.5, 9.8, 9.8, 9.8, 9.8, 9.8,
+              8.75, 8.75, 10.05, 10.5, 10.5, 10.5, 
+              7, 7, 7, 7, 7, 7),  # Adjust y positions
+  x_end =as.Date(c("2035-07-17", "2035-08-28", "2035-10-23", "2035-02-27", "2035-05-22", "2035-07-31", "2035-09-25", "2035-12-28",
+                              "2035-08-14", "2035-06-19", "2035-01-16", "2035-05-08", "2035-07-17", "2035-09-11",
+                              "2035-09-11", "2035-04-24", "2035-10-09", "2035-08-28", "2035-05-08","2035-10-09")),  
+  y_start = c(11.5, 11.5, 11.5, 11.8, 11.8, 11.8, 11.8, 11.8,
+            10.75, 10.75, 12.05, 12.05,12.05, 12.05, 
+            9, 9, 9, 9, 9, 9)  # Adjust arrow end points
+)
+
 Fig3 <- ggplot(data = oneyear, aes(x = Date, y = log(Abund), group = as.factor(MeanTemp), color = as.factor(MeanTemp)))+
   geom_line(size = 1, alpha = 0.8)+
   scale_color_manual(name = "Mean Temperature (C)", labels = c("12", "20"), values = c("#4477AA", "#EE6677"))+
@@ -707,7 +730,10 @@ Fig3 <- ggplot(data = oneyear, aes(x = Date, y = log(Abund), group = as.factor(M
   scale_x_date(date_labels="%B", date_breaks  ="2 month")+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
         axis.text.y = element_text(size = 13),legend.position = "bottom", legend.key = element_rect(fill = "transparent"))+
-  facet_wrap(~Strategy)
+  facet_wrap(~Strategy)+
+  geom_segment(data = arrow_data, aes(x = x_start, y = y_start, xend = x_end, yend = y_end, color = as.factor(MeanTemp)), 
+               arrow = arrow(type = "closed", length = unit(0.1, "inches")), 
+                inherit.aes = FALSE, show.legend = F)
 ggsave(filename = "Fig3.png", Fig3, height = 5, width = 5, device = "png", dpi = "retina")
 
 
