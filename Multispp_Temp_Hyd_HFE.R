@@ -43,9 +43,9 @@ flows$Discharge[HFE_rows] <- 0.45
 # Create a sequence of hydropeaking intensity levels from 0.00 to 0.70 in increments of 0.05
 temp_seq <- c(1,1.1,1.2,1.5)
 # Initialize lists to store results for abundance, biomass, and annual biomass calculations
-Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), sd.abund = numeric(), temperature=factor())
-Multispp_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(), sd.biomass = numeric(), temperature=factor())
-MultisppS3_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), S3biomass=numeric(), sd.biomass = numeric(), temperature=factor())
+Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), temperature=factor())
+Multispp_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(),  temperature=factor())
+MultisppS3_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), S3biomass=numeric(),  temperature=factor())
 
 results <- mclapply(temp_seq, function(te) {
   set.seed(123)
@@ -111,9 +111,9 @@ temps$Temperature[16:23] <- c(14, 16, 18, 21, 21, 18, 16, 14)
 temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
 
 # Initialize lists to store results for abundance, biomass, and annual biomass calculations
-Multispp_temp_abund_spike <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), sd.abund = numeric(), temperature=factor())
-Multispp_temp_biomass_spike <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(), sd.biomass = numeric(), temperature=factor())
-MultisppS3_temp_biomass_spike <- data.frame(timesteps= numeric(), taxa = factor(), S3biomass=numeric(), sd.biomass = numeric(), temperature=factor())
+Multispp_temp_abund_spike <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), temperature=factor())
+Multispp_temp_biomass_spike <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(),  temperature=factor())
+MultisppS3_temp_biomass_spike <- data.frame(timesteps= numeric(), taxa = factor(), S3biomass=numeric(), temperature=factor())
 
 # Combine results from all temperature scenarios into final dataframes
 results <- mclapply(temp_seq, function(te) {
