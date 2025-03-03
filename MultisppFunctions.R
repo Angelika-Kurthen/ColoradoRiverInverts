@@ -1,75 +1,72 @@
 ###############
 #Multispp Functions
 ###############
+multispp.data.frame <- function(data, burnin, iteration, value = "biomass"){
+  
+  pop_matrix_perm <- aperm(data, c(1, 3, 4, 2))  # Now: [2601, 1000, 5, 3]
+  # Sum over stages directly with rowSums (preserving dimensions)
+  taxon_stage_sums <- rowSums(pop_matrix_perm, dims = 3)
+  
+  # Total sum across all taxa
+  total_stage_sums <- rowSums(taxon_stage_sums, dims = 2)
+  
+  # Compute relative abundance
+  relative_abundance <- sweep(taxon_stage_sums, c(1, 2), total_stage_sums, "/")
+  
+  dimnames(relative_abundance) <- list(
+    timesteps = 1:dim(relative_abundance)[1],
+    rep = 1:dim(relative_abundance)[2],
+    taxa = 1:dim(relative_abundance)[3]
+  )
 
-library(data.table)
-
-multispp.data.frame <- function(data, burnin = NULL, iteration, value) {
-  # Check if the input data is a 4D array
-  if (length(dim(data)) != 4) {
-    stop("Input data must be a 4-dimensional array.")
+  df <- as.data.frame(as.table(relative_abundance))  
+  
+  if (value == "abund"){
+  
+  # Rename the columns
+  colnames(df) <- c('timesteps', 'rep', 'taxa', 'rel_abund')
   }
   
-  # Extract dimensions
-  dims <- dim(data)
-  n_timesteps <- dims[1]
-  n_stages <- dims[2]
-  n_reps <- dims[3]
-  n_taxa <- dims[4]
-  
-  # Reshape the 4D array into a 2D matrix
-  data_matrix <- matrix(data, nrow = n_timesteps * n_stages * n_reps, ncol = n_taxa)
-  
-  # Create a data.table from the matrix
-  dt <- as.data.table(data_matrix)
-  
-  # Add identifier columns
-  dt[, timesteps := rep(1:n_timesteps, each = n_stages * n_reps)]
-  dt[, stage := rep(rep(1:n_stages, each = n_reps), times = n_timesteps)]
-  dt[, rep := rep(1:n_reps, times = n_timesteps * n_stages)]
-
-  # Melt the data.table to long format
-  dt_long <- melt(dt, id.vars = c("timesteps", "stage", "rep"), variable.name = "taxa", value.name = "value")
-  
-  
-  # Assign the desired taxa names
-  dt_long[, taxa := factor(taxa, levels = paste0("V", 1:n_taxa), labels = c("HYOS", "BAET", "NZMS", "CHIR", "GAMM"))]
-  # Calculate total biomass for each combination of timesteps, stage, and rep
-  dt_long[, total := sum(value), by = .(timesteps, rep)]
-  
-  # Calculate relative biomass
-  dt_long[, rel.value := value / total]
-  
-  # Apply burnin if specified
-  if (!is.null(burnin)) {
-    dt_long <- dt_long[timesteps > burnin]
+  else if (value == "biomass"){
+    colnames(df) <- c('timesteps', 'rep', 'taxa', 'rel_biomass')
   }
   
-  # Calculate mean and standard deviation of relative biomass by timesteps and taxa
-  if (value == "biomass") {
-  means.list <- dt_long[, .(
-    mean.rel.biomass = mean(rel.value, na.rm = TRUE), #mean
-    sd.rel.biomass = sd(rel.value, na.rm = TRUE) #sd
-  ), by = .(timesteps, taxa)]
-  
-  } else if (value == "abund") {
-    means.list <- dt_long[, .(
-      mean.rel.abund = mean(rel.value, na.rm = TRUE), #mean
-      sd.rel.abund = sd(rel.value, na.rm = TRUE) #sd
-    ), by = .(timesteps, taxa)]
-    
-  } else if (value == "S3.biomass") {
-    # Filter for stage 3
-    dt3 <- dt_long[stage == "3"]
-    
-      means.list <- dt3[, .(
-      mean.S3.biomass = mean(rel.value, na.rm = TRUE), #mean
-      sd.abund = sd(rel.value, na.rm = TRUE) #sd
-      ), by = .(timesteps, taxa)]
-  }
+  else if (value == "S3.biomass"){
+      stage_3_data <- data[, 3, , ] 
 
-  return(means.list)
+      total_abundance <- apply(stage_3_data, c(1, 2), sum)  #
+      relative_abundance <- sweep(stage_3_data, c(1, 2), total_abundance, "/")
+      
+      dimnames(relative_abundance) <- list(
+        timesteps = 1:dim(relative_abundance)[1],
+        rep = 1:dim(relative_abundance)[2],
+        taxa = 1:dim(relative_abundance)[3]
+      )
+      
+      # Convert the array to a data frame
+      df <- as.data.frame(as.table(relative_abundance))
+      
+      # Rename the columns
+      colnames(df) <- c('timesteps', 'rep', 'taxa', 'S3.biomass')
+      
+  }
+  
+  # Convert 'timesteps', 'rep', and 'taxa' to numeric (they are factors by default)
+  # Convert 'timesteps' and 'rep' to numeric
+  df$timesteps <- as.numeric(as.character(df$timesteps))
+  df$rep <- as.numeric(as.character(df$rep))
+  
+  # Define taxa names
+  taxa_names <- c("HYOS", "BAET", "NZMS", "CHIR", "GAMM")
+  
+  # Assign these names to the 'taxa' column
+  df$taxa <- factor(df$taxa, levels = 1:5, labels = taxa_names)
+
+  if (is.null(burnin)== F){
+    df <- df <- df[df$timesteps > burnin, ]
+  }
+  # Remove the 'rep' column
+  df$rep <- NULL
+  
+  return(df)
 }
-
-
-#dat <- multispp.data.frame(out$biomass, burnin = 260, 1000, value = "S3.biomass")
