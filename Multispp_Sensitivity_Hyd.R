@@ -40,11 +40,10 @@ flows$Discharge <- flows$Discharge / 85000
 
 # Define your species-stage parameters
 parameters <- c("G1_HYOS", "G1_BAET", "G1_NZMS", "G1_GAMM", "G1_CHIR", 
-                "G2_HYOS", "G2_BAET", "G2_NZMS", "G2_GAMM", "G2_CHIR", 
-                "P1_HYOS", "P1_BAET", "P1_NZMS", "P1_GAMM", "P2_CHIR",
-                "P2_HYOS", "P2_BAET", "P2_NZMS", "P2_GAMM", "P2_CHIR")
+                "G2_HYOS", "G2_BAET", "G2_NZMS", "G2_GAMM", "G2_CHIR")
+
 # Sensitivity increments from -0.01 to +0.01 in 0.001 steps
-increments <- seq(-0.01, 0.01, by = 0.001)
+increments <- seq(-0.001, 0.001, by = 0.0001)
 
 temp_seq <- c(1, 1.1, 1.2, 1.5)
 # # Create a grid of all parameter/increment combinations
@@ -135,5 +134,5 @@ all_results <- mclapply(1:nrow(scenario_grid), run_scenario, mc.cores = numCores
 final_results <- do.call(rbind, all_results)
 
 # Save to CSV
-write.csv(final_results, "Multispp_vr_sens_temps_hyd.csv", row.names = FALSE)
+write.csv(final_results, "Multispp_G_sens_temps_hyd.csv", row.names = FALSE)
 
