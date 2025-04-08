@@ -109,7 +109,7 @@ rmse.nzms<- sqrt(mean((cor.df$V2 - cor.df$mean.abund)^2))
 rmse.nzms.scale <- sqrt(mean((scale(cor.df$V2) - scale(cor.df$mean.abund))^2))
 # coverage 
 coverage <- mean(scale(cor.df$V2) >= (scale(cor.df$mean.abund) - (1.96*rmse.nzms.scale)) & scale(cor.df$V2) <= (scale(cor.df$mean.abund) + (1.96*rmse.nzms.scale)))
-colors <- c("black","#4477AA")
+colors <- c("#4477AA","black")
 linetypes <- c("solid", "solid")
 NZMSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, color = "Model")) +
   geom_ribbon(aes(ymin = scale(mean.abund) - 1.96 * rmse.nzms.scale,
