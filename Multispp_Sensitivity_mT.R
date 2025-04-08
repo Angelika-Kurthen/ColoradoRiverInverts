@@ -17,8 +17,12 @@ source("MultisppFunctions.R")
 source("Multispp.R")
 
 # Read in Lees Ferry temperature and discharge data from 2007 to 2023
-temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")  # Water temperature data
-discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")  # River discharge data
+# temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")  # Water temperature data
+# discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")  # River discharge data
+# read in from csv to save time
+temp <- read.csv2("LFtemp2007to2023.csv", header= T)
+discharge <- read.csv2("LFdischarge2007to2023.csv", header = T)
+
 
 # Calculate average yearly flows from discharge data
 flow <- average.yearly.flows(flowdata = discharge, flow.column_name = "X_00060_00003", date.column_name = "Date")
@@ -41,7 +45,7 @@ flows$Discharge <- flows$Discharge / 85000
 # Define your species-stage parameters
 parameters <- c("TempSurvival_HYOS", "TempSurvival_BAET", "TempSurvival_CHIR", "TempSurvival_NZMS", "TempSurvival_GAMM")
 # Sensitivity increments from -0.01 to +0.01 in 0.001 steps
-increments <- seq(-0.01, 0.01, by = 0.001)
+increments <- seq(-0.001, 0.001, by = 0.0001)
 
 temp_seq <- c(1, 1.1, 1.2, 1.5)
 # # Create a grid of all parameter/increment combinations
