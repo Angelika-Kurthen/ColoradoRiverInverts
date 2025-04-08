@@ -24,11 +24,14 @@ source("GAMMSurvivorship.R")
 # peakeach <- length(temps$Temperature)
 # peaklist <- 0
 # stage_output <- "size"
-# discharge <temps# discharge <- rep(0.1, times = length(temps$Temperature))
-#modify_paramter <- NULL
+# discharge <- rep(0.1, times = length(temps$Temperature))
+# modify_paramter <- NULL
+# q <- list(HYOS = 2, BAET = 1, NZMS = 1, CHIR = 1, GAMM = 1)
+
 Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
                      extinct, iteration, peaklist = NULL, peakeach = NULL, 
-                     stage_output = "all", modify_parameter = NULL, increment = NULL ){
+                     stage_output = "all", modify_parameter = NULL, increment = NULL, 
+                     q = list(HYOS = 1, BAET = 1, NZMS = 1, CHIR = 1, GAMM = 1)){
 
   Q <- as.numeric(flow.data)
   temps <- temp.data
@@ -46,21 +49,8 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   hydro.mort_BAET <- hydropeaking.mortality(lower = 0.0, upper = 0.15, h = unique(hp))
   hydro.mort_GAMM <- hydropeaking.mortality(lower = 0, upper = 1, h = unique(hp))
   hydro.mort_NZMS <- hydropeaking.mortality(lower = 0, upper = 1, h = unique(hp))
-  hydro.mort_CHIR <- hydropeaking.mortality(lower = 0, upper = 0.6, h = unique(hp))  # Fixed h = unique(hp)
+  hydro.mort_CHIR <- hydropeaking.mortality(lower = 0, upper = 0.6, h = unique(hp))  
   
-  
-  if (!is.null(modify_parameter) && nzchar(modify_parameter)) {
-    # List of valid parameter names
-    valid_parameters <- c("hydro.mort_HYOS", "hydro.mort_BAET", "hydro.mort_GAMM", "hydro.mort_NZMS", "hydro.mort_CHIR")
-    
-    # Check if modify_parameter is a valid parameter name
-    if (modify_parameter %in% valid_parameters) {
-      current_value <- get(modify_parameter)
-      sens <- checkpos(current_value + increment)
-      sens <- ifelse(sens > 1, 1, sens)
-      assign(modify_parameter, sens, envir = .GlobalEnv)  
-      
-    }}
   # mortality_lookup <- sapply(unique_h, function(hp, lower, upper) {
   #   hydropeaking.mortality(lower = X, upper = Y, h = h)
   # })
@@ -112,6 +102,14 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   GAMM_h <- unname(surv.fit.GAMM$m$getPars()[2])
   GAMM_k <- unname(surv.fit.GAMM$m$getPars()[1])
   
+  # load q, which relates intra to interspecific competition
+  HYOS_q <- q[["HYOS"]]
+  BAET_q <- q[["BAET"]]
+  NZMS_q <- q[["NZMS"]]
+  CHIR_q <- q[["CHIR"]]
+  GAMM_q <- q[["GAMM"]]
+  
+  
   extinction <- extinct # the same for all
   
   flood.mort_HYOS <- sapply(Q, flood.mortality, N = 1, k = HYOS_k, h = HYOS_h, Qmin = Qmin)
@@ -140,17 +138,7 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   TempSurvival_CHIR <- sapply(temps$Temperature, TempSurv_CHIR)
   TempSurvival_GAMM <- sapply(temps$Temperature, TempSurv_GAMM)
   
-  if (!is.null(modify_parameter) && nzchar(modify_parameter)) {
-    # List of valid parameter names
-    valid_parameters <- c("TempSurvival_HYOS", "TempSurvival_BAET", "TempSurvival_NZMS", "TempSurvival_CHIR", "TempSurvival_GAMM")
-    
-    # Check if modify_parameter is a valid parameter name
-    if (modify_parameter %in% valid_parameters) {
-      current_value <- get(modify_parameter)
-      sens <- checkpos(current_value + increment)
-      sens <- ifelse(sens > 1, 1, sens)
-      assign(modify_parameter, sens, envir = .GlobalEnv)  
-    }}
+
   # Calculate how many timesteps emerging adults have matured
   emergetime_HYOS <- sapply(timestep, back.count.degreedays, criticaldegreedays = 1680, degreedays)
   emergetime_BAET <- sapply(timestep, back.count.degreedays, criticaldegreedays = 250, degreedays)
@@ -272,7 +260,7 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       Qf <- as.numeric(Qf.Function(Q[t-1], Qmin, a))
       
       #-------------------------------------------------------------------
-      # Calculate K arrying capacity immediately following the disturbance
+      # Calculate K arrying capacity immediately following the disturbance (one for all other and one for NZMS?)
       K0 <- as.numeric(K + ((Kd-K)*Qf))
       
       # Calculate final K for timestep, including relationship between K and time since disturbance
@@ -280,17 +268,24 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       Klist <- append(Klist, K)
       
       #---------------------------------------------
-      # Calculate effect of community density dependence on fecundity
-      
+      # Calculate effect of community density dependence on fecundity 
+
       # Logistic via Rogosch et al. Fish Model
-      F3_HYOS <- Logistic.Dens.Dependence(F3_HYOS, K, Total.Biomass[t-1, iter])
+      F3_HYOS <- Logistic.Dens.Dependence(F3_HYOS, K, 
+                                          N = (HYOS_q * sum(output.Biomass.list[t-1, ,iter, "HYOS"])) + 
+                                            sum(output.Biomass.list[t-1, ,iter, c("BAET", "CHIR", "NZMS", "GAMM")]))
       Flist_HYOS[t] <- F3_HYOS
       
-      F3_BAET <- Logistic.Dens.Dependence(F3_BAET, K, Total.Biomass[t-1, iter]) 
+      F3_BAET <- Logistic.Dens.Dependence(F3_BAET, K, 
+                                        N = (BAET_q * sum(output.Biomass.list[t-1, ,iter, "BAET"])) + 
+                                              sum(output.Biomass.list[t-1, ,iter, c("HYOS", "CHIR", "NZMS", "GAMM")])) 
       Flist_BAET[t] <-  F3_BAET
       
-      
-      F2_NZMS <- Logistic.Dens.Dependence(F2_NZMS, K, Total.Biomass[t-1, iter])  
+      #we assume that NZMS do no see increase in K post disturbance but other taxa do... how to model this
+      # 
+      F2_NZMS <- Logistic.Dens.Dependence(F2_NZMS, K, 
+                                          N = (NZMS_q * sum(output.Biomass.list[t-1, ,iter, "NZMS"])) +
+                                         sum(output.Biomass.list[t-1, ,iter, c("HYOS", "CHIR", "BAET", "GAMM")]))
       F3_NZMS <- Logistic.Dens.Dependence(F3_NZMS, K, Total.Biomass[t-1, iter]) 
       #once again, sometimes they goes below 0, so make sure not negative
       if (F2_NZMS < 0){
@@ -303,14 +298,22 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       Flist_NZMS[t] <- F2_NZMS + F3_NZMS
       
       # CHIR
-      F3_CHIR <- Logistic.Dens.Dependence(F3_CHIR, K, Total.Biomass[t-1, iter])
+      F3_CHIR <- Logistic.Dens.Dependence(F3_CHIR, K, 
+                                          N = (CHIR_q * sum(output.Biomass.list[t-1, ,iter, "CHIR"])) +
+                                          sum(output.Biomass.list[t-1, ,iter, c("HYOS", "NZMS", "BAET", "GAMM")]))
+      
       # 
       # add F_CHIR to list
       Flist_CHIR[t] <- F3_CHIR
       
       #GAMM
-      F2_GAMM <- Logistic.Dens.Dependence(F2_GAMM, K, Total.Biomass[t-1, iter])
-      F3_GAMM <- Logistic.Dens.Dependence(F3_GAMM, K, Total.Biomass[t-1, iter]) 
+      F2_GAMM <- Logistic.Dens.Dependence(F2_GAMM, K, 
+                                          N = (GAMM_q * sum(output.Biomass.list[t-1, ,iter, "GAMM"])) +
+                                          sum(output.Biomass.list[t-1, ,iter, c("HYOS", "NZMS", "BAET", "CHIR")]))
+      F3_GAMM <- Logistic.Dens.Dependence(F3_GAMM, K,
+                                          N = (GAMM_q * sum(output.Biomass.list[t-1, ,iter, "GAMM"])) +
+                                          sum(output.Biomass.list[t-1, ,iter, c("HYOS", "NZMS", "BAET", "CHIR")]))
+      
       #
       if (F2_GAMM < 0){
         F2_GAMM <- 0
@@ -396,10 +399,6 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       }
       #-----------------------------------------------
       # NZMS
-      # its speculated (Cross et al 2010) that survivorship is between 80 - 100% for NZMS in Grand Canyon - will say 80% survival to be on the conservative side
-      # from timestep to timestep, we expect 90% to survive so for stage 1 (which lasts aproximately 14 timesteps, survival should be approx 09^14 = 0.2287679
-      # from that, only 1/14th will transition out, 13/14 remain in stage (Birt et al 2009)
-      
       stageduration1_NZMS <- timestep_to_mat(temps$Temperature[t-1])[[1]]
       stageduration2_NZMS <- timestep_to_mat(temps$Temperature[t-1])[[2]]
       
@@ -677,9 +676,9 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
 
 # out <- Multispp(flow.data = flow.data, temp.data = temp.data,
 #                            baselineK =10000 , disturbanceK = 100000, Qmin = 0.25,
-#                            extinct = 50, iteration = 2, peaklist = 0.17,
-#                            peakeach = length(temps$Temperature), stage_output = c("biomass", "size"), modify_parameter = "TempSurvival_HYOS", increment = 0.001)
-
-
+#                            extinct = 50, iteration = 1000, peaklist = 0.17,
+#                            peakeach = length(temps$Temperature), stage_output = c("biomass", "size"))
+# 
+# 
 
                      
