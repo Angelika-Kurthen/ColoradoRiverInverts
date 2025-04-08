@@ -56,7 +56,7 @@ results <- mclapply(temp_seq, function(te) {
   set.seed(123) # make reproducible
   # model sizes
   temps$Temperature <- temps$Temperature * te
-  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
+  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 2000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
   temps$Temperature <- temps$Temperature / te
   # calculate mean abundances at each timestep
   means.list.NZMS <- mean.data.frame(out, burnin = 260, iteration = 1000)
@@ -86,8 +86,8 @@ NZMS_temp_hyd_abund_HFE <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_a
 NZMS_temp_hyd_biomass_HFE <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_biomass_HFE"))
 
 # Write results to CSV files
-write.csv(NZMS_temp_hyd_abund_HFE, "NZMS_temp_hyd_abund_HFE.csv", row.names = FALSE)
-write.csv(NZMS_temp_hyd_biomass_HFE, "NZMS_temp_hyd_biomass_HFE.csv", row.names = FALSE)
+write.csv(NZMS_temp_hyd_abund_HFE, "NZMS_temp_hyd_abund_HFE_2000.csv", row.names = FALSE)
+write.csv(NZMS_temp_hyd_biomass_HFE, "NZMS_temp_hyd_biomass_HFE_2000.csv", row.names = FALSE)
 
 # tabula rasa
 rm(temp)
@@ -115,7 +115,7 @@ results <- mclapply(temp_seq, function(te) {
   # modify temperature regim
   temps$Temperature <- temps$Temperature * te
   # add temp spike in September
-  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 9000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
+  out <- NZMSmodel(flow.data = flows$Discharge, temp.data = temps, baselineK = 5000, disturbanceK = 2000 , Qmin = 0.3, extinct = 50, iteration = 1000, peaklist = 0.17, peakeach = length(temps$Temperature))
   temps$Temperature <- temps$Temperature / te
   # calculate mean abundances at each timestep
   means.list.NZMS <- mean.data.frame(out, burnin = 260, iteration = 1000)
@@ -145,6 +145,6 @@ NZMS_temp_hyd_abund_HFE_spike <- do.call(rbind, lapply(results, `[[`, "NZMS_temp
 NZMS_temp_hyd_biomass_HFE_spike <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_biomass_HFE_spike"))
 
 # Write results to CSV files
-write.csv(NZMS_temp_hyd_abund_HFE_spike, "NZMS_temp_hyd_abund_HFE_spike.csv", row.names = FALSE)
-write.csv(NZMS_temp_hyd_biomass_HFE_spike, "NZMS_temp_hyd_biomass_HFE_spike.csv", row.names = FALSE)
+write.csv(NZMS_temp_hyd_abund_HFE_spike, "NZMS_temp_hyd_abund_HFE_spike_2000.csv", row.names = FALSE)
+write.csv(NZMS_temp_hyd_biomass_HFE_spike, "NZMS_temp_hyd_biomass_HFE_spike_2000.csv", row.names = FALSE)
 
