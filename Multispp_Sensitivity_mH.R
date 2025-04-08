@@ -17,8 +17,13 @@ source("MultisppFunctions.R")
 source("Multispp.R")
 
 # Read in Lees Ferry temperature and discharge data from 2007 to 2023
-temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")  # Water temperature data
-discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")  # River discharge data
+# temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")  # Water temperature data
+# discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")  # River discharge data
+
+# read in from csv to save time
+temp <- read.csv2("LFtemp2007to2023.csv", header= T)
+discharge <- read.csv2("LFdischarge2007to2023.csv", header = T)
+
 
 # Calculate average yearly flows from discharge data
 flow <- average.yearly.flows(flowdata = discharge, flow.column_name = "X_00060_00003", date.column_name = "Date")
@@ -41,7 +46,7 @@ flows$Discharge <- flows$Discharge / 85000
 # Define your species-stage parameters
 parameters <- c("hydro.mort_HYOS", "hydro.mort_BAET", "hydro.mort_CHIR", "hydro.mort_NZMS", "hydro.mort_GAMM")
 # Sensitivity increments from -0.01 to +0.01 in 0.001 steps
-increments <- seq(-0.01, 0.01, by = 0.001)
+increments <- seq(-0.001, 0.001, by = 0.0001)
 
 temp_seq <- c(1, 1.1, 1.2, 1.5)
 # # Create a grid of all parameter/increment combinations
@@ -123,10 +128,10 @@ run_scenario <- function(idx) {
 }
 
 # Run all scenarios in parallel
-library(parallel)
-numCores <- detectCores() - 1  # Use available cores minus 1 for safety
-all_results <- mclapply(1:nrow(scenario_grid), run_scenario, mc.cores = numCores)
-#all_results <- mclapply(1:3, run_scenario, mc.cores = 1)
+num_cores <- as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK"))
+if (is.na(num_cores)) { num_cores <- detectCores() }  # Fallback if not set
+print(paste("Using", num_cores, "cores for parallel processing"))
+all_results <- mclapply(1:nrow(scenario_grid), run_scenario, mc.cores = num_cores, mc.preschedule = FALSE)
 
 # Combine results into a single dataframe
 final_results <- do.call(rbind, all_results)
