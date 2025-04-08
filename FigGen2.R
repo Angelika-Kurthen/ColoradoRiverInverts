@@ -4,16 +4,20 @@
 library(ggpubr)
 library(tidyverse)
 library(patchwork)
-#install.packages("svglite")
 library(svglite)
 library(dataRetrieval)
 library(cowplot)
 library(png)
 library(grid)
+library(lm.beta)
+library(effectsize)
+library(flextable)
+library(officer)
+# Set global options for digits
+options(digits = 3)
+
 
 source("1spFunctions.R")
-# source("CHIR_Validation.R")
-# soruce("HYOS_Validation.R") etc
 temp <- readNWISdv("09380000", "00010", "2015-10-01", "2022-05-01")
 
 temperature <-ggplot(temp, aes(x = as.Date(Date), y = X_00010_00003)) +
@@ -35,112 +39,112 @@ Fig1 <- ggarrange(NZMSts, BAETts, GAMMts, HYOSts, CHIRts, temperature,
           labels = c("a", "b", "c", "d", "e", "f"),
           ncol = 2, nrow = 3, common.legend =F)
 ggsave(filename = "fig3.1.png", Fig1, device = "png", dpi = "retina", height = 15, width = 10)
-# hydropeaking intensity 
-source("BAET_Hydropeaking.R")
-source("HYOS_Hydropeaking.R")
-source("NZMS_Hydropeaking.R")
-source("GAMM_Hydropeaking.R")
-source("CHIR_Hydropeaking.R")
-
-hyos_hydropeaking <- read_csv("hyos_hydropeaking_results.csv")
-hyos_hydropeaking$Taxa <- rep("HYOS", times = length(hyos_hydropeaking$Hydropeak))
-chir_hydropeaking <- read_csv("chir_hydropeaking_results.csv")
-chir_hydropeaking$Taxa <- rep("CHIR", times = length(chir_hydropeaking$Hydropeak))
-baet_hydropeaking_results <- read_csv("baet_hydropeaking_results.csv")
-baet_hydropeaking_results$Taxa <- rep("BAET", times = length(baet_hydropeaking_results$Hydropeak))
-nzms_hydropeaking <- read_csv("nzms_hydropeaking_results.csv")
-nzms_hydropeaking$Taxa <- rep("NZMS", times = length(nzms_hydropeaking$Hydropeak))
-gamm_hydropeaking <- read_csv("gamm_hydropeaking_results.csv")
-gamm_hydropeaking$Taxa <- rep("GAMM", times = length(gamm_hydropeaking$Hydropeak))
-#Hydro_Abund <- as.data.frame(rbind(BAET_hyd_means, HYOS_hyd_means, NZMS_hyd_means, CHIR_hyd_means, GAMM_hyd_means))
-Hydro_Abund <- as.data.frame(rbind(baet_hydropeaking_results, hyos_hydropeaking, nzms_hydropeaking, chir_hydropeaking, gamm_hydropeaking))
-# combine all abundance data
-Hydro_Abund$Hydropeak <- as.numeric(Hydro_Abund$Hydropeak)
-
-# make sure in the correct format
-Hydro_Abund$MeanAbund <- as.numeric(Hydro_Abund$MeanAbund)
-Hydro_Abund$SdAbund <- as.numeric(Hydro_Abund$SdAbund)
-Hydro_Abund$Taxa <- as.factor(Hydro_Abund$Taxa)
-#plot
-hyd_abund <- ggplot(data = Hydro_Abund, aes(Hydropeak, log(MeanAbund), group = Taxa, color = Taxa))+ 
-  geom_line(linewidth = 1, alpha = 0.8)+
-  geom_ribbon(data = Hydro_Abund, aes(ymin = log(MeanAbund - SdAbund),
-                  ymax = log(MeanAbund + SdAbund), fill = Taxa),
-                         alpha = .15,
-                         color= "transparent",
-                         show.legend = F) +
-  scale_color_manual(name = "Taxon", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")), expression(paste(italic("Hydropsyche"), " spp.")), expression(italic("P. antipodarum"))), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-  scale_fill_manual(name = "Taxon", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-  geom_vline(aes(xintercept = 0.01), linetype = "dotted", 
-              linewidth=1)+
-  geom_vline(aes(xintercept = 0.17 ), linetype="dashed", 
-              linewidth=1)+
-  geom_vline(aes(xintercept = 0.55 ), linetype = "dotdash", 
-            linewidth=1)+
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 4), limit = c(0, 11))+
-  theme_bw()+
-  xlab("Hydropeaking Intensity")+
-  ylab("Log Abundance per Reach")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-# read in mean timestep biomass data
-# Hydro_TS_Biomass <- rbind(BAET_hyd_size, HYOS_hyd_size, NZMS_hyd_size, CHIR_hyd_size, GAMM_hyd_size)
+# # hydropeaking intensity 
+# source("BAET_Hydropeaking.R")
+# source("HYOS_Hydropeaking.R")
+# source("NZMS_Hydropeaking.R")
+# source("GAMM_Hydropeaking.R")
+# source("CHIR_Hydropeaking.R")
+# 
+# hyos_hydropeaking <- read_csv("hyos_hydropeaking_results.csv")
+# hyos_hydropeaking$Taxa <- rep("HYOS", times = length(hyos_hydropeaking$Hydropeak))
+# chir_hydropeaking <- read_csv("chir_hydropeaking_results.csv")
+# chir_hydropeaking$Taxa <- rep("CHIR", times = length(chir_hydropeaking$Hydropeak))
+# baet_hydropeaking_results <- read_csv("baet_hydropeaking_results.csv")
+# baet_hydropeaking_results$Taxa <- rep("BAET", times = length(baet_hydropeaking_results$Hydropeak))
+# nzms_hydropeaking <- read_csv("nzms_hydropeaking_results.csv")
+# nzms_hydropeaking$Taxa <- rep("NZMS", times = length(nzms_hydropeaking$Hydropeak))
+# gamm_hydropeaking <- read_csv("gamm_hydropeaking_results.csv")
+# gamm_hydropeaking$Taxa <- rep("GAMM", times = length(gamm_hydropeaking$Hydropeak))
+# #Hydro_Abund <- as.data.frame(rbind(BAET_hyd_means, HYOS_hyd_means, NZMS_hyd_means, CHIR_hyd_means, GAMM_hyd_means))
+# Hydro_Abund <- as.data.frame(rbind(baet_hydropeaking_results, hyos_hydropeaking, nzms_hydropeaking, chir_hydropeaking, gamm_hydropeaking))
+# # combine all abundance data
+# Hydro_Abund$Hydropeak <- as.numeric(Hydro_Abund$Hydropeak)
+# 
+# # make sure in the correct format
+# Hydro_Abund$MeanAbund <- as.numeric(Hydro_Abund$MeanAbund)
+# Hydro_Abund$SdAbund <- as.numeric(Hydro_Abund$SdAbund)
+# Hydro_Abund$Taxa <- as.factor(Hydro_Abund$Taxa)
+# #plot
+# hyd_abund <- ggplot(data = Hydro_Abund, aes(Hydropeak, log(MeanAbund), group = Taxa, color = Taxa))+ 
+#   geom_line(linewidth = 1, alpha = 0.8)+
+#   geom_ribbon(data = Hydro_Abund, aes(ymin = log(MeanAbund - SdAbund),
+#                   ymax = log(MeanAbund + SdAbund), fill = Taxa),
+#                          alpha = .15,
+#                          color= "transparent",
+#                          show.legend = F) +
+#   scale_color_manual(name = "Taxon", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")), expression(paste(italic("Hydropsyche"), " spp.")), expression(italic("P. antipodarum"))), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
+#   scale_fill_manual(name = "Taxon", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
+#   geom_vline(aes(xintercept = 0.01), linetype = "dotted", 
+#               linewidth=1)+
+#   geom_vline(aes(xintercept = 0.17 ), linetype="dashed", 
+#               linewidth=1)+
+#   geom_vline(aes(xintercept = 0.55 ), linetype = "dotdash", 
+#             linewidth=1)+
+#   scale_y_continuous(breaks = scales::pretty_breaks(n = 4), limit = c(0, 11))+
+#   theme_bw()+
+#   xlab("Hydropeaking Intensity")+
+#   ylab("Log Abundance per Reach")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
+# # read in mean timestep biomass data
+# # Hydro_TS_Biomass <- rbind(BAET_hyd_size, HYOS_hyd_size, NZMS_hyd_size, CHIR_hyd_size, GAMM_hyd_size)
+# # # make sure in correct format
+# # Hydro_TS_Biomass$hydropeak <- as.numeric(Hydro_TS_Biomass$hydropeak)
+# # Hydro_TS_Biomass$sizemeans <- as.numeric(Hydro_TS_Biomass$sizemeans)
+# # Hydro_TS_Biomass$sizesd <- as.numeric(Hydro_TS_Biomass$sizesd)
+# # Hydro_TS_Biomass$V4 <- as.factor(Hydro_TS_Biomass$V4)
+# #plot
+# hyd_ts <- ggplot(data = Hydro_Abund, aes(Hydropeak, log(SizeMean), group = Taxa, color = Taxa)) + 
+#   geom_ribbon(aes(ymin = log(SizeMean - SizeSd),
+#                     ymax = log(SizeMean + SizeSd), fill = Taxa),
+#                 color = "transparent",
+#                 alpha = .15,
+#                 show.legend = F) +
+#   geom_line(linewidth = 1, alpha = 0.8)+
+#   scale_color_manual(name = "Taxon", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")), expression(paste(italic("Hydropsyche"), " spp.")), expression(italic("P. antipodarum"))), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
+#   scale_fill_manual(name = "Taxon", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
+#   geom_vline(aes(xintercept = 0.01), linewidth = 1, linetype = "dotted")+
+#   geom_vline(aes(xintercept = 0.17 ), linewidth = 1, linetype="dashed")+ 
+#   geom_vline(aes(xintercept = 0.55 ), linewidth = 1, linetype = "dotdash")+
+#      theme_bw()+
+#     xlab("Hydropeaking Intensity")+
+#    ylab("Log Average Timestep Biomass (mg) per Reach")+
+#   scale_y_continuous(breaks = scales::pretty_breaks(n = 4), limit = c(0, 12))+
+#    theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#     axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+#                                    
+# # read in mean annual productivity/biomass data
+# #Hydro_Yr_Prod <- as.data.frame(rbind(BAET_hyd_yrprod, HYOS_hyd_yrprod, CHIR_hyd_yrprod, NZMS_hyd_yrprod, GAMM_hyd_yrprod))                                 
 # # make sure in correct format
-# Hydro_TS_Biomass$hydropeak <- as.numeric(Hydro_TS_Biomass$hydropeak)
-# Hydro_TS_Biomass$sizemeans <- as.numeric(Hydro_TS_Biomass$sizemeans)
-# Hydro_TS_Biomass$sizesd <- as.numeric(Hydro_TS_Biomass$sizesd)
-# Hydro_TS_Biomass$V4 <- as.factor(Hydro_TS_Biomass$V4)
-#plot
-hyd_ts <- ggplot(data = Hydro_Abund, aes(Hydropeak, log(SizeMean), group = Taxa, color = Taxa)) + 
-  geom_ribbon(aes(ymin = log(SizeMean - SizeSd),
-                    ymax = log(SizeMean + SizeSd), fill = Taxa),
-                color = "transparent",
-                alpha = .15,
-                show.legend = F) +
-  geom_line(linewidth = 1, alpha = 0.8)+
-  scale_color_manual(name = "Taxon", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")), expression(paste(italic("Hydropsyche"), " spp.")), expression(italic("P. antipodarum"))), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-  scale_fill_manual(name = "Taxon", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-  geom_vline(aes(xintercept = 0.01), linewidth = 1, linetype = "dotted")+
-  geom_vline(aes(xintercept = 0.17 ), linewidth = 1, linetype="dashed")+ 
-  geom_vline(aes(xintercept = 0.55 ), linewidth = 1, linetype = "dotdash")+
-     theme_bw()+
-    xlab("Hydropeaking Intensity")+
-   ylab("Log Average Timestep Biomass (mg) per Reach")+
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 4), limit = c(0, 12))+
-   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-    axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-                                   
-# read in mean annual productivity/biomass data
-#Hydro_Yr_Prod <- as.data.frame(rbind(BAET_hyd_yrprod, HYOS_hyd_yrprod, CHIR_hyd_yrprod, NZMS_hyd_yrprod, GAMM_hyd_yrprod))                                 
-# make sure in correct format
-
-# Hydro_Yr_Prod$hydropeak <- as.numeric(Hydro_Yr_Prod$hydropeak)
-# Hydro_Yr_Prod$S3Yrprod <- as.numeric(Hydro_Yr_Prod$S3Yrprod)
-# Hydro_Yr_Prod$V3 <- as.factor(Hydro_Yr_Prod$V3)
-
-Hyd_yr <- ggplot(data = Hydro_Abund, aes(Hydropeak, log(S3Yrprod), group = Taxa, color = Taxa)) + 
-  geom_ribbon(aes(ymin = log(S3Yrprod - S3Yrprodsd),
-                    ymax = log(S3Yrprod + S3Yrprodsd), fill = Taxa),
-                color = "transparent",
-                alpha = .15,
-                show.legend = F) +
-  geom_line(linewidth = 1, alpha = 0.8)+
-  scale_color_manual(name = "Taxon", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")), expression(paste(italic("Hydropsyche"), " spp.")), expression(italic("P. antipodarum"))), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-  scale_fill_manual(name = "Taxon", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-  geom_vline(aes(xintercept = 0.01), linewidth = 1, linetype = "dotted")+
-  geom_vline(aes(xintercept = 0.17 ), linewidth = 1, linetype="dashed")+ 
-  geom_vline(aes(xintercept = 0.55 ), linewidth = 1, linetype = "dotdash")+
-  theme_bw()+
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
-  xlab("Hydropeaking Intensity")+
-  ylab("Log Annual Emergent Biomass (mg) per Reach")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-Fig3.4 <- ggarrange(hyd_abund, hyd_ts, Hyd_yr,
-          labels = c("a", "b", "c"),
-          ncol = 3, nrow = 1, common.legend = T)
+# 
+# # Hydro_Yr_Prod$hydropeak <- as.numeric(Hydro_Yr_Prod$hydropeak)
+# # Hydro_Yr_Prod$S3Yrprod <- as.numeric(Hydro_Yr_Prod$S3Yrprod)
+# # Hydro_Yr_Prod$V3 <- as.factor(Hydro_Yr_Prod$V3)
+# 
+# Hyd_yr <- ggplot(data = Hydro_Abund, aes(Hydropeak, log(S3Yrprod), group = Taxa, color = Taxa)) + 
+#   geom_ribbon(aes(ymin = log(S3Yrprod - S3Yrprodsd),
+#                     ymax = log(S3Yrprod + S3Yrprodsd), fill = Taxa),
+#                 color = "transparent",
+#                 alpha = .15,
+#                 show.legend = F) +
+#   geom_line(linewidth = 1, alpha = 0.8)+
+#   scale_color_manual(name = "Taxon", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")), expression(paste(italic("Hydropsyche"), " spp.")), expression(italic("P. antipodarum"))), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
+#   scale_fill_manual(name = "Taxon", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
+#   geom_vline(aes(xintercept = 0.01), linewidth = 1, linetype = "dotted")+
+#   geom_vline(aes(xintercept = 0.17 ), linewidth = 1, linetype="dashed")+ 
+#   geom_vline(aes(xintercept = 0.55 ), linewidth = 1, linetype = "dotdash")+
+#   theme_bw()+
+#   scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
+#   xlab("Hydropeaking Intensity")+
+#   ylab("Log Annual Emergent Biomass (mg) per Reach")+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
+# Fig3.4 <- ggarrange(hyd_abund, hyd_ts, Hyd_yr,
+#           labels = c("a", "b", "c"),
+#           ncol = 3, nrow = 1, common.legend = T)
 
 #------------------------------------------------
 # read in Lees Ferry temp and discharge data from 2007 to 2023
@@ -177,211 +181,6 @@ chir_abund <- read_csv("CHIR_temp_abund.csv")
 gamm_abund <- read_csv("GAMM_temp_abund.csv")
 nzms_abund <- read_csv("NZMS_temp_abund.csv")
 # 
-# temp_abund <- as.data.frame(rbind(baet_abund, hyos_abund, chir_abund, gamm_abund, nzms_abund))
-# 
-# temp_ab <- ggplot(data = temp_abund, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   facet_wrap(.~taxa, scale= "free_y")
-# 
-# h_abund <- ggplot(data = hyos_abund, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                            "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# 
-# b_abund <- ggplot(data = baet_abund, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# c_abund <- ggplot(data = chir_abund, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# g_abund <- ggplot(data = gamm_abund, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# n_abund <-ggplot(data = nzms_abund, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#    xlab("Temperature")+
-#   ylab("Abundance")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_abund, h_abund, c_abund, g_abund, n_abund, regime)+
-# plot_layout(guides = 'collect')+
-#   plot_annotation(tag_levels = "a")
-# 
-# 
-# hyos_pc <- read_csv("HYOS_temp_percapita.csv")
-# baet_pc <- read_csv("BAET_temp_percapita.csv")
-# chir_pc <- read_csv("CHIR_temp_percapita.csv")
-# gamm_pc <- read_csv("GAMM_temp_percapita.csv")
-# nzms_pc <- read_csv("NZMS_temp_percapita.csv")
-# 
-# h_pc <- ggplot(data = hyos_pc, aes(x = as.factor(temperature), y = (as.numeric(percapita)), color = taxa, fill = taxa))+
-#   #geom_boxplot()+
-#   stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
-#   
-#   stat_summary(fun = mean, geom = "point", size = 2)+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   
-#   xlab("Temperature")+
-#   ylab("Adult Biomass (mg)")
-# b_pc <- ggplot(data = baet_pc, aes(x = as.factor(temperature), y = (as.numeric(percapita)), color = taxa, fill = taxa))+
-#   #geom_boxplot()+
-#   theme_bw()+
-#   stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
-#   
-#   stat_summary(fun = mean, geom = "point", size = 2)+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Adult Biomass (mg)")
-# c_pc <- ggplot(data = chir_pc, aes(x = as.factor(temperature), y = (as.numeric(percapita)), color = taxa, fill = taxa))+
-#   #geom_boxplot()+
-#   stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
-#   
-#   stat_summary(fun = mean, geom = "point", size = 2)+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   
-#   xlab("Temperature")+
-#   ylab("Adult Biomass (mg)")
-# g_pc <- ggplot(data = gamm_pc, aes(x = as.factor(temperature), y = (as.numeric(percapita)), color = taxa, fill = taxa))+
-#   #geom_boxplot()+
-#   stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
-#   stat_summary(fun = mean, geom = "point", size = 2)+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Proportion in mature size-classes")
-# n_pc <-ggplot(data = nzms_pc, aes(x = as.factor(temperature), y = (as.numeric(percapita)), color = taxa, fill = taxa))+
-#   #geom_boxplot()+
-#   stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
-#   
-#   stat_summary(fun = mean, geom = "point", size = 2)+
-#   xlab("Temperature")+
-#   ylab("Proportion in mature size-classes")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_pc, h_pc, c_pc, g_pc, n_pc, regime)+
-#   plot_layout(guides = 'collect')+
-#   plot_annotation(tag_levels = 'a')
-# 
-# 
-# hyos_biomass <- read_csv("HYOS_temp_biomass.csv")
-# baet_biomass <- read_csv("BAET_temp_biomass.csv")
-# chir_biomass <- read_csv("CHIR_temp_biomass.csv")
-# gamm_biomass <- read_csv("GAMM_temp_biomass.csv")
-# nzms_biomass <- read_csv("NZMS_temp_biomass.csv")
-# # 
-# # temp_biomass <- as.data.frame(rbind(baet_biomass, hyos_biomass, chir_biomass, gamm_biomass, nzms_biomass))
-# # 
-# # tempbio <- ggplot(data = temp_biomass, aes(x = as.factor(temperature), y = (as.numeric(biomass)), fill = taxa))+
-# #   geom_boxplot()+
-# #   facet_wrap(.~taxa, scale = "free_y")
-#  
-# h_biomass <- ggplot(data = hyos_biomass, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# b_biomass <- ggplot(data = baet_biomass, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# c_biomass <- ggplot(data = chir_biomass, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color  = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# g_biomass <- ggplot(data = gamm_biomass, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# n_biomass <-ggplot(data = nzms_biomass, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_biomass, h_biomass, c_biomass, g_biomass, n_biomass, regime)+
-#   plot_layout(guides = 'collect')+
-#   plot_annotation(tag_levels = "a")
-
 #----------------
 # with spike
 
@@ -418,944 +217,6 @@ spikeregime <- ggplot(data = temperature.regime, aes(x = as.Date(dts), y = Tempe
   xlab("")+
   theme(text = element_text(size = 11), axis.text.x = element_text(hjust = 1, size = 10, angle = 0), 
         axis.text.y = element_text(size = 10), legend.key = element_rect(fill = "transparent"))
-
-# hyos_abund_sp <- read_csv("HYOS_temp_abund_spike.csv")
-# baet_abund_sp <- read_csv("BAET_temp_abund_spike.csv")
-# chir_abund_sp <- read_csv("CHIR_temp_abund_spike.csv")
-# gamm_abund_sp <- read_csv("GAMM_temp_abund_spike.csv")
-# nzms_abund_sp <- read_csv("NZMS_temp_abund_spike.csv")
-# 
-# # temp_abund <- as.data.frame(rbind(baet_abund, hyos_abund, chir_abund, gamm_abund, nzms_abund))
-# # 
-# # temp_ab <- ggplot(data = temp_abund, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-# #   geom_boxplot()+
-# #   facet_wrap(.~taxa, scale= "free_y")
-# # 
-# h_abund_sp <- ggplot(data = hyos_abund_sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# b_abund_sp <- ggplot(data = baet_abund_sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# c_abund_sp <- ggplot(data = chir_abund_sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# g_abund_sp <- ggplot(data = gamm_abund_sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# n_abund_sp <-ggplot(data = nzms_abund_sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_abund_sp, h_abund_sp, c_abund_sp, g_abund_sp, n_abund_sp, spikeregime)+
-#   plot_layout(guides = 'collect')+
-#   plot_annotation(tag_levels = "a")
-# 
-# hyos_pc_sp <- read_csv("HYOS_temp_percapita_spike.csv")
-# baet_pc_sp <- read_csv("BAET_temp_percapita_spike.csv")
-# chir_pc_sp <- read_csv("CHIR_temp_percapita_spike.csv")
-# gamm_pc_sp <- read_csv("GAMM_temp_percapita_spike.csv")
-# nzms_pc_sp <- read_csv("NZMS_temp_percapita_spike.csv")
-# 
-# h_pc_sp <- ggplot(data = hyos_pc_sp, aes(x = as.factor(temperature), y = (as.numeric(percapita)), color = taxa, fill = taxa))+
-#   #geom_boxplot()+
-#   stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
-#   stat_summary(fun = mean, geom = "point", size = 2)+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike) ")+
-#   ylab("Individual Biomass (mg)")
-# b_pc_sp <- ggplot(data = baet_pc_sp, aes(x = as.factor(temperature), y = (as.numeric(percapita)), color = taxa, fill = taxa))+
-#   #geom_boxplot()+
-#   stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
-#   stat_summary(fun = mean, geom = "point", size = 2)+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike) ")+
-#   ylab("Individual Biomass (mg)")
-# c_pc_sp <- ggplot(data = chir_pc_sp, aes(x = as.factor(temperature), y = (as.numeric(percapita)), color = taxa, fill = taxa))+
-#   #geom_boxplot()+
-#   stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
-#   stat_summary(fun = mean, geom = "point", size = 2)+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   xlab("Temperature (with spike)")+
-#   ylab("Individual Biomass (mg)")
-# g_pc_sp <- ggplot(data = gamm_pc_sp, aes(x = as.factor(temperature), y = (as.numeric(percapita)), color = taxa, fill = taxa))+
-#   #geom_boxplot()+
-#   stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
-#   stat_summary(fun = mean, geom = "point", size = 2)+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Individual Biomass (mg)")
-# n_pc_sp <-ggplot(data = nzms_pc_sp, aes(x = as.factor(temperature), y = (as.numeric(percapita)), color = taxa, fill = taxa))+
-#   #geom_boxplot()+
-#   stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
-#   stat_summary(fun = mean, geom = "point", size = 2)+
-#   xlab("Temperature (with spike)")+
-#   ylab("Individual Biomass (mg)")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_pc_sp, h_pc_sp, c_pc_sp, g_pc_sp, n_pc_sp, spikeregime)+
-#   plot_layout(guides = 'collect')+
-#   plot_annotation(tag_levels = "a")
-# 
-# 
-# 
-# 
-# 
-# hyos_biomass_sp <- read_csv("HYOS_temp_biomass_spike.csv")
-# baet_biomass_sp <- read_csv("BAET_temp_biomass_spike.csv")
-# chir_biomass_sp <- read_csv("CHIR_temp_biomass_spike.csv")
-# gamm_biomass_sp <- read_csv("GAMM_temp_biomass_spike.csv")
-# nzms_biomass_sp <- read_csv("NZMS_temp_biomass_spike.csv")
-# # 
-# # temp_biomass <- as.data.frame(rbind(baet_biomass, hyos_biomass, chir_biomass, gamm_biomass, nzms_biomass))
-# # 
-# # tempbio <- ggplot(data = temp_biomass, aes(x = as.factor(temperature), y = (as.numeric(biomass)), fill = taxa))+
-# #   geom_boxplot()+
-# #   facet_wrap(.~taxa, scale = "free_y")
-# 
-# h_biomass_sp <- ggplot(data = hyos_biomass_sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# b_biomass_sp <- ggplot(data = baet_biomass_sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# c_biomass_sp <- ggplot(data = chir_biomass_sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color  = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# g_biomass_sp <- ggplot(data = gamm_biomass_sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   scale_color_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# n_biomass_sp <-ggplot(data = nzms_biomass_sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_biomass_sp, h_biomass_sp, c_biomass_sp, g_biomass_sp, n_biomass_sp, spikeregime)+
-#   plot_layout(guides = 'collect')+
-#   plot_annotation(tag_levels = "a")
-# #-----------------------------------------
-# #
-# hyos_abund_t.h <- read_csv("HYOS_temp_hyd_abund.csv")
-# baet_abund_t.h <- read_csv("BAET_temp_hyd_abund.csv")
-# chir_abund_t.h <- read_csv("CHIR_temp_hyd_abund.csv")
-# gamm_abund_t.h <- read_csv("GAMM_temp_hyd_abund.csv")
-# nzms_abund_t.h <- read_csv("NZMS_temp_hyd_abund.csv")
-# # 
-# # temp_abund <- as.data.frame(rbind(baet_abund, hyos_abund, chir_abund, gamm_abund, nzms_abund))
-# # 
-# # temp_ab <- ggplot(data = temp_abund, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-# #   geom_boxplot()+
-# #   facet_wrap(.~taxa, scale= "free_y")
-# # 
-# h_abund_t.h <- ggplot(data = hyos_abund_t.h, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# b_abund_t.h <- ggplot(data = baet_abund_t.h, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# c_abund_t.h <- ggplot(data = chir_abund_t.h, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# g_abund_t.h <- ggplot(data = gamm_abund_t.h, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# n_abund_t.h <-ggplot(data = nzms_abund_t.h, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature")+
-#   ylab("Abundance")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# wrap_plots(b_abund_t.h, h_abund_t.h, c_abund_t.h, g_abund_t.h, n_abund_t.h, regime)+
-#   plot_layout(guides = 'collect')+
-#   plot_annotation(tag_levels = "a")
-# 
-# hyos_biomass_t.h <- read_csv("HYOS_temp_hyd_biomass.csv")
-# baet_biomass_t.h <- read_csv("BAET_temp_hyd_biomass.csv")
-# chir_biomass_t.h <- read_csv("CHIR_temp_hyd_biomass.csv")
-# gamm_biomass_t.h <- read_csv("GAMM_temp_hyd_biomass.csv")
-# nzms_biomass_t.h <- read_csv("NZMS_temp_hyd_biomass.csv")
-# # 
-# # temp_abund <- as.data.frame(rbind(baet_abund, hyos_abund, chir_abund, gamm_abund, nzms_abund))
-# # 
-# # temp_ab <- ggplot(data = temp_abund, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-# #   geom_boxplot()+
-# #   facet_wrap(.~taxa, scale= "free_y")
-# # 
-# h_biomass_t.h <- ggplot(data = hyos_biomass_t.h, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# b_biomass_t.h <- ggplot(data = baet_biomass_t.h, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# c_biomass_t.h <- ggplot(data = chir_biomass_t.h, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# g_biomass_t.h <- ggplot(data = gamm_biomass_t.h, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# n_biomass_t.h <-ggplot(data = nzms_biomass_t.h, aes(x = as.factor(temperature), y = (as.numeric(biomass)),color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_biomass_t.h, h_biomass_t.h, c_biomass_t.h, g_biomass_t.h, n_biomass_t.h, regime)+
-#   plot_layout(guides = 'collect')+
-#   plot_annotation(tag_levels = "a")
-# 
-# hyos_abund_t.h_spike <- read_csv("HYOS_temp_hyd_abund_spike.csv")
-# baet_abund_t.h_spike <- read_csv("BAET_temp_hyd_abund_spike.csv")
-# chir_abund_t.h_spike <- read_csv("CHIR_temp_hyd_abund_spike.csv")
-# gamm_abund_t.h_spike <- read_csv("GAMM_temp_hyd_abund_spike.csv")
-# nzms_abund_t.h_spike <- read_csv("NZMS_temp_hyd_abund_spike.csv")
-# # 
-# # temp_abund <- as.data.frame(rbind(baet_abund, hyos_abund, chir_abund, gamm_abund, nzms_abund))
-# # 
-# # temp_ab <- ggplot(data = temp_abund, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-# #   geom_boxplot()+
-# #   facet_wrap(.~taxa, scale= "free_y")
-# # 
-# h_abund_t.h_spike <- ggplot(data = hyos_abund_t.h_spike, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# b_abund_t.h_spike <- ggplot(data = baet_abund_t.h_spike, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# c_abund_t.h_spike <- ggplot(data = chir_abund_t.h_spike, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# g_abund_t.h_spike <- ggplot(data = gamm_abund_t.h_spike, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# n_abund_t.h_spike <-ggplot(data = nzms_abund_t.h_spike, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")+
-#   theme_bw()+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_abund_t.h_spike, h_abund_t.h_spike, c_abund_t.h_spike, g_abund_t.h_spike, n_abund_t.h_spike, spikeregime)+
-#   plot_layout(guides = 'collect')
-# #results are the same as TempAbundSpike except that Baetidae is 0 and there is less variation in Chir baseline values
-# 
-# hyos_biomass_t.h_spike <- read_csv("HYOS_temp_hyd_biomass_spike.csv")
-# baet_biomass_t.h_spike <- read_csv("BAET_temp_hyd_biomass_spike.csv")
-# chir_biomass_t.h_spike <- read_csv("CHIR_temp_hyd_biomass_spike.csv")
-# gamm_biomass_t.h_spike <- read_csv("GAMM_temp_hyd_biomass_spike.csv")
-# nzms_biomass_t.h_spike <- read_csv("NZMS_temp_hyd_biomass_spike.csv")
-# # 
-# # temp_abund <- as.data.frame(rbind(baet_abund, hyos_abund, chir_abund, gamm_abund, nzms_abund))
-# # 
-# # temp_ab <- ggplot(data = temp_abund, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-# #   geom_boxplot()+
-# #   facet_wrap(.~taxa, scale= "free_y")
-# # 
-# h_biomass_t.h.sp <- ggplot(data = hyos_biomass_t.h_spike, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# b_biomass_t.h.sp <- ggplot(data = baet_biomass_t.h_spike, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# c_biomass_t.h.sp <- ggplot(data = chir_biomass_t.h_spike, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# g_biomass_t.h.sp <- ggplot(data = gamm_biomass_t.h_spike, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# n_biomass_t.h.sp <-ggplot(data = nzms_biomass_t.h_spike, aes(x = as.factor(temperature), y = (as.numeric(biomass)),color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_biomass_t.h.sp, h_biomass_t.h.sp, c_biomass_t.h.sp, g_biomass_t.h.sp, n_biomass_t.h.sp, spikeregime)+
-#   plot_layout(guides = 'collect')
-# 
-# # also looks similar to temp biomass spike, minus chir which seems to have some happy medium between tempbiomassspike and tempbiomasshyd - optimum with lowe values for highest temp
-# 
-# hyos_abund_HFE <- read_csv("HYOS_temp_abund_HFE.csv")
-# baet_abund_HFE <- read_csv("BAET_temp_abund_HFE.csv")
-# chir_abund_HFE <- read_csv("CHIR_temp_abund_HFE.csv")
-# gamm_abund_HFE <- read_csv("GAMM_temp_abund_HFE.csv")
-# nzms_abund_HFE <- read_csv("NZMS_temp_abund_HFE.csv")
-# 
-# 
-# h_abund_hfe <- ggplot(data = hyos_abund_HFE, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# b_abund_hfe <- ggplot(data = baet_abund_HFE, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# c_abund_hfe <- ggplot(data = chir_abund_HFE, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# g_abund_hfe <- ggplot(data = gamm_abund_HFE, aes(x = as.factor(temperature), y = (as.numeric(abundance)),  fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# n_abund_hfe <-ggplot(data = nzms_abund_HFE, aes(x = as.factor(temperature), y = (as.numeric(abundance)),fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature")+
-#   ylab("Abundance")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_abund_hfe, h_abund_hfe, c_abund_hfe, g_abund_hfe, n_abund_hfe, regime)+
-#   plot_layout(guides = 'collect')
-# 
-# 
-# hyos_biomass_HFE <- read_csv("HYOS_temp_biomass_HFE.csv")
-# baet_biomass_HFE <- read_csv("BAET_temp_biomass_HFE.csv")
-# chir_biomass_HFE <- read_csv("CHIR_temp_biomass_HFE.csv")
-# gamm_biomass_HFE <- read_csv("GAMM_temp_biomass_HFE.csv")
-# nzms_biomass_HFE <- read_csv("NZMS_temp_biomass_HFE.csv")
-# 
-# h_biomass_hfe <- ggplot(data = hyos_biomass_HFE, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# 
-# b_biomass_hfe <- ggplot(data = baet_biomass_HFE, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# 
-# c_biomass_hfe <- ggplot(data = chir_biomass_HFE, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# g_biomass_hfe <- ggplot(data = gamm_biomass_HFE, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# n_biomass_hfe <-ggplot(data = nzms_biomass_HFE, aes(x = as.factor(temperature), y = (as.numeric(biomass)),color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_biomass_hfe, h_biomass_hfe, c_biomass_hfe, g_biomass_hfe, n_biomass_hfe, regime)+
-#   plot_layout(guides = 'collect')
-# 
-# 
-# 
-# hyos_abund_HFE_sp <- read_csv("HYOS_temp_abund_HFE_spike.csv")
-# baet_abund_HFE_sp <- read_csv("BAET_temp_abund_HFE_spike.csv")
-# chir_abund_HFE_sp <- read_csv("CHIR_temp_abund_HFE_spike.csv")
-# gamm_abund_HFE_sp <- read_csv("GAMM_temp_abund_HFE_spike.csv")
-# nzms_abund_HFE_sp<- read_csv("NZMS_temp_abund_HFE_spike.csv")
-# 
-# h_abund_hfe.sp <- ggplot(data = hyos_abund_HFE_sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# b_abund_hfe.sp <- ggplot(data = baet_abund_HFE_sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# c_abund_hfe.sp <- ggplot(data = chir_abund_HFE_sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# g_abund_hfe.sp <- ggplot(data = gamm_abund_HFE_sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)),  fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# n_abund_hfe.sp <-ggplot(data = nzms_abund_HFE_sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)),fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_abund_hfe.sp, h_abund_hfe.sp, c_abund_hfe.sp, g_abund_hfe.sp, n_abund_hfe.sp, spikeregime)+
-#   plot_layout(guides = 'collect')
-# 
-# hyos_biomass_HFE.sp <- read_csv("HYOS_temp_biomass_HFE_spike.csv")
-# baet_biomass_HFE.sp <- read_csv("BAET_temp_biomass_HFE_spike.csv")
-# chir_biomass_HFE.sp <- read_csv("CHIR_temp_biomass_HFE_spike.csv")
-# gamm_biomass_HFE.sp <- read_csv("GAMM_temp_biomass_HFE_spike.csv")
-# nzms_biomass_HFE.sp <- read_csv("NZMS_temp_biomass_HFE_spike.csv")
-# 
-# 
-# h_biomass_hfe.sp <- ggplot(data = hyos_biomass_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# 
-# b_biomass_hfe.sp <- ggplot(data = baet_biomass_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass")
-# 
-# c_biomass_hfe.sp <- ggplot(data = chir_biomass_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# g_biomass_hfe.sp <- ggplot(data = gamm_biomass_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# n_biomass_hfe.sp <-ggplot(data = nzms_biomass_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)),color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_biomass_hfe.sp, h_biomass_hfe.sp, c_biomass_hfe.sp, g_biomass_hfe.sp, n_biomass_hfe.sp, spikeregime)+
-#   plot_layout(guides = 'collect')
-# 
-# hyos_abund_hyd_HFE <- read_csv("HYOS_temp_hyd_abund_HFE.csv")
-# baet_abund_hyd_HFE <- read_csv("BAET_temp_hyd_abund_HFE.csv")
-# chir_abund_hyd_HFE <- read_csv("CHIR_temp_hyd_abund_HFE.csv")
-# gamm_abund_hyd_HFE <- read_csv("GAMM_temp_hyd_abund_HFE.csv")
-# nzms_abund_hyd_HFE <- read_csv("NZMS_temp_hyd_abund_HFE.csv")
-# 
-# 
-# h_abund_hyd_hfe <- ggplot(data = hyos_abund_hyd_HFE, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# b_abund_hyd_hfe <- ggplot(data = baet_abund_hyd_HFE, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# c_abund_hyd_hfe <- ggplot(data = chir_abund_hyd_HFE, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# g_abund_hyd_hfe <- ggplot(data = gamm_abund_hyd_HFE, aes(x = as.factor(temperature), y = (as.numeric(abundance)),  fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Abundance")
-# n_abund_hyd_hfe <-ggplot(data = nzms_abund_hyd_HFE, aes(x = as.factor(temperature), y = (as.numeric(abundance)),fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature")+
-#   ylab("Abundance")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_abund_hyd_hfe, h_abund_hyd_hfe, c_abund_hyd_hfe, g_abund_hyd_hfe, n_abund_hyd_hfe, regime)+
-#   plot_layout(guides = 'collect')
-# 
-# 
-# hyos_biomass_hyd_HFE <- read_csv("HYOS_temp_hyd_biomass_HFE.csv")
-# baet_biomass_hyd_HFE <- read_csv("BAET_temp_hyd_biomass_HFE.csv")
-# chir_biomass_hyd_HFE <- read_csv("CHIR_temp_hyd_biomass_HFE.csv")
-# gamm_biomass_hyd_HFE <- read_csv("GAMM_temp_hyd_biomass_HFE.csv")
-# nzms_biomass_hyd_HFE <- read_csv("NZMS_temp_hyd_biomass_HFE.csv")
-# 
-# h_biomass_hyd_hfe <- ggplot(data = hyos_biomass_hyd_HFE, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# 
-# b_biomass_hyd_hfe <- ggplot(data = baet_biomass_hyd_HFE, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# 
-# c_biomass_hyd_hfe <- ggplot(data = chir_biomass_hyd_HFE, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")
-# g_biomass_hyd_hfe <- ggplot(data = gamm_biomass_hyd_HFE, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature ")+
-#   ylab("Biomass (mg)")
-# n_biomass_hyd_hfe <-ggplot(data = nzms_biomass_hyd_HFE, aes(x = as.factor(temperature), y = (as.numeric(biomass)),color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature")+
-#   ylab("Biomass (mg)")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_biomass_hyd_hfe, h_biomass_hyd_hfe, c_biomass_hyd_hfe, g_biomass_hyd_hfe, n_biomass_hyd_hfe, regime)+
-#   plot_layout(guides = 'collect')
-# 
-# 
-# hyos_abund_hyd_HFE.sp <- read_csv("HYOS_temp_hyd_abund_HFE_spike.csv")
-# baet_abund_hyd_HFE.sp <- read_csv("BAET_temp_hyd_abund_HFE_spike.csv")
-# chir_abund_hyd_HFE.sp <- read_csv("CHIR_temp_hyd_abund_HFE_spike.csv")
-# gamm_abund_hyd_HFE.sp <- read_csv("GAMM_temp_hyd_abund_HFE_spike.csv")
-# nzms_abund_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_abund_HFE_spike.csv")
-# 
-# 
-# h_abund_hyd_hfe.sp <- ggplot(data = hyos_abund_hyd_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# b_abund_hyd_hfe.sp <- ggplot(data = baet_abund_hyd_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# c_abund_hyd_hfe.sp <- ggplot(data = chir_abund_hyd_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)), fill = taxa))+
-#   geom_boxplot()+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# g_abund_hyd_hfe.sp <- ggplot(data = gamm_abund_hyd_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)),  fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")
-# n_abund_hyd_hfe.sp <-ggplot(data = nzms_abund_hyd_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(abundance)),fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature (with spike)")+
-#   ylab("Abundance")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_abund_hyd_hfe.sp, h_abund_hyd_hfe.sp, c_abund_hyd_hfe.sp, g_abund_hyd_hfe.sp, n_abund_hyd_hfe.sp, spikeregime)+
-#   plot_layout(guides = 'collect')
-# 
-# 
-# hyos_biomass_hyd_HFE.sp <- read_csv("HYOS_temp_hyd_biomass_HFE_spike.csv")
-# baet_biomass_hyd_HFE.sp <- read_csv("BAET_temp_hyd_biomass_HFE_spike.csv")
-# chir_biomass_hyd_HFE.sp <- read_csv("CHIR_temp_hyd_biomass_HFE_spike.csv")
-# gamm_biomass_hyd_HFE.sp <- read_csv("GAMM_temp_hyd_biomass_HFE_spike.csv")
-# nzms_biomass_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_biomass_HFE_spike.csv")
-# 
-# h_biomass_hyd_hfe.sp <- ggplot(data = hyos_biomass_hyd_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Hydropsyche spp.","Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#AA3377","#66CCEE", "#228833", "#CCBB44", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# 
-# b_biomass_hyd_hfe.sp <- ggplot(data = baet_biomass_hyd_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c("Baetidae spp.", "Chironomidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#66CCEE", "#228833", "#CCBB44", "#AA3377", "#4477AA"))+
-#   xlab("Temperature(with spike)")+
-#   ylab("Biomass (mg)")
-# 
-# c_biomass_hyd_hfe.sp <- ggplot(data = chir_biomass_hyd_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   scale_color_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "Chironomidae spp.","Baetidae spp.", "G. lacustris", "Hydropsyche spp.", "P. antipodarum"), values=c("#228833","#66CCEE", "#CCBB44", "#AA3377", "#4477AA"))+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# g_biomass_hyd_hfe.sp <- ggplot(data = gamm_biomass_hyd_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)), color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   scale_fill_manual(name = " ", labels=c( "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#CCBB44", "#228833","#66CCEE", "#AA3377", "#4477AA"))+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")
-# n_biomass_hyd_hfe.sp <-ggplot(data = nzms_biomass_hyd_HFE.sp, aes(x = as.factor(temperature), y = (as.numeric(biomass)),color = taxa, fill = taxa))+
-#   geom_boxplot()+
-#   xlab("Temperature (with spike)")+
-#   ylab("Biomass (mg)")+
-#   theme_bw()+
-#   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-#                             "1.2" = "+20%", "1.5" = "+50%"))+
-#   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))+
-#   scale_color_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))+
-#   scale_fill_manual(name = " ", labels=c("P. antipodarum", "G. lacustris", "Chironomidae spp.","Baetidae spp.", "Hydropsyche spp.", "P. antipodarum"), values=c("#4477AA","#CCBB44", "#228833","#66CCEE", "#AA3377"))
-# 
-# wrap_plots(b_biomass_hyd_hfe.sp, h_biomass_hyd_hfe.sp, c_biomass_hyd_hfe.sp, g_biomass_hyd_hfe.sp, n_biomass_hyd_hfe.sp, spikeregime)+
-#   plot_layout(guides = 'collect')
-# 
-
 
 ########################
 source("GAMMSurvivorship.R")
@@ -1456,49 +317,33 @@ hyos_pa_hfe_sp <- read_csv("HYOS_temp_propadult_HFE_spike.csv")
 
 # abundance
 hyos_abund_combo <- bind_rows(
-  hyos_abund %>% mutate(source = "Temperature"),
-  hyos_abund_sp %>% mutate(source = "Temperature & spike"),
-  hyos_abund_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  hyos_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
-  hyos_abund_HFE %>% mutate(source = "Temperature & HFE"),
-  hyos_abund_HFE_sp %>% mutate(source = "Temperature & spike & HFE"),
-  hyos_abund_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
-  hyos_abund_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+  hyos_abund %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
+  hyos_abund_sp %>% mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
+  hyos_abund_t.h %>% mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
+  hyos_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
+  hyos_abund_HFE %>% mutate(source = "Temperature & HFE",  temp_spike = 0, hydropeaking = 0, HFE = 1),
+  hyos_abund_HFE_sp %>% mutate(source = "Temperature & spike & HFE",  temp_spike = 1, hydropeaking = 0, HFE = 1),
+  hyos_abund_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE",  temp_spike = 0, hydropeaking = 1, HFE = 1),
+  hyos_abund_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE",  temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
 # biomass
 hyos_biomass_combo <- bind_rows(
-  hyos_biomass %>% mutate(source = "Temperature"),
-  hyos_biomass_sp %>% mutate(source = "Temperature & spike"),
-  hyos_biomass_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  hyos_biomass_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
-  hyos_biomass_HFE %>% mutate(source = "Temperature & HFE"),
-  hyos_biomass_HFE_sp %>% mutate(source = "Temperature & spike & HFE"),
-  hyos_biomass_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
-  hyos_biomass_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+  hyos_biomass %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
+  hyos_biomass_sp %>% mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
+  hyos_biomass_t.h %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
+  hyos_biomass_t.h_spike %>% mutate(source = "Temperature & HFE",  temp_spike = 1, hydropeaking = 1, HFE = 0),
+  hyos_biomass_HFE %>% mutate(source = "Temperature & spike & HFE",  temp_spike = 0, hydropeaking = 0, HFE = 1),
+  hyos_biomass_HFE_sp %>% mutate(source = "Temperature & hydropeaking & HFE",  temp_spike =1, hydropeaking = 0, HFE = 1),
+  hyos_biomass_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE",  temp_spike = 0, hydropeaking = 1, HFE = 1),
+  hyos_biomass_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE",  temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
 hyos_pc_combo <- bind_rows(
   hyos_pc %>% mutate(source = "Temperature"),
   hyos_pc_sp %>% mutate(source = "Temperature & spike"),
-  # hyos_pc_hfe %>% mutate(source = "Temperature & HFE"),
-  # hyos_pc_hfe_sp %>% mutate(source = "Temperature & spike & HFE")
 )
 
-# hyos_pa_combo <- bind_rows(
-#   hyos_pa %>% mutate(source = "Temperature"),
-#   hyos_pa_sp %>% mutate(source = "Temperature & spike"),
-#   hyos_pa_hfe %>% mutate(source = "Temperature & HFE"),
-#   hyos_pa_hfe_sp %>% mutate(source = "Temperature & spike & HFE")
-# )
-#c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999")
-#"#440154FF" "#46337EFF" "#365C8DFF" "#277F8EFF" "#1FA187FF" "#4AC16DFF" "#9FDA3AFF","#FDE725FF"
-
-# "#A6CEE3","#1F78B4",
-# "#B2DF8A","#33A02C",
-# "#FDBF6F","#FF7F00", 
-# "#CAB2D6","#6A3D9A")
-# percapita
 
 paired.colors <- c("#56B4E9", "#365C8DFF",
                    "#FDE725FF","#E69F00", 
@@ -1600,6 +445,147 @@ h.pc <- ggplot(data = hyos_pc_combo, aes(x = as.factor(temperature), y = percapi
   theme(text = element_text(size = 11), axis.text.x = element_text(hjust = 1, angle=45, size = 10), 
         axis.text.y = element_text(size = 11), legend.key = element_rect(fill = "transparent"))
 
+
+# Fit linear models with ALL interactions (full factorial design)
+hyosmod_biomass <- lm(biomass ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = hyos_biomass_combo)
+hyosmod_abund <- lm(abundance ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = hyos_abund_combo)
+sum_biomass_lm <- lm.beta(hyosmod_biomass)
+sum_abund_lm <- lm.beta(hyosmod_abund)
+# Extract the standardized coefficients
+#lm.beta stores the standardized coefficients in the model object as 'standardized.coefficients'
+std_coefs.b <- sum_biomass_lm$standardized.coefficients
+std_coefs.a <- sum_abund_lm$standardized.coefficients
+# Remove the intercept (if present) so we only have the effects and interactions
+std_coefs.b <- std_coefs.b[-1]
+std_coefs.a <- std_coefs.a[-1]
+
+# # Create a data frame with effect names and their beta values
+coef_df.b <- data.frame(
+  Stressor = names(std_coefs.b),
+  Beta = std_coefs.b,
+  AbsBeta = abs(std_coefs.b)  # for sorting purposes
+)
+
+
+coef_df.a <- data.frame(
+  Stressor = names(std_coefs.a),
+  Beta = std_coefs.a,
+  AbsBeta = abs(std_coefs.a)  # for sorting purposes
+)
+# Sort the data frame by absolute beta values in decreasing order
+coef_df_sorted.hyos.b <- coef_df.b %>% arrange(desc(AbsBeta))
+coef_df_sorted.hyos.a <- coef_df.a %>% arrange(desc(AbsBeta))
+
+# Define effect size categories
+coef_df_sorted.hyos.b$Effect_Size <- cut(abs(coef_df_sorted.hyos.b$Beta),
+                                  breaks = c(0, 0.1, 0.3, 0.5, Inf),
+                                  labels = c("Small", "Medium", "Large", "Very Large"),
+                                  right = FALSE)
+
+# Define effect size categories
+coef_df_sorted.hyos.a$Effect_Size <- cut(abs(coef_df_sorted.hyos.a$Beta),
+                                    breaks = c(0, 0.1, 0.3, 0.5, Inf),
+                                    labels = c("Small", "Medium", "Large", "Very Large"),
+                                    right = FALSE)
+
+# Now plot the sorted coefficients using ggplot2
+# ggplot(coef_df_sorted.hyos.b, aes(x = reorder(Effect, Beta), y = Beta, fill = Effect_Size)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip() +  # Flip for better readability
+#   labs(title = "Standardized Beta Coefficients",
+#        x = "Predictor",
+#        y = "Standardized Beta",
+#        fill = "Effect Size") +
+#   scale_fill_manual(values = c("Small" = "blue", "Medium" = "orange", "Large" = "red", "Very Large" = "darkred")) +
+#   theme_minimal()
+
+# Now plot the sorted coefficients using ggplot2
+# ggplot(coef_df_sorted.hyos.a, aes(x = reorder(Effect, Beta), y = Beta, fill = Effect_Size)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip() +  # flips the axes so the labels are easier to read
+#   labs(
+#     title = "Standardized Beta Coefficients for Abundance",
+#     x = "Effect",
+#     y = "Standardized Beta Coefficient"
+#   ) +
+#   scale_fill_manual(values = c("Small" = "blue", "Medium" = "orange", "Large" = "red", "Very Large" = "darkred")) +
+#   theme_bw()
+
+
+# because if categorical, fit manova
+hyosmod_biomass <- aov(biomass ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = hyos_biomass_combo)
+hyosmod_abund <- aov(abundance ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = hyos_abund_combo)
+
+# Extract partial eta squared values
+eta_sq_df.hyos.b <- eta_squared(hyosmod_biomass, partial = TRUE) %>%
+  as.data.frame() %>%
+  arrange(desc(Eta2_partial))  # Order from largest to smallest effect
+
+eta_sq_df.hyos.a <- eta_squared(hyosmod_abund, partial = TRUE) %>%
+  as.data.frame() %>%
+  arrange(desc(Eta2_partial))  # Order from largest to smallest effect
+# Create the bar plot
+ggplot(eta_sq_df.hyos.b, aes(x = reorder(Parameter, Eta2_partial), y = Eta2_partial, fill = Eta2_partial)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  # Flip for better readability
+  scale_fill_viridis_c() +  # Color scale
+  labs(title = "Hydropsyche spp.",
+       x = "Stressor(s)",
+       y = "Partial Eta Squared") +
+  theme_bw()
+
+ggplot(eta_sq_df.hyos.a, aes(x = reorder(Parameter, Eta2_partial), y = Eta2_partial, fill = Eta2_partial)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  # Flip for better readability
+  scale_fill_viridis_c() +  # Color scale
+  labs(title = "Hydropsyche spp.",
+       x = "Stressor(s)",
+       y = "Partial Eta Squared") +
+  theme_bw()
+
+
+# Merge Dataframes
+results_df.hyos.b <- left_join(eta_sq_df.hyos.b, coef_df_sorted.hyos.b, by = c("Parameter" = "Stressor")) %>%
+  mutate(Direction = ifelse(Beta > 0, "Positive", "Negative"))
+
+# Sort by Partial Eta Squared (Descending)
+results_df.hyos.b <- results_df.hyos.b %>% arrange(desc(Eta2_partial))
+write.table(results_df.hyos.b, file = "partialetasquare_hyos_biomass.csv", sep=",")
+
+# Format Table with `flextable`
+results_hyos.b <- flextable(results_df.hyos.b) %>%
+  theme_vanilla() %>%  # Clean formatting
+  set_header_labels(
+    Parameter = "Stressor(s)",
+    Eta2_partial = "Partial Eta²",
+    Beta = "β Coefficient",
+    Direction = "Effect Direction"
+  ) %>%
+  colformat_num(j = c("Eta2_partial", "Beta")) %>%  
+  autofit()  
+
+
+# Merge Dataframes
+results_df.hyos.a <- left_join(eta_sq_df.hyos.a, coef_df_sorted.hyos.a, by = c("Parameter" = "Stressor")) %>%
+  mutate(Direction = ifelse(Beta > 0, "Positive", "Negative"))
+
+# Sort by Partial Eta Squared (Descending)
+results_df.hyos.a <- results_df.hyos.a %>% arrange(desc(Eta2_partial))
+write.table(results_df.hyos.a, file = "partialetasquare_hyos_abund.csv", sep= " , ")
+
+# Format Table with `flextable`
+results_hyos.a <- flextable(results_df.hyos.a) %>%
+  theme_vanilla() %>%  # Clean formatting
+  set_header_labels(
+    Parameter = "Stressor(s)",
+    Eta2_partial = "Partial Eta²",
+    Beta = "β Coefficient",
+    Direction = "Effect Direction"
+  ) %>%
+  colformat_num(j = c("Eta2_partial", "Beta")) %>%  
+  autofit()  # Adjust column widths
+
+
 ## baetidae
 baet_abund <- read_csv("BAET_temp_abund.csv")
 baet_pc <- read_csv("BAET_temp_percapita.csv")
@@ -1624,26 +610,26 @@ baet_biomass_hyd_HFE.sp <- read_csv("BAET_temp_hyd_biomass_HFE_spike.csv")
 
 # abundance
 baet_abund_combo <- bind_rows(
-  baet_abund %>% mutate(source = "Temperature"),
-  baet_abund_sp %>% mutate(source = "Temperature & spike"),
-  baet_abund_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  baet_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
-  baet_abund_HFE %>% mutate(source = "Temperature & HFE"),
-  baet_abund_HFE_sp %>% mutate(source = "Temperature & spike & HFE"),
-  baet_abund_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
-  baet_abund_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+  baet_abund %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
+  baet_abund_sp %>% mutate(source = "Temperature", temp_spike = 1, hydropeaking = 0, HFE = 0),
+  baet_abund_t.h %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 1, HFE = 0),
+  baet_abund_t.h_spike %>% mutate(source = "Temperature", temp_spike =1, hydropeaking = 1, HFE = 0),
+  baet_abund_HFE %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 1),
+  baet_abund_HFE_sp %>% mutate(source = "Temperature", temp_spike = 1, hydropeaking = 0, HFE = 1),
+  baet_abund_hyd_HFE %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 1, HFE = 1),
+  baet_abund_hyd_HFE.sp %>% mutate(source = "Temperature", temp_spike = 1, hydropeaking = 1, HFE = 1),
 )
 
 # biomass
 baet_biomass_combo <- bind_rows(
-  baet_biomass %>% mutate(source = "Temperature"),
-  baet_biomass_sp %>% mutate(source = "Temperature & spike"),
-  baet_biomass_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  baet_biomass_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
-  baet_biomass_HFE %>% mutate(source = "Temperature & HFE"),
-  baet_biomass_HFE.sp %>% mutate(source = "Temperature & spike & HFE"),
-  baet_biomass_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
-  baet_biomass_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+  baet_biomass %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
+  baet_biomass_sp %>% mutate(source = "Temperature", temp_spike = 1, hydropeaking = 0, HFE = 0),
+  baet_biomass_t.h %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 1, HFE = 0),
+  baet_biomass_t.h_spike %>%mutate(source = "Temperature", temp_spike =1, hydropeaking = 1, HFE = 0),
+  baet_biomass_HFE %>%mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 1),
+  baet_biomass_HFE.sp %>%mutate(source = "Temperature", temp_spike = 1, hydropeaking = 0, HFE = 1),
+  baet_biomass_hyd_HFE %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 1, HFE = 1),
+  baet_biomass_hyd_HFE.sp %>% mutate(source = "Temperature", temp_spike = 1, hydropeaking = 1, HFE = 1),
 )
 
 baet_pc_combo <- bind_rows(
@@ -1739,6 +725,145 @@ b.pc <- ggplot(data = baet_pc_combo, aes(x = as.factor(temperature), y = percapi
   theme(text = element_text(size = 11), axis.text.x = element_text(hjust = 1, angle=45, size = 10), 
         axis.text.y = element_text(size = 11), legend.key = element_rect(fill = "transparent"))
 
+# Fit linear models with ALL interactions (full factorial design)
+baetmod_biomass <- lm(biomass ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = baet_biomass_combo)
+baetmod_abund <- lm(abundance ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = baet_abund_combo)
+
+sum_biomass_lm <- lm.beta(baetmod_biomass)
+sum_abund_lm <- lm.beta(baetmod_abund)
+# Extract the standardized coefficients
+# lm.beta stores the standardized coefficients in the model object as 'standardized.coefficients'
+std_coefs.b <- sum_biomass_lm$standardized.coefficients
+std_coefs.a <- sum_abund_lm$standardized.coefficients
+# Remove the intercept (if present) so we only have the effects and interactions
+std_coefs.b <- std_coefs.b[-1]
+std_coefs.a <- std_coefs.a[-1]
+
+# Create a data frame with effect names and their beta values
+coef_df.b <- data.frame(
+  Stressor = names(std_coefs.b),
+  Beta = std_coefs.b,
+  AbsBeta = abs(std_coefs.b)  # for sorting purposes
+)
+
+
+coef_df.a <- data.frame(
+  Stressor = names(std_coefs.a),
+  Beta = std_coefs.a,
+  AbsBeta = abs(std_coefs.a)  # for sorting purposes
+)
+# Sort the data frame by absolute beta values in decreasing order
+coef_df_sorted.baet.b <- coef_df.b %>% arrange(desc(AbsBeta))
+coef_df_sorted.baet.a <- coef_df.a %>% arrange(desc(AbsBeta))
+
+# Define effect size categories
+coef_df_sorted.baet.b$Effect_Size <- cut(abs(coef_df_sorted.baet.b$Beta),
+                                         breaks = c(0, 0.1, 0.3, 0.5, Inf),
+                                         labels = c("Small", "Medium", "Large", "Very Large"),
+                                         right = FALSE)
+# Define effect size categories
+coef_df_sorted.baet.a$Effect_Size <- cut(abs(coef_df_sorted.baet.a$Beta),
+                                         breaks = c(0, 0.1, 0.3, 0.5, Inf),
+                                         labels = c("Small", "Medium", "Large", "Very Large"),
+                                         right = FALSE)
+# Now plot the sorted coefficients using ggplot2
+# ggplot(coef_df_sorted.baet.b, aes(x = reorder(Effect, Beta), y = Beta, fill = Effect_Size)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip() +  # flips the axes so the labels are easier to read
+#   labs(
+#     title = "Standardized Beta Coefficients for Biomass",
+#     x = "Effect",
+#     y = "Standardized Beta Coefficient"
+#   ) +
+#   scale_fill_manual(values = c("Small" = "blue", "Medium" = "orange", "Large" = "red", "Very Large" = "darkred")) +
+#   theme_bw()
+# 
+# 
+# 
+# # Now plot the sorted coefficients using ggplot2
+# ggplot(coef_df_sorted.baet.a, aes(x = reorder(Effect, Beta), y = Beta, fill = Effect_Size)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip() +  # flips the axes so the labels are easier to read
+#   labs(
+#     title = "Standardized Beta Coefficients for Abundance",
+#     x = "Effect",
+#     y = "Standardized Beta Coefficient"
+#   ) +
+#   scale_fill_manual(values = c("Small" = "blue", "Medium" = "orange", "Large" = "red", "Very Large" = "darkred")) +
+#   theme_bw()
+
+# because if categorical, fit manova
+baetmod_biomass <- aov(biomass ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = baet_biomass_combo)
+baetmod_abund <- aov(abundance ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = baet_abund_combo)
+
+# Extract partial eta squared values
+eta_sq_df.baet.b <- eta_squared(baetmod_biomass, partial = TRUE) %>%
+  as.data.frame() %>%
+  arrange(desc(Eta2_partial))  # Order from largest to smallest effect
+
+eta_sq_df.baet.a <- eta_squared(baetmod_abund, partial = TRUE) %>%
+  as.data.frame() %>%
+  arrange(desc(Eta2_partial))  # Order from largest to smallest effect
+# Create the bar plot
+ggplot(eta_sq_df.baet.b, aes(x = reorder(Parameter, Eta2_partial), y = Eta2_partial, fill = Eta2_partial)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  # Flip for better readability
+  scale_fill_viridis_c() +  # Color scale
+  labs(title = "Hydropsyche spp.",
+       x = "Stressor(s)",
+       y = "Partial Eta Squared") +
+  theme_bw()
+
+ggplot(eta_sq_df.baet.a, aes(x = reorder(Parameter, Eta2_partial), y = Eta2_partial, fill = Eta2_partial)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  # Flip for better readability
+  scale_fill_viridis_c() +  # Color scale
+  labs(title = "Hydropsyche spp.",
+       x = "Stressor(s)",
+       y = "Partial Eta Squared") +
+  theme_bw()
+
+
+# Merge Dataframes
+results_df.baet.b <- left_join(eta_sq_df.baet.b, coef_df_sorted.baet.b, by = c("Parameter" = "Stressor")) %>%
+  mutate(Direction = ifelse(Beta > 0, "Positive", "Negative"))
+
+# Sort by Partial Eta Squared (Descending)
+results_df.baet.b <- results_df.baet.b %>% arrange(desc(Eta2_partial))
+write.table(results_df.baet.b, file = "partialetasquare_baet_biomass.csv", sep = " , ")
+
+# Format Table with `flextable`
+results_baet.b <- flextable(results_df.baet.b) %>%
+  theme_vanilla() %>%  # Clean formatting
+  set_header_labels(
+    Parameter = "Stressor(s)",
+    Eta2_partial = "Partial Eta²",
+    Beta = "β Coefficient",
+    Direction = "Effect Direction"
+  ) %>%
+  colformat_num(j = c("Eta2_partial", "Beta")) %>%  
+  autofit()  # Adjust column widths
+
+# Merge Dataframes
+results_df.baet.a <- left_join(eta_sq_df.baet.a, coef_df_sorted.baet.a, by = c("Parameter" = "Stressor")) %>%
+  mutate(Direction = ifelse(Beta > 0, "Positive", "Negative"))
+
+# Sort by Partial Eta Squared (Descending)
+results_df.baet.a <- results_df.baet.a %>% arrange(desc(Eta2_partial))
+
+write.table(results_df.baet.a, file = "partialetasquare_baet_abund.csv", sep = " , ")
+# Format Table with `flextable`
+results_baet.a <- flextable(results_df.baet.a) %>%
+  theme_vanilla() %>%  # Clean formatting
+  set_header_labels(
+    Parameter = "Stressor(s)",
+    Eta2_partial = "Partial Eta²",
+    Beta = "β Coefficient",
+    Direction = "Effect Direction"
+  ) %>%
+  colformat_num(j = c("Eta2_partial", "Beta")) %>%  
+  autofit()  # Adjust column widths
+
 ## Chironomidae spp
 chir_abund <- read_csv("CHIR_temp_abund.csv")
 chir_pc <- read_csv("CHIR_temp_percapita.csv")
@@ -1762,26 +887,26 @@ chir_biomass_hyd_HFE.sp <- read_csv("CHIR_temp_hyd_biomass_HFE_spike.csv")
 
 # abundance
 chir_abund_combo <- bind_rows(
-  chir_abund %>% mutate(source = "Temperature"),
-  chir_abund_sp %>% mutate(source = "Temperature & spike"),
-  chir_abund_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  chir_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
-  chir_abund_HFE %>% mutate(source = "Temperature & HFE"),
-  chir_abund_HFE_sp %>% mutate(source = "Temperature & spike & HFE"),
-  chir_abund_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
-  chir_abund_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+  chir_abund %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
+  chir_abund_sp %>% mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
+  chir_abund_t.h %>% mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
+  chir_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
+  chir_abund_HFE %>% mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
+  chir_abund_HFE_sp %>% mutate(source = "Temperature & spike & HFE", temp_spike = 1, hydropeaking = 0, HFE = 1),
+  chir_abund_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE", temp_spike = 0, hydropeaking = 1, HFE = 1),
+  chir_abund_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE", temp_spike = 1, hydropeaking = 1, HFE = 1),
 )
 
 # biomass
 chir_biomass_combo <- bind_rows(
-  chir_biomass %>% mutate(source = "Temperature"),
-  chir_biomass_sp %>% mutate(source = "Temperature & spike"),
-  chir_biomass_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  chir_biomass_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
-  chir_biomass_HFE %>% mutate(source = "Temperature & HFE"),
-  chir_biomass_HFE.sp %>% mutate(source = "Temperature & spike & HFE"),
-  chir_biomass_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
-  chir_biomass_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+  chir_biomass %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
+  chir_biomass_sp %>% mutate(source = "Temperature & spike",temp_spike = 1, hydropeaking = 0, HFE = 0),
+  chir_biomass_t.h %>% mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
+  chir_biomass_t.h_spike %>% mutate(source =  "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
+  chir_biomass_HFE %>% mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
+  chir_biomass_HFE.sp %>% mutate(source =  "Temperature & spike & HFE", temp_spike = 1, hydropeaking = 0, HFE = 1),
+  chir_biomass_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE", temp_spike = 0, hydropeaking = 1, HFE = 1),
+  chir_biomass_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE", temp_spike = 1, hydropeaking = 1, HFE = 1),
 )
 
 chir_pc_combo <- bind_rows(
@@ -1814,7 +939,7 @@ c.abund <- ggplot(data = chir_abund_combo, aes(y = abundance, x = as.factor(temp
   labs(y=expression(paste(italic("Chironomidae"), "  Scaled Abundance")))+
   theme(text = element_text(size = 13), axis.text.x = element_text(hjust = 1, angle=45, size = 12), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-# hyos biomass
+# baet biomass
 chir_biomass_combo$biomass <- scale(chir_biomass_combo$biomass)
 chir_biomass_combo$source <- ordered(chir_biomass_combo$source, levels = c(
   "Temperature", 
@@ -1879,6 +1004,143 @@ c.pc <- ggplot(data = chir_pc_combo, aes(x = as.factor(temperature), y = percapi
   theme(text = element_text(size = 11), axis.text.x = element_text(hjust = 1, angle=45, size = 10), 
         axis.text.y = element_text(size = 11), legend.key = element_rect(fill = "transparent"))
 
+# Fit linear models with ALL interactions (full factorial design)
+chirmod_biomass <- lm(biomass ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = chir_biomass_combo)
+chirmod_abund <- lm(abundance ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = chir_abund_combo)
+
+sum_biomass_lm <- lm.beta(chirmod_biomass)
+sum_abund_lm <- lm.beta(chirmod_abund)
+# Extract the standardized coefficients
+# lm.beta stores the standardized coefficients in the model object as 'standardized.coefficients'
+std_coefs.b <- sum_biomass_lm$standardized.coefficients
+std_coefs.a <- sum_abund_lm$standardized.coefficients
+# Remove the intercept (if present) so we only have the effects and interactions
+std_coefs.b <- std_coefs.b[-1]
+std_coefs.a <- std_coefs.a[-1]
+
+# Create a data frame with effect names and their beta values
+coef_df.b <- data.frame(
+  Stressor = names(std_coefs.b),
+  Beta = std_coefs.b,
+  AbsBeta = abs(std_coefs.b)  # for sorting purposes
+)
+
+
+coef_df.a <- data.frame(
+  Stressor = names(std_coefs.a),
+  Beta = std_coefs.a,
+  AbsBeta = abs(std_coefs.a)  # for sorting purposes
+)
+# Sort the data frame by absolute beta values in decreasing order
+coef_df_sorted.chir.b <- coef_df.b %>% arrange(desc(AbsBeta))
+coef_df_sorted.chir.a <- coef_df.a %>% arrange(desc(AbsBeta))
+
+# Define effect size categories
+coef_df_sorted.chir.b$Effect_Size <- cut(abs(coef_df_sorted.chir.b$Beta),
+                                         breaks = c(0, 0.1, 0.3, 0.5, Inf),
+                                         labels = c("Small", "Medium", "Large", "Very Large"),
+                                         right = FALSE)
+
+# Define effect size categories
+coef_df_sorted.chir.a$Effect_Size <- cut(abs(coef_df_sorted.chir.a$Beta),
+                                         breaks = c(0, 0.1, 0.3, 0.5, Inf),
+                                         labels = c("Small", "Medium", "Large", "Very Large"),
+                                         right = FALSE)
+
+# # Now plot the sorted coefficients using ggplot2
+# ggplot(coef_df_sorted.chir.b, aes(x = reorder(Effect, Beta), y = Beta, fill = Effect_Size)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip() +  # flips the axes so the labels are easier to read
+#   labs(
+#     title = "Standardized Beta Coefficients for Biomass",
+#     x = "Effect",
+#     y = "Standardized Beta Coefficient"
+#   ) +
+#   scale_fill_manual(values = c("Small" = "blue", "Medium" = "orange", "Large" = "red", "Very Large" = "darkred")) +
+#   theme_bw()
+# 
+# # Now plot the sorted coefficients using ggplot2
+# ggplot(coef_df_sorted.chir.a, aes(x = reorder(Effect, Beta), y = Beta, fill = Effect_Size)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip() +  # flips the axes so the labels are easier to read
+#   labs(
+#     title = "Standardized Beta Coefficients for Abundance",
+#     x = "Effect",
+#     y = "Standardized Beta Coefficient"
+#   ) +
+#   scale_fill_manual(values = c("Small" = "blue", "Medium" = "orange", "Large" = "red", "Very Large" = "darkred")) +
+#   theme_bw()
+chirmod_biomass <- aov(biomass ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = chir_biomass_combo)
+chirmod_abund <- aov(abundance ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = chir_abund_combo)
+
+# Extract partial eta squared values
+eta_sq_df.chir.b <- eta_squared(chirmod_biomass, partial = TRUE) %>%
+  as.data.frame() %>%
+  arrange(desc(Eta2_partial))  # Order from largest to smallest effect
+
+eta_sq_df.chir.a <- eta_squared(chirmod_abund, partial = TRUE) %>%
+  as.data.frame() %>%
+  arrange(desc(Eta2_partial))  # Order from largest to smallest effect
+# Create the bar plot
+ggplot(eta_sq_df.chir.b, aes(x = reorder(Parameter, Eta2_partial), y = Eta2_partial, fill = Eta2_partial)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  # Flip for better readability
+  scale_fill_viridis_c() +  # Color scale
+  labs(title = "Hydropsyche spp.",
+       x = "Stressor(s)",
+       y = "Partial Eta Squared") +
+  theme_bw()
+
+ggplot(eta_sq_df.chir.a, aes(x = reorder(Parameter, Eta2_partial), y = Eta2_partial, fill = Eta2_partial)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  # Flip for better readability
+  scale_fill_viridis_c() +  # Color scale
+  labs(title = "Hydropsyche spp.",
+       x = "Stressor(s)",
+       y = "Partial Eta Squared") +
+  theme_bw()
+
+
+# Merge Dataframes
+results_df.chir.b <- left_join(eta_sq_df.chir.b, coef_df_sorted.chir.b, by = c("Parameter" = "Stressor")) %>%
+  mutate(Direction = ifelse(Beta > 0, "Positive", "Negative"))
+
+# Sort by Partial Eta Squared (Descending)
+results_df.chir.b <- results_df.chir.b %>% arrange(desc(Eta2_partial))
+write.table(results_df.chir.b, file = "partialetasquare_chir_biomass.csv", sep = " , ")
+
+# Format Table with `flextable`
+results_chir.b <- flextable(results_df.chir.b) %>%
+  theme_vanilla() %>%  # Clean formatting
+  set_header_labels(
+    Parameter = "Stressor(s)",
+    Eta2_partial = "Partial Eta²",
+    Beta = "β Coefficient",
+    Direction = "Effect Direction"
+  ) %>%
+  colformat_num(j = c("Eta2_partial", "Beta")) %>%  
+  autofit()  # Adjust column widths
+
+# Merge Dataframes
+results_df.chir.a <- left_join(eta_sq_df.chir.a, coef_df_sorted.chir.a, by = c("Parameter" = "Stressor")) %>%
+  mutate(Direction = ifelse(Beta > 0, "Positive", "Negative"))
+
+# Sort by Partial Eta Squared (Descending)
+results_df.chir.a <- results_df.chir.a %>% arrange(desc(Eta2_partial))
+write.table(results_df.chir.a, file = "partialetasquare_chir_abund.csv", sep = " , ")
+
+# Format Table with `flextable`
+results_chir.a <- flextable(results_df.chir.a) %>%
+  theme_vanilla() %>%  # Clean formatting
+  set_header_labels(
+    Parameter = "Stressor(s)",
+    Eta2_partial = "Partial Eta²",
+    Beta = "β Coefficient",
+    Direction = "Effect Direction"
+  ) %>%
+  colformat_num(j = c("Eta2_partial", "Beta")) %>%  
+  autofit()  # Adjust column widths
+
 # G. lacustris
 gamm_abund <- read_csv("GAMM_temp_abund.csv")
 gamm_pc <- read_csv("GAMM_temp_percapita.csv")
@@ -1902,26 +1164,26 @@ gamm_biomass_hyd_HFE.sp <- read_csv("GAMM_temp_hyd_biomass_HFE_spike.csv")
 
 # abundance
 gamm_abund_combo <- bind_rows(
-  gamm_abund %>% mutate(source = "Temperature"),
-  gamm_abund_sp %>% mutate(source = "Temperature & spike"),
-  gamm_abund_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  gamm_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
-  gamm_abund_HFE %>% mutate(source = "Temperature & HFE"),
-  gamm_abund_HFE_sp %>% mutate(source = "Temperature & spike & HFE"),
-  gamm_abund_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
-  gamm_abund_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+  gamm_abund %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
+  gamm_abund_sp %>%  mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
+  gamm_abund_t.h %>% mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
+  gamm_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
+  gamm_abund_HFE %>% mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
+  gamm_abund_HFE_sp %>% mutate(source = "Temperature & spike & HFE",  temp_spike = 1, hydropeaking = 0, HFE = 1),
+  gamm_abund_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE",  temp_spike = 0, hydropeaking = 1, HFE = 1),
+  gamm_abund_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE",  temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
 # biomass
 gamm_biomass_combo <- bind_rows(
-  gamm_biomass %>% mutate(source = "Temperature"),
-  gamm_biomass_sp %>% mutate(source = "Temperature & spike"),
-  gamm_biomass_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  gamm_biomass_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
-  gamm_biomass_HFE %>% mutate(source = "Temperature & HFE"),
-  gamm_biomass_HFE.sp %>% mutate(source = "Temperature & spike & HFE"),
-  gamm_biomass_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
-  gamm_biomass_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+  gamm_biomass %>%  mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
+  gamm_biomass_sp %>%  mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
+  gamm_biomass_t.h %>% mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
+  gamm_biomass_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
+  gamm_biomass_HFE %>% mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
+  gamm_biomass_HFE.sp %>% mutate(source = "Temperature & spike & HFE",  temp_spike = 1, hydropeaking = 0, HFE = 1),
+  gamm_biomass_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE",  temp_spike = 0, hydropeaking = 1, HFE = 1),
+  gamm_biomass_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE",  temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
 gamm_pc_combo <- bind_rows(
@@ -2016,6 +1278,147 @@ g.pc <- ggplot(data = gamm_pc_combo, aes(x = as.factor(temperature), y = percapi
   theme(text = element_text(size = 11), axis.text.x = element_text(hjust = 1, angle=45, size = 10), 
         axis.text.y = element_text(size = 11), legend.key = element_rect(fill = "transparent"))
 
+# Fit linear models with ALL interactions (full factorial design)
+gammmod_biomass <- lm(biomass ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = gamm_biomass_combo)
+gammmod_abund <- lm(abundance ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = gamm_abund_combo)
+
+sum_biomass_lm <- lm.beta(gammmod_biomass)
+sum_abund_lm <- lm.beta(gammmod_abund)
+# Extract the standardized coefficients
+# lm.beta stores the standardized coefficients in the model object as 'standardized.coefficients'
+std_coefs.b <- sum_biomass_lm$standardized.coefficients
+std_coefs.a <- sum_abund_lm$standardized.coefficients
+# Remove the intercept (if present) so we only have the effects and interactions
+std_coefs.b <- std_coefs.b[-1]
+std_coefs.a <- std_coefs.a[-1]
+
+# Create a data frame with effect names and their beta values
+coef_df.b <- data.frame(
+  Stressor = names(std_coefs.b),
+  Beta = std_coefs.b,
+  AbsBeta = abs(std_coefs.b)  # for sorting purposes
+)
+
+
+coef_df.a <- data.frame(
+  Stressor = names(std_coefs.a),
+  Beta = std_coefs.a,
+  AbsBeta = abs(std_coefs.a)  # for sorting purposes
+)
+# Sort the data frame by absolute beta values in decreasing order
+coef_df_sorted.gamm.b <- coef_df.b %>% arrange(desc(AbsBeta))
+coef_df_sorted.gamm.a <- coef_df.a %>% arrange(desc(AbsBeta))
+
+# Define effect size categories
+coef_df_sorted.gamm.b$Effect_Size <- cut(abs(coef_df_sorted.gamm.b$Beta),
+                                         breaks = c(0, 0.1, 0.3, 0.5, Inf),
+                                         labels = c("Small", "Medium", "Large", "Very Large"),
+                                         right = FALSE)
+
+# Define effect size categories
+coef_df_sorted.gamm.a$Effect_Size <- cut(abs(coef_df_sorted.gamm.a$Beta),
+                                         breaks = c(0, 0.1, 0.3, 0.5, Inf),
+                                         labels = c("Small", "Medium", "Large", "Very Large"),
+                                         right = FALSE)
+
+
+
+# Now plot the sorted coefficients using ggplot2
+# ggplot(coef_df_sorted.gamm.b, aes(x = reorder(Effect, Beta), y = Beta, fill = Effect_Size)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip() +  # flips the axes so the labels are easier to read
+#   labs(
+#     title = "Standardized Beta Coefficients for Biomass",
+#     x = "Effect",
+#     y = "Standardized Beta Coefficient"
+#   ) +
+#   scale_fill_manual(values = c("Small" = "blue", "Medium" = "orange", "Large" = "red", "Very Large" = "darkred")) +
+#   theme_bw()
+# 
+# 
+# # Now plot the sorted coefficients using ggplot2
+# ggplot(coef_df_sorted.gamm.a, aes(x = reorder(Effect, Beta), y = Beta, fill = Effect_Size)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip() +  # flips the axes so the labels are easier to read
+#   labs(
+#     title = "Standardized Beta Coefficients for Abundance",
+#     x = "Effect",
+#     y = "Standardized Beta Coefficient"
+#   ) +
+#   scale_fill_manual(values = c("Small" = "blue", "Medium" = "orange", "Large" = "red", "Very Large" = "darkred")) +
+#   theme_bw()
+
+gammmod_biomass <- aov(biomass ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = gamm_biomass_combo)
+gammmod_abund <- aov(abundance ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = gamm_abund_combo)
+
+# Extract partial eta squared values
+eta_sq_df.gamm.b <- eta_squared(gammmod_biomass, partial = TRUE) %>%
+  as.data.frame() %>%
+  arrange(desc(Eta2_partial))  # Order from largest to smallest effect
+
+eta_sq_df.gamm.a <- eta_squared(gammmod_abund, partial = TRUE) %>%
+  as.data.frame() %>%
+  arrange(desc(Eta2_partial))  # Order from largest to smallest effect
+# Create the bar plot
+ggplot(eta_sq_df.gamm.b, aes(x = reorder(Parameter, Eta2_partial), y = Eta2_partial, fill = Eta2_partial)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  # Flip for better readability
+  scale_fill_viridis_c() +  # Color scale
+  labs(title = "Hydropsyche spp.",
+       x = "Stressor(s)",
+       y = "Partial Eta Squared") +
+  theme_bw()
+
+ggplot(eta_sq_df.gamm.a, aes(x = reorder(Parameter, Eta2_partial), y = Eta2_partial, fill = Eta2_partial)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  # Flip for better readability
+  scale_fill_viridis_c() +  # Color scale
+  labs(title = "Hydropsyche spp.",
+       x = "Stressor(s)",
+       y = "Partial Eta Squared") +
+  theme_bw()
+
+
+# Merge Dataframes
+results_df.gamm.b <- left_join(eta_sq_df.gamm.b, coef_df_sorted.gamm.b, by = c("Parameter" = "Stressor")) %>%
+  mutate(Direction = ifelse(Beta > 0, "Positive", "Negative"))
+
+# Sort by Partial Eta Squared (Descending)
+results_df.gamm.b <- results_df.gamm.b %>% arrange(desc(Eta2_partial))
+write.table(results_df.gamm.b, file = "partialetasquare_gamm_biomass.csv", sep = " , ")
+
+# Format Table with `flextable`
+results_gamm.b <- flextable(results_df.gamm.b) %>%
+  theme_vanilla() %>%  # Clean formatting
+  set_header_labels(
+    Parameter = "Stressor(s)",
+    Eta2_partial = "Partial Eta²",
+    Beta = "β Coefficient",
+    Direction = "Effect Direction"
+  ) %>%
+  colformat_num(j = c("Eta2_partial", "Beta")) %>%  
+  autofit()  # Adjust column widths
+
+# Merge Dataframes
+results_df.gamm.a <- left_join(eta_sq_df.gamm.a, coef_df_sorted.gamm.a, by = c("Parameter" = "Stressor")) %>%
+  mutate(Direction = ifelse(Beta > 0, "Positive", "Negative"))
+
+# Sort by Partial Eta Squared (Descending)
+results_df.gamm.a <- results_df.gamm.a %>% arrange(desc(Eta2_partial))
+write.table(results_df.gamm.a, file = "partialetasquare_gamm_abund.csv", sep = " , ")
+
+# Format Table with `flextable`
+results_gamm.a <- flextable(results_df.gamm.a) %>%
+  theme_vanilla() %>%  # Clean formatting
+  set_header_labels(
+    Parameter = "Stressor(s)",
+    Eta2_partial = "Partial Eta²",
+    Beta = "β Coefficient",
+    Direction = "Effect Direction"
+  ) %>%
+  colformat_num(j = c("Eta2_partial", "Beta")) %>%  
+  autofit()  # Adjust column widths
+
 
 nzms_abund <- read_csv("NZMS_temp_abund.csv")
 nzms_pc <- read_csv("NZMS_temp_percapita.csv")
@@ -2037,28 +1440,48 @@ nzms_biomass_hyd_HFE <- read_csv("NZMS_temp_hyd_biomass_HFE.csv")
 nzms_abund_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_abund_HFE_spike.csv")
 nzms_biomass_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_biomass_HFE_spike.csv")
 
+nzms_abund <- read_csv("NZMS_temp_abund_2000.csv")
+nzms_pc <- read_csv("NZMS_temp_percapita_2000.csv")
+nzms_biomass <- read_csv("NZMS_temp_biomass_2000.csv")
+nzms_abund_sp <- read_csv("NZMS_temp_abund_spike_2000.csv")
+nzms_pc_sp <- read_csv("NZMS_temp_percapita_spike_2000.csv")
+nzms_biomass_sp <- read_csv("NZMS_temp_biomass_spike_2000.csv")
+nzms_abund_t.h <- read_csv("NZMS_temp_hyd_abund_2000.csv")
+nzms_biomass_t.h <- read_csv("NZMS_temp_hyd_biomass_2000.csv")
+nzms_abund_t.h_spike <- read_csv("NZMS_temp_hyd_abund_spike_2000.csv")
+nzms_biomass_t.h_spike <- read_csv("NZMS_temp_hyd_biomass_spike_2000.csv")
+nzms_abund_HFE <- read_csv("NZMS_temp_abund_HFE_2000.csv")
+nzms_biomass_HFE <- read_csv("NZMS_temp_biomass_HFE_2000.csv")
+nzms_abund_HFE_sp<- read_csv("NZMS_temp_abund_HFE_spike_2000.csv")
+nzms_biomass_HFE.sp <- read_csv("NZMS_temp_biomass_HFE_spike_2000.csv")
+nzms_abund_HFE_sp<- read_csv("NZMS_temp_abund_HFE_spike_2000.csv")
+nzms_abund_hyd_HFE <- read_csv("NZMS_temp_hyd_abund_HFE_2000.csv")
+nzms_biomass_hyd_HFE <- read_csv("NZMS_temp_hyd_biomass_HFE_2000.csv")
+nzms_abund_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_abund_HFE_spike_2000.csv")
+nzms_biomass_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_biomass_HFE_spike_2000.csv")
+
 #abundance
 nzms_abund_combo <- bind_rows(
-  nzms_abund %>% mutate(source = "Temperature"),
-  nzms_abund_sp %>% mutate(source = "Temperature & spike"),
-  nzms_abund_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  nzms_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
-  nzms_abund_HFE %>% mutate(source = "Temperature & HFE"),
-  nzms_abund_HFE_sp %>% mutate(source = "Temperature & spike & HFE"),
-  nzms_abund_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
-  nzms_abund_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+  nzms_abund %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
+  nzms_abund_sp %>% mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
+  nzms_abund_t.h %>% mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
+  nzms_abund_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
+  nzms_abund_HFE %>% mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
+  nzms_abund_HFE_sp %>% mutate(source = "Temperature & spike & HFE", temp_spike = 1, hydropeaking = 0, HFE = 1),
+  nzms_abund_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE", temp_spike = 0, hydropeaking = 1, HFE = 1),
+  nzms_abund_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE", temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
 # biomass
 nzms_biomass_combo <- bind_rows(
-  nzms_biomass %>% mutate(source = "Temperature"),
-  nzms_biomass_sp %>% mutate(source = "Temperature & spike"),
-  nzms_biomass_t.h %>% mutate(source = "Temperature & hydropeaking"),
-  nzms_biomass_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking"),
-  nzms_biomass_HFE %>% mutate(source = "Temperature & HFE"),
-  nzms_biomass_HFE.sp %>% mutate(source = "Temperature & spike & HFE"),
-  nzms_biomass_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE"),
-  nzms_biomass_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE")
+  nzms_biomass %>% mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
+  nzms_biomass_sp %>% mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
+  nzms_biomass_t.h %>% mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
+  nzms_biomass_t.h_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
+  nzms_biomass_HFE %>% mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
+  nzms_biomass_HFE.sp %>% mutate(source = "Temperature & spike & HFE", temp_spike = 1, hydropeaking = 0, HFE = 1),
+  nzms_biomass_hyd_HFE %>% mutate(source = "Temperature & hydropeaking & HFE", temp_spike = 0, hydropeaking = 1, HFE = 1),
+  nzms_biomass_hyd_HFE.sp %>% mutate(source = "Temperature & spike & hydropeaking & HFE", temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
 nzms_pc_combo <- bind_rows(
@@ -2153,18 +1576,222 @@ n.pc <- ggplot(data = nzms_pc_combo, aes(x = as.factor(temperature), y = percapi
   theme(text = element_text(size = 11), axis.text.x = element_text(hjust = 1, angle=45, size = 10), 
         axis.text.y = element_text(size = 11), legend.key = element_rect(color = "transparent"))
 
+
+# Fit linear models with ALL interactions (full factorial design)
+nzmsmod_biomass <- lm(biomass ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = nzms_biomass_combo)
+nzmsmod_abund <- lm(abundance ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = nzms_abund_combo)
+
+sum_biomass_lm <- lm.beta(nzmsmod_biomass)
+sum_abund_lm <- lm.beta(nzmsmod_abund)
+# Extract the standardized coefficients
+# lm.beta stores the standardized coefficients in the model object as 'standardized.coefficients'
+std_coefs.b <- sum_biomass_lm$standardized.coefficients
+std_coefs.a <- sum_abund_lm$standardized.coefficients
+# Remove the intercept (if present) so we only have the effects and interactions
+std_coefs.b <- std_coefs.b[-1]
+std_coefs.a <- std_coefs.a[-1]
+
+# Create a data frame with effect names and their beta values
+coef_df.b <- data.frame(
+  Stressor = names(std_coefs.b),
+  Beta = std_coefs.b,
+  AbsBeta = abs(std_coefs.b)  # for sorting purposes
+)
+
+
+coef_df.a <- data.frame(
+  Stressor = names(std_coefs.a),
+  Beta = std_coefs.a,
+  AbsBeta = abs(std_coefs.a)  # for sorting purposes
+)
+# Sort the data frame by absolute beta values in decreasing order
+coef_df_sorted.nzms.b <- coef_df.b %>% arrange(desc(AbsBeta))
+coef_df_sorted.nzms.a <- coef_df.a %>% arrange(desc(AbsBeta))
+
+# Define effect size categories
+coef_df_sorted.nzms.b$Effect_Size <- cut(abs(coef_df_sorted.nzms.b$Beta),
+                                         breaks = c(0, 0.1, 0.3, 0.5, Inf),
+                                         labels = c("Small", "Medium", "Large", "Very Large"),
+                                         right = FALSE)
+
+# Define effect size categories
+coef_df_sorted.nzms.a$Effect_Size <- cut(abs(coef_df_sorted.nzms.a$Beta),
+                                         breaks = c(0, 0.1, 0.3, 0.5, Inf),
+                                         labels = c("Small", "Medium", "Large", "Very Large"),
+                                         right = FALSE)
+
+# # Now plot the sorted coefficients using ggplot2
+# ggplot(coef_df_sorted.nzms.b, aes(x = reorder(Effect, Beta), y = Beta, fill = Effect_Size)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip() +  # flips the axes so the labels are easier to read
+#   labs(
+#     title = "Standardized Beta Coefficients for Biomass",
+#     x = "Effect",
+#     y = "Standardized Beta Coefficient"
+#   ) +
+#   scale_fill_manual(values = c("Small" = "blue", "Medium" = "orange", "Large" = "red", "Very Large" = "darkred")) +
+#   theme_bw()
+# 
+# print(coef_df_sorted.nzms.b)
+# # Now plot the sorted coefficients using ggplot2
+# ggplot(coef_df_sorted.nzms.a, aes(x = reorder(Effect, Beta), y = Beta, fill = Effect_Size)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip() +  # flips the axes so the labels are easier to read
+#   labs(
+#     title = "Standardized Beta Coefficients for Abundance",
+#     x = "Effect",
+#     y = "Standardized Beta Coefficient"
+#   ) +
+#   scale_fill_manual(values = c("Small" = "blue", "Medium" = "orange", "Large" = "red", "Very Large" = "darkred")) +
+#   theme_bw()
+
+nzmsmod_biomass <- aov(biomass ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = nzms_biomass_combo)
+nzmsmod_abund <- aov(abundance ~ (temperature + temp_spike + hydropeaking + HFE)^4, data = nzms_abund_combo)
+
+# Extract partial eta squared values
+eta_sq_df.nzms.b <- eta_squared(nzmsmod_biomass, partial = TRUE) %>%
+  as.data.frame() %>%
+  arrange(desc(Eta2_partial))  # Order from largest to smallest effect
+
+eta_sq_df.nzms.a <- eta_squared(nzmsmod_abund, partial = TRUE) %>%
+  as.data.frame() %>%
+  arrange(desc(Eta2_partial))  # Order from largest to smallest effect
+# Create the bar plot
+ggplot(eta_sq_df.nzms.b, aes(x = reorder(Parameter, Eta2_partial), y = Eta2_partial, fill = Eta2_partial)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  # Flip for better readability
+  scale_fill_viridis_c() +  # Color scale
+  labs(title = "Hydropsyche spp.",
+       x = "Stressor(s)",
+       y = "Partial Eta Squared") +
+  theme_bw()
+
+ggplot(eta_sq_df.nzms.a, aes(x = reorder(Parameter, Eta2_partial), y = Eta2_partial, fill = Eta2_partial)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +  # Flip for better readability
+  scale_fill_viridis_c() +  # Color scale
+  labs(title = "Hydropsyche spp.",
+       x = "Stressor(s)",
+       y = "Partial Eta Squared") +
+  theme_bw()
+
+
+# Merge Dataframes
+results_df.nzms.b <- left_join(eta_sq_df.nzms.b, coef_df_sorted.nzms.b, by = c("Parameter" = "Stressor")) %>%
+  mutate(Direction = ifelse(Beta > 0, "Positive", "Negative"))
+write.table(results_df.nzms.b, file = "partialetasquare_nzms_biomass.csv", sep = " , ")
+
+# Sort by Partial Eta Squared (Descending)
+results_df.nzms.b <- results_df.nzms.b %>% arrange(desc(Eta2_partial))
+
+# Format Table with `flextable`
+results_nzms.b <- flextable(results_df.nzms.b) %>%
+  theme_vanilla() %>%  # Clean formatting
+  set_header_labels(
+    Parameter = "Stressor(s)",
+    Eta2_partial = "Partial Eta²",
+    Beta = "β Coefficient",
+    Direction = "Effect Direction"
+  ) %>%
+  colformat_num(j = c("Eta2_partial", "Beta")) %>%  
+  autofit()  # Adjust column widths
+
+# Merge Dataframes
+results_df.nzms.a <- left_join(eta_sq_df.nzms.a, coef_df_sorted.nzms.a, by = c("Parameter" = "Stressor")) %>%
+  mutate(Direction = ifelse(Beta > 0, "Positive", "Negative"))
+
+# Sort by Partial Eta Squared (Descending)
+results_df.nzms.a <- results_df.nzms.a %>% arrange(desc(Eta2_partial))
+write.table(results_df.nzms.a, file = "partialetasquare_nzms_abund.csv", sep = " , ")
+
+# Format Table with `flextable`
+results_nzms.a <- flextable(results_df.nzms.a) %>%
+  theme_vanilla() %>%  # Clean formatting
+  set_header_labels(
+    Parameter = "Stressor(s)",
+    Eta2_partial = "Partial Eta²",
+    Beta = "β Coefficient",
+    Direction = "Effect Direction"
+  ) %>%
+  colformat_num(j = c("Eta2_partial", "Beta")) %>%  
+  autofit()  # Adjust column widths
+
+
+
+# List of all data frames
+df_list <- list(results_df.hyos.a, results_df.hyos.b, results_df.baet.a, results_df.baet.b, 
+                results_df.chir.a, results_df.chir.b, results_df.gamm.a, results_df.gamm.b, 
+                results_df.nzms.a, results_df.nzms.b)
+
+# Combine all data frames into one
+combined_df <- bind_rows(df_list, .id = "Taxon_Response")  # Add identifier
+
+# Extract top stressor for each taxon-response based on highest eta squared
+top_stressor_df <- combined_df %>%
+  group_by(Taxon_Response) %>%
+  filter(!grepl(":", Parameter)) %>%  # Exclude interaction terms
+  slice_max(Eta2_partial, n = 1) %>%
+  rename(Top_Stressor = Parameter, Top_Stressor_Eta2 = Eta2_partial, Top_Stressor_Direction = Direction)
+
+# Extract strongest interaction for each taxon-response
+top_interaction_df <- combined_df %>%
+  group_by(Taxon_Response) %>%
+  filter(grepl(":", Parameter)) %>%  # Only keep interaction terms
+  slice_max(Eta2_partial, n = 1) %>%
+  rename(Strongest_Interaction = Parameter, Interaction_Eta2 = Eta2_partial, Interaction_Direction = Direction)
+
+# Merge top stressor and strongest interaction data
+summary_df <- (left_join(top_stressor_df, top_interaction_df, by = "Taxon_Response"))
+summary_df <- summary_df %>% arrange((as.numeric(Taxon_Response)))
+# Manually assign Taxon & Response (Ensure the length matches your data)
+summary_df$Taxon_Response <- c(
+  "Hydropsyche spp. Abundance", "Hydropsyche spp. Biomass",
+  "Baetidae spp. Abundance", "Baetidae spp. Biomass",
+  "Chironomidae spp. Abundance", "Chironomidae spp. Biomass",
+  "G. lacustris Abundance", "G. lacustris Biomass",
+  "P. antipodarum Abundance", "P. antipodarum Biomass"
+)
+library(flextable)
+
+# Select and rename relevant columns for clarity
+summary_table <- summary_df %>%
+  select(
+    Taxon_Response,
+    Top_Stressor, Top_Stressor_Eta2, Top_Stressor_Direction,
+    Strongest_Interaction, Interaction_Eta2, Interaction_Direction
+  ) %>%
+  rename(
+    `Taxon & Response` = Taxon_Response,
+    `Strongest Predictor` = Top_Stressor,
+    `Partial Eta² (Predictor)` = Top_Stressor_Eta2,
+    `Effect Direction (Predictor)` = Top_Stressor_Direction,
+    `Key Interaction` = Strongest_Interaction,
+    `Partial Eta² (Interaction)` = Interaction_Eta2,
+    `Effect Direction (Interaction)` = Interaction_Direction
+  )
+
+# Create a formatted flextable
+results_flextable <- flextable(summary_table) %>%
+  theme_vanilla() %>%
+  colformat_num(j = c("Partial Eta² (Predictor)", "Partial Eta² (Interaction)")) %>%
+  autofit()
+
+# Print the table
+results_flextable
+save_as_docx(results_flextable, path = "eta_sq_results_table.docx")
+
 # read in Lees Ferry temp and discharge data from 2007 to 2023
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
 # create a timeseries of average temperatures 100 years long
 temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
 
-
 # Define the temperature multipliers and labels
 scenarios <- data.frame(
   multiplier = c(1, 1.1, 1.2, 1.5),
   label = c("base", "+10%", "+20%", "+50%")
 )
+
 
 # Apply modifications to create the different temperature regimes
 temperature.regime <- map2_dfr(scenarios$multiplier, scenarios$label, ~ {
@@ -2240,53 +1867,3 @@ Fig2.2 <- wrap_plots(b.pc, h.pc, c.pc, g.pc, n.pc, regimes)+
 
 ggsave("fig2.2.png", Fig2.2, device = "png", height = 11, width = 8.5, unit = c("in"), dpi = "retina")
 
-
-
-
-# Load necessary libraries
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-
-
-
-plot_means_heatmap <- function(df, numeric_col, factor_col) {
-  # Calculate mean values grouped by factor_col
-  summary_df <- df %>%
-    group_by(category) %>%
-    summarise(mean_value = mean(value, na.rm = TRUE), .groups = "drop")
-  
-  # Rename column to "category" for easier manipulation
-  colnames(summary_df)[1] <- "category"
-  
-  # Create a full grid of categories to ensure all comparisons exist
-  heatmap_df <- expand_grid(X = summary_df$category, Y = summary_df$category) %>%
-    left_join(summary_df, by = c("X" = "category")) %>%
-    rename(mean_value = mean_value)
-  
-  # Create the heatmap using ggplot2
-  ggplot(heatmap_df, aes(x = X, y = Y, fill = mean_value)) +
-    geom_tile(color = "white") +  # White grid lines
-    scale_fill_viridis_c(option = "magma", na.value = "grey50") +  # Use Viridis color palette
-    theme_minimal() +
-    labs(title = paste("Heatmap of Mean", numeric_col, "by", factor_col),
-         x = factor_col, y = factor_col, fill = "Mean Value") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
-}
-
-# Example dataset
-set.seed(123)
-df <- data.frame(
-  category = rep(LETTERS[1:5], each = 10),  # Five categories (A to E)
-  value = rnorm(50, mean = 10, sd = 2)  # Random values around 10
-)
-
-# Generate heatmap
-plot_means_heatmap(df, "value", "category")
-
-a <- subset(nzms_abund, temperature ==1) 
-b <- subset(nzms_pc, temperature ==1)
-mean(a$abundance - (a$abundance * b$percapita))
-a <- subset(nzms_abund, temperature ==1.5) 
-b <- subset(nzms_pc, temperature ==1.5)
-mean(a$abundance - (a$abundance * b$percapita))
