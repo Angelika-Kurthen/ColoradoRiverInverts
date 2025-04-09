@@ -34,7 +34,7 @@ flows$Discharge <- flows$Discharge / 85000
 
 # Create a sequence
 temp_seq <- c(1,1.1,1.2,1.5)
-q_seq <- c(0.5, 1, 2, 3, 4, 5)
+q_seq <- c(0.5, 1, 2, 4)
 
 # Initialize lists to store results for abundance, biomass, and annual biomass calculations
 Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), temperature=factor(), q = factor() )
@@ -130,7 +130,7 @@ temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 # calculate average yearly temperatures
 temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
 # create summertime spike (up to 21 C, then scale from there)
-temps$Temperature[16:24] <- c(14, 16, 18, 21, 21, 18, 16, 14)
+temps$Temperature[16:23] <- c(14, 16, 18, 21, 21, 18, 16, 14)
 
 # create a timeseries of average temperatures 100 years long
 temps <- rep.avg.year(temps, n = 100, change.in.temp = 0, years.at.temp = 0)
@@ -167,13 +167,13 @@ results <- mclapply(temp_seq, function(te) {
 
     # Convert to data frame & add metadata
     average_means <- data.frame(means.abund, temperature = rep(te, nrow(means.abund)), q = rep(q_val, nrow(means.abund)))
-    colnames(average_means) <- colnames(Multispp_temp_abund)
+    colnames(average_means) <- colnames(Multispp_temp_abund_spike)
 
     average_biomass <- data.frame(means.biomass, temperature = rep(te, nrow(means.biomass)), q = rep(q_val, nrow(means.biomass)))
-    colnames(average_biomass) <- colnames(Multispp_temp_biomass)
+    colnames(average_biomass) <- colnames(Multispp_temp_biomass_spike)
 
     s3biomass <- data.frame(means.s3.biomass, temperature = rep(te, nrow(means.s3.biomass)), q = rep(q_val, nrow(means.s3.biomass)))
-    colnames(s3biomass) <- colnames(MultisppS3_temp_biomass)
+    colnames(s3biomass) <- colnames(MultisppS3_temp_biomass_spike)
 
     # Ensure factor consistency
     average_means$taxa <- as.factor(average_means$taxa)
