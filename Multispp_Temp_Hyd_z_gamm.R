@@ -202,7 +202,7 @@ flat_results <- do.call(c, results)
 # Final binding
 Multispp_temp_abund_spike <- do.call(rbind, lapply(flat_results, `[[`, "Multispp_temp_abund_spike"))
 Multispp_temp_biomass_spike <- do.call(rbind, lapply(flat_results, `[[`, "Multispp_temp_biomass_spike"))
-MultisppS3_temp_biomass_spike <- do.call(rbind, lapply(results, `[[`, "MultisppS3_temp_biomass_spike"))
+MultisppS3_temp_biomass_spike <- do.call(rbind, lapply(flat_results, `[[`, "MultisppS3_temp_biomass_spike"))
 
 write.csv(Multispp_temp_abund_spike, "Multispp_temp_hyd_abund_spike_z_gamm_full.csv", row.names = FALSE)
 write.csv(Multispp_temp_biomass_spike, "Multispp_temp_hyd_biomass_spike_z_gamm_full.csv", row.names = FALSE)
