@@ -34,7 +34,7 @@ flows$Discharge <- flows$Discharge / 85000
 
 # Create a sequences
 temp_seq <- c(1,1.1,1.2,1.5)
-q_seq <- c(0.5, 1, 2, 4)
+q_seq <- c(1, 2, 4, 8)
 
 # Initialize final storage data frames
 Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), temperature=factor(), q = factor())
@@ -95,6 +95,7 @@ results <- mclapply(temp_seq, function(te) {
   })
 
   return(temp_results)
+}, mc.cores = 1)
 
 }, mc.cores = detectCores() - 1)
 
@@ -158,7 +159,7 @@ results <- mclapply(temp_seq, function(te) {
     
     # Process outputs
     means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 1000, value = "abund")
-    means.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "biomass")
+    means.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration =1000, value = "biomass")
     means.s3.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "S3.biomass")
     
     # Reset input scaling_
@@ -193,6 +194,8 @@ results <- mclapply(temp_seq, function(te) {
   })
   
   return(temp_results)
+}, mc.cores = 1)
+
 }, mc.cores = detectCores() - 1)
 
 # Flatten the nested results (convert list of lists to a single list)
@@ -200,7 +203,7 @@ flat_results <- do.call(c, results)
 
 # Final binding
 Multispp_temp_abund_spike <- do.call(rbind, lapply(flat_results, `[[`, "Multispp_temp_abund_spike"))
-Multispp_temp_abund_spike <- do.call(rbind, lapply(flat_results, `[[`, "Multispp_temp_biomass_spike"))
+Multispp_temp_biomass_spike <- do.call(rbind, lapply(flat_results, `[[`, "Multispp_temp_biomass_spike"))
 MultisppS3_temp_biomass_spike <- do.call(rbind, lapply(flat_results, `[[`, "MultisppS3_temp_biomass_spike"))
 
 write.csv(Multispp_temp_abund_spike, "Multispp_temp_abund_spike_z_nzms_full.csv", row.names = FALSE)
@@ -213,7 +216,7 @@ Multispp_temp_abund_spike <- Multispp_temp_abund_spike %>%
             sd_abund = sd(abundance, na.rm = TRUE), .groups = "drop")
 
 
-Multispp_temp_abund_spike <- Multispp_temp_abund_spike %>%
+Multispp_temp_biomass_spike <- Multispp_temp_biomass_spike %>%
   group_by(temperature, taxa, q) %>%
   summarise(mean_biomass = mean(biomass, na.rm = TRUE),
             sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
