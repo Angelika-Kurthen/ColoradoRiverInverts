@@ -410,45 +410,22 @@ multi_biomass <- ggplot(data = multi_biomass_summary,
 ###
 # 8 different scenarios zi 
 
-# read in the csv's - these are very big so we are going to condense them first
-Multispp_temp_biomass <- read_csv("Multispp_temp_biomass_q.csv")
-biomass <- Multispp_temp_biomass %>% group_by(temperature, taxa, q) %>%
-  summarise(mean_abund = mean(biomass, na.rm = TRUE),
-            sd_abund = sd(biomass, na.rm = TRUE), .groups = "drop")
-rm(Multispp_temp_biomass)
-Multispp_temp_abund <- read_csv("Multispp_temp_abund_q.csv")
-Multispp_temp_abund$q <- as.factor(Multispp_temp_abund$q)
-abund <- Multispp_temp_abund %>% group_by(abundance, taxa, q) %>%
-  summarise(mean_abund = mean(abundance, na.rm = TRUE),
-            sd_abund = sd(abundance, na.rm = TRUE), .groups = "drop")
-rm(Multispp_temp_abund)
-rm(abund)
-#Multispp_temp_abund_spike <- read_csv("Multispp_temp_abund_spike1.2.csv")
-#Multispp_temp_biomass_spike <- read_csv("Multispp_temp_biomass_spike1.2.csv")
-Multispp_temp_hyd_biomass <- read_csv("Multispp_temp_biomass_hyd_q.csv")
-Multispp_temp_hyd_biomass_spike <- read_csv("Multispp_temp_hyd_biomass_spike_q.csv")
-#Multispp_temp_hyd_HFE_biomass_spike <- read_csv("Multispp_temp_hyd_HFE_biomass_spike.csv")
-#Multispp_temp_hyd_HFE_biomass <- read_csv("Multispp_temp_hyd_HFE_biomass.csv")
-#Multispp_temp_hyd_HFE_abund_spike <- read_csv("Multispp_temp_hyd_HFE_abund_spike.csv")
-Multispp_temp_HFE_abund_spike <- read_csv("Multispp_temp_HFE_abund_hfe_q_spike.csv")
-Multispp_temp_HFE_abund <- read_csv("Multispp_temp_abund_hfe_q.csv")
-Multispp_temp_HFE_biomass <- read_csv("Multispp_temp_biomass_hfe_q.csv")
-Multispp_temp_hyd_abund <- read_csv("Multispp_temp_abund_hyd_q.csv")
-Multispp_temp_HFE_biomass_spike <- read_csv("Multispp_temp_HFE_biomass_hfe_q_spike.csv")
-Multispp_temp_hyd_abund_spike <- read_csv("Multispp_temp_hyd_abund_spike_q.csv")
-# Multispp_temp_hyd_HFE_abund <- read_csv("Multispp_temp_hyd_HFE_abund.csv")
-# Multispp_temp_S3 <- read_csv("MultisppS3_temp_biomass.csv")
-# Multispp_temp_S3_spike <- read_csv("MultisppS3_temp_biomass_spike.csv")
+Multispp_temp_biomass <- read_csv("Multispp_temp_biomass_z.csv")
+Multispp_temp_abund <- read_csv("Multispp_temp_abund_z.csv")
+Multispp_temp_hyd_HFE_abund <- read_csv("Multispp_temp_hyd_HFE_abund_z.csv")
+Multispp_temp_hyd_HFE_biomass <- read_csv("Multispp_temp_hyd_HFE_biomass_z.csv")
+Multispp_temp_abund_hfe <- read_csv("Multispp_temp_abund_hfe_z.csv")
+Multispp_temp_biomass_hfe <- read_csv("Multispp_temp_biomass_hfe_z.csv")
 
-multi_abund_combo <- bind_rows(
-  Multispp_temp_abund %>%  mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
-  Multispp_temp_abund_spike %>% mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
-  Multispp_temp_hyd_abund %>%  mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
-  Multispp_temp_hyd_abund_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
-  Multispp_temp_HFE_abund %>% mutate(source = "Temperature & HFE",  temp_spike = 0, hydropeaking = 0, HFE = 1),
-  Multispp_temp_HFE_abund_spike %>% mutate(source = "Temperature & spike & HFE",  temp_spike = 1, hydropeaking = 0, HFE = 1),
-  Multispp_temp_hyd_HFE_abund %>% mutate(source = "Temperature & hydropeaking & HFE",  temp_spike = 0, hydropeaking = 1, HFE = 1),
-  Multispp_temp_hyd_HFE_abund_spike %>% mutate(source = "Temperature & spike & hydropeaking & HFE",  temp_spike = 1, hydropeaking = 1, HFE = 1)
+multi_biomass_combo <- bind_rows(
+  Multispp_temp_biomass %>%  mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
+  #Multispp_temp_biomass_spike %>% mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
+  #Multispp_temp_hyd_biomass %>%  mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
+  #Multispp_temp_hyd_biomass_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
+  Multispp_temp_biomass_hfe %>% mutate(source = "Temperature & HFE",  temp_spike = 0, hydropeaking = 0, HFE = 1),
+ # Multispp_temp_HFE_biomass_spike %>% mutate(source = "Temperature & spike & HFE",  temp_spike = 1, hydropeaking = 0, HFE = 1),
+ Multispp_temp_hyd_HFE_biomass %>% mutate(source = "Temperature & hydropeaking & HFE",  temp_spike = 0, hydropeaking = 1, HFE = 1),
+ # Multispp_temp_hyd_HFE_biomass_spike %>% mutate(source = "Temperature & spike & hydropeaking & HFE",  temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
 
@@ -466,7 +443,7 @@ label.names <- c(
   "Temperature +\nSpike + Hydropeaking + HFE"
 )
 
-multi_abund_combo$source <- ordered(multi_abund_combo$source, levels = c(
+multi_biomass_combo$source <- ordered(multi_biomass_combo$source, levels = c(
   "Temperature", 
   "Temperature & spike", 
   "Temperature & hydropeaking", 
@@ -476,86 +453,19 @@ multi_abund_combo$source <- ordered(multi_abund_combo$source, levels = c(
   "Temperature & hydropeaking & HFE", 
   "Temperature & spike & hydropeaking & HFE"
 ))  
-multi_abund_combo$taxa <- ordered(multi_abund_combo$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
-
-
-multi_abund_summary <- multi_abund_combo %>%
-  group_by(temperature, taxa, source) %>%
-  summarise(mean_abund = mean(abundance, na.rm = TRUE),
-            sd_abund = sd(abundance, na.rm = TRUE), .groups = "drop")
-
-head(multi_abund_summary)
-
-multi_abund <- ggplot(data = multi_abund_summary, 
-                      aes(x = as.factor(temperature), y = log(mean_abund), color = taxa)) +
-  geom_errorbar(aes(ymin = log(mean_abund - sd_abund), ymax = log(mean_abund + sd_abund)), 
-                linewidth = 0.75, width = 0.2, position = position_dodge(0.5)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-                            "1.2" = "+20%", "1.5" = "+50%")) +
-  facet_wrap(.~source, nrow = 4) +
-  theme_bw() +
-  scale_color_manual(name = " ", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Hydropsyche"), " spp.")),expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")),  expression(italic("P. antipodarum"))), values=taxa.colors) +
-  xlab("Temperature") +
-  labs(y= "Log Relative Abundance") +
-  theme(text = element_text(size = 13), 
-        axis.text.x = element_text(hjust = 1, angle=45, size = 12), 
-        axis.text.y = element_text(size = 13), 
-        legend.key = element_rect(fill = "transparent"))
-
-multi_biomass_combo <- bind_rows(
-  Multispp_temp_biomass %>%  mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
-  Multispp_temp_biomass_spike %>% mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
-  #Multispp_temp_hyd_biomass %>%  mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
-  #Multispp_temp_hyd_biomass_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
-  Multispp_temp_HFE_biomass %>% mutate(source = "Temperature & HFE",  temp_spike = 0, hydropeaking = 0, HFE = 1),
-  Multispp_temp_HFE_biomass_spike %>% mutate(source = "Temperature & spike & HFE",  temp_spike = 1, hydropeaking = 0, HFE = 1)
-  #Multispp_temp_hyd_HFE_biomass %>% mutate(source = "Temperature & hydropeaking & HFE",  temp_spike = 0, hydropeaking = 1, HFE = 1),
-  #Multispp_temp_hyd_HFE_biomass_spike %>% mutate(source = "Temperature & spike & hydropeaking & HFE",  temp_spike = 1, hydropeaking = 1, HFE = 1)
-)
-
-
-label.names <- c(
-  "Temperature", 
-  "Temperature +\nSpike", 
-  #"Temperature +\nHydropeaking", 
-  #"Temperature +\nSpike + Hydropeaking",
-  "Temperature +\nHFE", 
-  "Temperature +\nSpike + HFE"
-  #"Temperature +\nHydropeaking + HFE", 
-  #"Temperature +\nSpike + Hydropeaking + HFE"
-)
-
-multi_biomass_combo$source <- ordered(multi_biomass_combo$source, levels = c(
-  "Temperature", 
-  "Temperature & spike", 
-  #"Temperature & hydropeaking", 
-  #"Temperature & spike & hydropeaking",
-  "Temperature & HFE", 
-  "Temperature & spike & HFE" 
-  #"Temperature & hydropeaking & HFE", 
-  #"Temperature & spike & hydropeaking & HFE"
-))  
 multi_biomass_combo$taxa <- ordered(multi_biomass_combo$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
+multi_biomass_combo$q <- as.factor(multi_biomass_combo$q)
+multi_biomass_combo <- multi_biomass_combo %>% 
+  filter(q == 1 | q == 2 | q == 4)
 
-write.csv2(multi_abund_combo, file = "multi_abund_combo.csv")
-write.csv2(multi_biomass_combo, file = "multi_biomass_combo.csv")
-
-
-multi_biomass_summary <- multi_biomass_combo %>%
-  group_by(temperature, taxa, source) %>%
-  summarise(mean_biomass = mean(biomass, na.rm = TRUE),
-            sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
-
-head(multi_biomass_summary)
-multi_biomass <- ggplot(data = multi_biomass_summary, 
-                        aes(x = as.factor(temperature), y = log(mean_biomass), color = taxa)) +
-  geom_errorbar(aes(ymin = log(mean_biomass - sd_biomass), ymax = log(mean_biomass + sd_biomass)), 
+multi_biomass <- ggplot(data = multi_biomass_combo, 
+                      aes(x = as.factor(temperature), y = (mean_biomass), color = taxa)) +
+  geom_errorbar(aes(ymin = (mean_biomass - sd_biomass), ymax = (mean_biomass + sd_biomass)), 
                 linewidth = 0.75, width = 0.2, position = position_dodge(0.5)) +
   geom_point(size = 3, position = position_dodge(0.5)) +
   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
                             "1.2" = "+20%", "1.5" = "+50%")) +
-  facet_wrap(.~source, nrow= 4) +
+  facet_wrap(.~source + q, nrow = 4) +
   theme_bw() +
   scale_color_manual(name = " ", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Hydropsyche"), " spp.")),expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")),  expression(italic("P. antipodarum"))), values=taxa.colors) +
   xlab("Temperature") +
@@ -564,8 +474,6 @@ multi_biomass <- ggplot(data = multi_biomass_summary,
         axis.text.x = element_text(hjust = 1, angle=45, size = 12), 
         axis.text.y = element_text(size = 13), 
         legend.key = element_rect(fill = "transparent"))
-
-
 
 # #----------------------------------------------------------------
 # Multispp_mh_sens_temps <- read_csv("Multispp_mh_sens_temps.csv")
