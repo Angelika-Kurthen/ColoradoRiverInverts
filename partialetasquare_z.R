@@ -2,26 +2,26 @@
 library(tidyverse)
 library(effectsize)
 
-# read in the csv's
-Multispp_temp_biomass <- read_csv("ColoradoRiverInverts/Multispp_temp_biomass_z_full.csv")
-Multispp_temp_biomass_spike <- read_csv("ColoradoRiverInverts/Multispp_temp_biomass_spike_z_full.csv")
-Multispp_temp_hyd_biomass_spike <- read_csv("ColoradoRiverInverts/Multispp_temp_hyd_biomass_spike_z_full.csv")
+# read in the csv's for HYOS
+# Multispp_temp_biomass <- read_csv("ColoradoRiverInverts/Multispp_temp_biomass_z_hyos_full.csv")
+# Multispp_temp_biomass_spike <- read_csv("ColoradoRiverInverts/Multispp_temp_biomass_spike_z_hyos_full.csv")
+# Multispp_temp_hyd_biomass <- read_csv("ColoradoRiverInverts/Multispp_temp_biomass_hyd_z_hyos_full.csv")
+# Multispp_temp_hyd_biomass_spike <- read_csv("ColoradoRiverInverts/Multispp_temp_hyd_biomass_spike_z_hyos_full.csv")
+# Multispp_temp_HFE_biomass <- read_csv("ColoradoRiverInverts/Multispp_temp_biomass_hfe_z_hyos_full.csv")
+# Multispp_temp_HFE_biomass_spike <- read_csv("ColoradoRiverInverts/Multispp_temp_HFE_biomass_spike_z_hyos_full.csv")
+# Multispp_temp_hyd_HFE_biomass <- read_csv("ColoradoRiverInverts/Multispp_temp_hyd_HFE_biomass_z_hyos_full.csv")
+# Multispp_temp_hyd_HFE_biomas_spike <- read_csv("ColoradoRiverInverts/Multispp_temp_hyd_HFE_biomass_spike_z_hyos_full.csv")
 
-Multispp_temp_HFE_biomass <- read_csv("ColoradoRiverInverts/Multispp_temp_biomass_hfe_z_full.csv")
-Multispp_temp_HFE_biomass_spike <- read_csv("ColoradoRiverInverts/Multispp_temp_biomass_hfe_z_spike_full.csv")
-Multispp_temp_hyd_HFE_biomass <- read_csv("ColoradoRiverInverts/Multispp_temp_hyd_HFE_biomass_z_full.csv")
-Multispp_temp_hyd_HFE_biomas_spike <- read_csv("ColoradoRiverInverts/Multispp_temp_hyd_HFE_biomass_spike_z_full.csv")
 
-multi_biomass_combo <- bind_rows(
-  Multispp_temp_biomass %>%  mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
-  Multispp_temp_biomass_spike %>% mutate(source = "Temperature", temp_spike = 1, hydropeaking = 0, HFE = 0),
-  Multispp_temp_hyd_biomass %>%  mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
-  Multispp_temp_hyd_biomass_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
-  Multispp_temp_HFE_biomass %>% mutate(source = "Temperature & HFE",  temp_spike = 0, hydropeaking = 0, HFE = 1),
-  Multispp_temp_HFE_biomass_spike %>% mutate(source = "Temperature & spike & HFE",  temp_spike = 1, hydropeaking = 0, HFE = 1),
-  Multispp_temp_hyd_HFE_biomass %>% mutate(source = "Temperature & hydropeaking & HFE",  temp_spike = 0, hydropeaking = 1, HFE = 1),
-  Multispp_temp_hyd_HFE_biomass_spike %>% mutate(source = "Temperature & spike & hydropeaking & HFE",  temp_spike = 1, hydropeaking = 1, HFE = 1)
-)
+
+Multispp_temp_biomass <- read_csv("Multispp_temp_biomass_z_hyos_full.csv")
+Multispp_temp_biomass_spike <- read_csv("Multispp_temp_biomass_spike_z_hyos_full.csv")
+Multispp_temp_hyd_biomass <- read_csv("Multispp_temp_biomass_hyd_z_hyos_full.csv")
+Multispp_temp_hyd_biomass_spike <- read_csv("Multispp_temp_hyd_biomass_spike_z_hyos_full.csv")
+Multispp_temp_HFE_biomass <- read_csv("Multispp_temp_biomass_hfe_z_hyos_full.csv")
+Multispp_temp_HFE_biomass_spike <- read_csv("Multispp_temp_HFE_biomass_spike_z_hyos_full.csv")
+Multispp_temp_hyd_HFE_biomass <- read_csv("Multispp_temp_hyd_HFE_biomass_z_hyos_full.csv")
+Multispp_temp_hyd_HFE_biomass_spike <- read_csv("Multispp_temp_hyd_HFE_biomass_spike_z_hyos_full.csv")
 
 multi_biomass_combo <- bind_rows(
   Multispp_temp_biomass %>%  mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
@@ -89,4 +89,4 @@ eta_sq_taxon_biomass <- multi_biomass_combo %>%
   map_df(~ compute_eta_sq(.x, "biomass"), .id = "taxon")
 
 
-write.csv(eta_sq_taxon_biomass, "Multispp_partialetasquare_biomass_z.csv", row.names = FALSE)
+write.csv(eta_sq_taxon_biomass, "Multispp_partialetasquare_biomass_z_hyos.csv", row.names = FALSE)
