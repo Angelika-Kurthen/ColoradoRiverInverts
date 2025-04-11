@@ -201,7 +201,7 @@ flat_results <- do.call(c, results)
 
 # Final binding
 Multispp_temp_abund_spike <- do.call(rbind, lapply(flat_results, `[[`, "Multispp_temp_abund_spike"))
-Multispp_temp_abund_spike <- do.call(rbind, lapply(flat_results, `[[`, "Multispp_temp_biomass_spike"))
+Multispp_temp_biomass_spike <- do.call(rbind, lapply(flat_results, `[[`, "Multispp_temp_biomass_spike"))
 MultisppS3_temp_biomass_spike <- do.call(rbind, lapply(flat_results, `[[`, "MultisppS3_temp_biomass_spike"))
 
 write.csv(Multispp_temp_abund_spike, "Multispp_temp_abund_spike_z_full.csv", row.names = FALSE)
@@ -216,7 +216,7 @@ Multispp_temp_abund_spike <- Multispp_temp_abund_spike %>%
             sd_abund = sd(abundance, na.rm = TRUE), .groups = "drop")
 
 
-Multispp_temp_abund_spike <- Multispp_temp_abund_spike %>%
+Multispp_temp_biomass_spike <- Multispp_temp_biomass_spike %>%
   group_by(temperature, taxa, q) %>%
   summarise(mean_biomass = mean(biomass, na.rm = TRUE),
             sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
