@@ -35,6 +35,15 @@ multi_biomass_combo <- bind_rows(
 )
 
 
+rm(Multispp_temp_biomass)
+rm(Multispp_temp_biomass_spike)
+rm(Multispp_temp_hyd_biomass)
+rm(Multispp_temp_hyd_biomass_spike)
+rm(Multispp_temp_HFE_biomass)
+rm(Multispp_temp_HFE_biomass_spike)
+rm(Multispp_temp_hyd_HFE_biomass)
+rm(Multispp_temp_hyd_HFE_biomass_spike)
+
 label.names <- c(
   "Temperature", 
   "Temperature +\nSpike", 
