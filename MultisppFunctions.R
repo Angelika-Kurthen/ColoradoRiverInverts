@@ -13,6 +13,7 @@ multispp.data.frame <- function(data, burnin, iteration, value = "biomass"){
   # Compute relative abundance
   relative_abundance <- sweep(taxon_stage_sums, c(1, 2), total_stage_sums, "/")
   
+  
   dimnames(relative_abundance) <- list(
     timesteps = 1:dim(relative_abundance)[1],
     rep = 1:dim(relative_abundance)[2],
@@ -70,3 +71,52 @@ multispp.data.frame <- function(data, burnin, iteration, value = "biomass"){
   
   return(df)
 }
+
+partial.eta.data.frame <- function(data, burnin, iteration){
+  
+  pop_matrix_perm <- aperm(data, c(1, 3, 4, 2))  # Now: [2601, 1000, 5, 3]
+  # Sum over stages directly with rowSums (preserving dimensions)
+  taxon_stage_sums <- rowSums(pop_matrix_perm, dims = 3)
+  
+  # Total sum across all taxa
+  total_stage_sums <- rowSums(taxon_stage_sums, dims = 2)
+  
+  # Compute relative abundance
+  relative_abundance <- sweep(taxon_stage_sums, c(1, 2), total_stage_sums, "/")
+  
+  dimnames(relative_abundance) <- list(
+    timesteps = 1:dim(relative_abundance)[1],
+    rep = 1:dim(relative_abundance)[2],
+    taxa = 1:dim(relative_abundance)[3]
+  )
+  
+  df <- as.data.frame(as.table(relative_abundance))  
+
+  colnames(df) <- c('timesteps', 'rep', 'taxa', 'rel_biomass')
+  df$timesteps <- as.numeric(as.character(df$timesteps))
+  
+  if (is.null(burnin)== F){
+    df <- df[df$timesteps > burnin, ]
+  }
+  
+  # Convert 'timesteps', 'rep', and 'taxa' to numeric (they are factors by default)
+  # Convert 'timesteps' and 'rep' to numeric
+  df$timesteps <- as.numeric(as.character(df$timesteps))
+  df <- df %>% 
+    group_by(rep, taxa) %>% 
+    summarise(across(where(is.numeric), ~mean(.x, na.rm = T))) %>% 
+    select(timesteps, taxa, rel_biomass)
+  # Define taxa names
+  taxa_names <- c("HYOS", "BAET", "NZMS", "CHIR", "GAMM")
+  
+  # Assign these names to the 'taxa' column
+  df$taxa <- factor(df$taxa, levels = 1:5, labels = taxa_names)
+  
+
+  # Remove the 'rep' column
+  df$rep <- NULL
+  
+  return(df)
+}
+
+
