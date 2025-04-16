@@ -286,7 +286,9 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       F2_NZMS <- Logistic.Dens.Dependence(F2_NZMS, K, 
                                           N = (NZMS_q * sum(output.Biomass.list[t-1, ,iter, "NZMS"])) +
                                          sum(output.Biomass.list[t-1, ,iter, c("HYOS", "CHIR", "BAET", "GAMM")]))
-      F3_NZMS <- Logistic.Dens.Dependence(F3_NZMS, K, Total.Biomass[t-1, iter]) 
+      F3_NZMS <- Logistic.Dens.Dependence(F3_NZMS, K, 
+                                          N = (NZMS_q * sum(output.Biomass.list[t-1, ,iter, "NZMS"])) +
+                                            sum(output.Biomass.list[t-1, ,iter, c("HYOS", "CHIR", "BAET", "GAMM")]))
       #once again, sometimes they goes below 0, so make sure not negative
       if (F2_NZMS < 0){
         F2_NZMS <- 0
