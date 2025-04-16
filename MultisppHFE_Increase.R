@@ -1,7 +1,8 @@
 ##########
-# Multispecies Hydropeaking Simulation
+# Multispecies HFEs
 #############
 
+library(parallel)
 # Load required scripts with custom functions and models
 source("Multispp.R")
 source("MultisppFunctions.R")
@@ -34,14 +35,14 @@ flows$Discharge <- flows$Discharge / 85000
 
 # Create a sequence of hydropeaking intensity levels from 0.00 to 0.70 in increments of 0.05
 HFEs <- seq(0, 2, by = 0.25)
-HFEs <- 1
+#HFEs <- 1
 # Get row indices for high flow events
 HFE_rows <- which(month(flows$dts) == 3 & day(flows$dts) == 31)
 HFE_rows <- HFE_rows[seq(1, length(HFE_rows), by = 3)]  # Keep every 3rd occurrence
 
 # Initialize lists to store results for abundance, biomass, and annual biomass calculations
-Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), temperature=factor())
-Multispp_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(), temperature=factor())
+#Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), HFE=factor())
+Multispp_temp_biomass <- data.frame(timesteps= numeric(), taxa = factor(), biomass=numeric(), magnitude=factor())
 
 # Loop through each hfe intensity level
 results <- mclapply(HFEs, function(HFE) {
@@ -50,35 +51,35 @@ results <- mclapply(HFEs, function(HFE) {
   
   out <- Multispp(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000, 
                   disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 1000, 
-                  peaklist = 0, peakeach = length(temps$Temperature), stage_output = c("all", "biomass"))
+                  peaklist = 0, peakeach = length(temps$Temperature), stage_output = c("biomass"))
   
-  means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 1000, value = "abund")
+  #means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 1000, value = "abund")
   means.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "biomass")
 
   # Convert to data frame instead of cbind matrix
-  average_means <- data.frame(means.abund, temperature = rep(HFE, nrow(means.abund)))
-  colnames(average_means) <- colnames(Multispp_temp_abund)
+  # average_means <- data.frame(means.abund, temperature = rep(HFE, nrow(means.abund)))
+  # colnames(average_means) <- colnames(Multispp_temp_abund)
   
   average_biomass <- data.frame(means.biomass, temperature = rep(HFE, nrow(means.biomass)))
   colnames(average_biomass) <- colnames(Multispp_temp_biomass)
   
   # Ensure factor consistency
-  average_means$taxa <- as.factor(average_means$taxa)
-  average_means$temperature <- as.factor(average_means$temperature)
-  
+  # average_means$taxa <- as.factor(average_means$taxa)
+  # average_means$temperature <- as.factor(average_means$temperature)
+  # 
   average_biomass$taxa <- as.factor(average_biomass$taxa)
-  average_biomass$temperature <- as.factor(average_biomass$temperature)
+  average_biomass$magnitude <- as.factor(average_biomass$magnitude)
   
-  return(list(Multispp_temp_abund = average_means, 
+  return(list( 
               Multispp_temp_biomass = average_biomass))
- # }, mc.cores = 1)
+
 }, mc.cores = detectCores() - 1)
 
-Multispp_temp_abund <- do.call(rbind, lapply(results, `[[`, "Multispp_temp_abund"))
-Multispp_temp_biomass <- do.call(rbind, lapply(results, `[[`, "Multispp_temp_biomass"))
+#Multispp_temp_abund <- do.call(rbind, lapply(results, `[[`, "Multispp_temp_abund"))
+Multispp_temp_biomass_HFEs <- do.call(rbind, lapply(results, `[[`, "Multispp_temp_biomass"))
 
 # Write results to CSV files
-write.csv(Multispp_temp_abund, "Multispp_temp_HFE_abund.csv", row.names = FALSE)
-write.csv(Multispp_temp_biomass, "Multispp_temp_HFE_biomass.csv", row.names = FALSE)
+#write.csv(Multispp_temp_abund, "Multispp_temp_HFE_abund.csv", row.names = FALSE)
+write.csv(Multispp_temp_biomass_HFEs, "Multispp_temp_HFE_biomass_increase.csv", row.names = FALSE)
 
 
