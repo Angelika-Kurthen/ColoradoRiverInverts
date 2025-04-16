@@ -31,7 +31,7 @@ source("GAMMSurvivorship.R")
 Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
                      extinct, iteration, peaklist = NULL, peakeach = NULL, 
                      stage_output = "all", modify_parameter = NULL, increment = NULL, 
-                     q = list(HYOS = 1, BAET = 1, NZMS = 1, CHIR = 1, GAMM = 1)){
+                     z = list(HYOS = 1, BAET = 1, NZMS = 1, CHIR = 1, GAMM = 1)){
 
   Q <- as.numeric(flow.data)
   temps <- temp.data
@@ -103,11 +103,11 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   GAMM_k <- unname(surv.fit.GAMM$m$getPars()[1])
   
   # load q, which relates intra to interspecific competition
-  HYOS_q <- q[["HYOS"]]
-  BAET_q <- q[["BAET"]]
-  NZMS_q <- q[["NZMS"]]
-  CHIR_q <- q[["CHIR"]]
-  GAMM_q <- q[["GAMM"]]
+  HYOS_z <- z[["HYOS"]]
+  BAET_z <- z[["BAET"]]
+  NZMS_z <- z[["NZMS"]]
+  CHIR_z <- z[["CHIR"]]
+  GAMM_z <- z[["GAMM"]]
   
   
   extinction <- extinct # the same for all
@@ -272,22 +272,22 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
 
       # Logistic via Rogosch et al. Fish Model
       F3_HYOS <- Logistic.Dens.Dependence(F3_HYOS, K, 
-                                          N = (HYOS_q * sum(output.Biomass.list[t-1, ,iter, "HYOS"])) + 
+                                          N = (HYOS_z * sum(output.Biomass.list[t-1, ,iter, "HYOS"])) + 
                                             sum(output.Biomass.list[t-1, ,iter, c("BAET", "CHIR", "NZMS", "GAMM")]))
       Flist_HYOS[t] <- F3_HYOS
       
       F3_BAET <- Logistic.Dens.Dependence(F3_BAET, K, 
-                                        N = (BAET_q * sum(output.Biomass.list[t-1, ,iter, "BAET"])) + 
+                                        N = (BAET_z * sum(output.Biomass.list[t-1, ,iter, "BAET"])) + 
                                               sum(output.Biomass.list[t-1, ,iter, c("HYOS", "CHIR", "NZMS", "GAMM")])) 
       Flist_BAET[t] <-  F3_BAET
       
       #we assume that NZMS do no see increase in K post disturbance but other taxa do... how to model this
       # 
       F2_NZMS <- Logistic.Dens.Dependence(F2_NZMS, K, 
-                                          N = (NZMS_q * sum(output.Biomass.list[t-1, ,iter, "NZMS"])) +
+                                          N = (NZMS_z * sum(output.Biomass.list[t-1, ,iter, "NZMS"])) +
                                          sum(output.Biomass.list[t-1, ,iter, c("HYOS", "CHIR", "BAET", "GAMM")]))
       F3_NZMS <- Logistic.Dens.Dependence(F3_NZMS, K, 
-                                          N = (NZMS_q * sum(output.Biomass.list[t-1, ,iter, "NZMS"])) +
+                                          N = (NZMS_z * sum(output.Biomass.list[t-1, ,iter, "NZMS"])) +
                                             sum(output.Biomass.list[t-1, ,iter, c("HYOS", "CHIR", "BAET", "GAMM")]))
       #once again, sometimes they goes below 0, so make sure not negative
       if (F2_NZMS < 0){
@@ -301,7 +301,7 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       
       # CHIR
       F3_CHIR <- Logistic.Dens.Dependence(F3_CHIR, K, 
-                                          N = (CHIR_q * sum(output.Biomass.list[t-1, ,iter, "CHIR"])) +
+                                          N = (CHIR_z * sum(output.Biomass.list[t-1, ,iter, "CHIR"])) +
                                           sum(output.Biomass.list[t-1, ,iter, c("HYOS", "NZMS", "BAET", "GAMM")]))
       
       # 
@@ -310,10 +310,10 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
       
       #GAMM
       F2_GAMM <- Logistic.Dens.Dependence(F2_GAMM, K, 
-                                          N = (GAMM_q * sum(output.Biomass.list[t-1, ,iter, "GAMM"])) +
+                                          N = (GAMM_z * sum(output.Biomass.list[t-1, ,iter, "GAMM"])) +
                                           sum(output.Biomass.list[t-1, ,iter, c("HYOS", "NZMS", "BAET", "CHIR")]))
       F3_GAMM <- Logistic.Dens.Dependence(F3_GAMM, K,
-                                          N = (GAMM_q * sum(output.Biomass.list[t-1, ,iter, "GAMM"])) +
+                                          N = (GAMM_z * sum(output.Biomass.list[t-1, ,iter, "GAMM"])) +
                                           sum(output.Biomass.list[t-1, ,iter, c("HYOS", "NZMS", "BAET", "CHIR")]))
       
       #
