@@ -95,7 +95,6 @@ results <- mclapply(temp_seq, function(te) {
   })
 
   return(temp_results)
-}, mc.cores = 1)
 
 }, mc.cores = detectCores() - 1)
 
@@ -194,7 +193,6 @@ results <- mclapply(temp_seq, function(te) {
   })
   
   return(temp_results)
-}, mc.cores = 1)
 
 }, mc.cores = detectCores() - 1)
 
