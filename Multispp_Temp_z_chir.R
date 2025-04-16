@@ -34,7 +34,7 @@ flows$Discharge <- flows$Discharge / 85000
 
 # Create a sequences
 temp_seq <- c(1,1.1,1.2,1.5)
-q_seq <- c(0.5, 1, 2, 4)
+q_seq <- c(1, 2, 4, 8)
 
 # Initialize final storage data frames
 Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), temperature=factor(), q = factor())

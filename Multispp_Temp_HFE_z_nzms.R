@@ -42,7 +42,7 @@ flows$Discharge[HFE_rows] <- 0.45
 
 # Create a sequences
 temp_seq <- c(1,1.1,1.2,1.5)
-q_seq <- c(0.5, 1, 2, 4)
+q_seq <- c(1, 2, 4, 8)
 
 # Initialize lists to store results for abundance, biomass, and annual biomass calculations
 Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), temperature=factor(), q = factor())
@@ -102,7 +102,6 @@ results <- mclapply(temp_seq, function(te) {
   })
 
   return(temp_results)
-
 }, mc.cores = detectCores() - 1)
 
 # Flatten the nested results (convert list of lists to a single list)
@@ -157,7 +156,7 @@ results <- mclapply(temp_seq, function(te) {
   temp_results <- lapply(q_seq, function(q_val) {
 
     # Modify inputs
-    qs <- list(HYOS = 1, BAET = q_val, NZMS = 1, CHIR = 1, GAMM = 1)
+    qs <- list(HYOS = 1, BAET = 1, NZMS = q_val, CHIR = 1, GAMM = 1)
     temps$Temperature <- temps$Temperature * te
 
     # Run model

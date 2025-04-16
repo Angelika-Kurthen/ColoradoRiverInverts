@@ -42,7 +42,7 @@ flows$Discharge[HFE_rows] <- 0.45
 
 # Create a sequence of hydropeaking intensity levels from 0.00 to 0.70 in increments of 0.05
 temp_seq <- c(1,1.1,1.2,1.5)
-q_seq <- c(0.5, 1, 2, 4)
+q_seq <- c(1, 2,4,8)
 
 # Initialize lists to store results for abundance, biomass, and annual biomass calculations
 Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), temperature=factor(), q = factor())
