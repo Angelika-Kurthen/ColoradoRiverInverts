@@ -5,15 +5,26 @@ library(effectsize)
 library(dplyr)
 library(parallel)
 
-# List of input files and their metadata
+# List of input Hydropsyche files when zHydropsyche is changed
+biomass <- read.csv2("Multispp_temp_biomass_z_hyos_full_HYOS.csv")
+biomass_spike <- read.csv2("Multispp_temp_biomass_spike_z_hyos_full_HYOS.csv") 
+hyd <- read.csv2("Multispp_temp_biomass_hyd_z_hyos_full_HYOS.csv")
+hyd_spike <- read.csv2("Multispp_temp_hyd_biomass_spike_z_hyos_full_HYOS.csv")
+hfe <- read.csv2("Multispp_temp_biomass_hfe_z_hyos_full_HYOS.csv")
+hfe_spike <- read.csv2("Multispp_temp_HFE_biomass_spike_z_hyos_full_HYOS.csv")
+hyd_hfe <- read.csv2("Multispp_temp_hyd_HFE_biomass_z_hyos_full_HYOS.csv")
+hyd_hfe_spike <- read.csv2("Multispp_temp_hyd_HFE_biomass_spike_z_hyos_full_HYOS.csv")
+
+
 hyos <- bind_rows(
-  "Multispp_temp_biomass_z_hyos_full_HYOS.csv",
-  "Multispp_temp_biomass_spike_z_hyos_full_HYOS.csv", 
-  "Multispp_temp_biomass_hyd_z_hyos_full_HYOS.csv",
-  "Multispp_temp_hyd_biomass_spike_z_hyos_full_HYOS.csv",
-  "Multispp_temp_biomass_hfe_z_hyos_full_HYOS.csv",
-  "Multispp_temp_HFE_biomass_spike_z_hyos_full_HYOS.csv", 
-  "Multispp_temp_hyd_HFE_biomass_spike_z_hyos_full_HYOS.csv", 
+  biomass, 
+  biomass_spike, 
+  hyd, 
+  hyd_spike, 
+  hfe, 
+  hfe_spike, 
+  hyd_hfe, 
+  hyd_hfe_spike
 )
 
 label.names <- c(
@@ -52,15 +63,26 @@ write.csv(eta_sq_df.multi.b, "Multispp_partialetasquare_biomass_hyos_hyos.csv", 
 rm(hyos)
 
 
-# List of input files and their metadata
+# List of input Baetidae files when zHydropsyche is changed
+biomass <- read.csv2("Multispp_temp_biomass_z_hyos_full_BAET.csv")
+biomass_spike <- read.csv2("Multispp_temp_biomass_spike_z_hyos_full_BAET.csv") 
+hyd <- read.csv2("Multispp_temp_biomass_hyd_z_hyos_full_BAET.csv")
+hyd_spike <- read.csv2("Multispp_temp_hyd_biomass_spike_z_hyos_full_BAET.csv")
+hfe <- read.csv2("Multispp_temp_biomass_hfe_z_hyos_full_BAET.csv")
+hfe_spike <- read.csv2("Multispp_temp_HFE_biomass_spike_z_hyos_full_BAET.csv")
+hyd_hfe <- read.csv2("Multispp_temp_hyd_HFE_biomass_z_hyos_full_BAET.csv")
+hyd_hfe_spike <- read.csv2("Multispp_temp_hyd_HFE_biomass_spike_z_hyos_full_BAET.csv")
+
+
 baet <- bind_rows(
-  "Multispp_temp_biomass_z_hyos_full_BAET.csv",
-  "Multispp_temp_biomass_spike_z_hyos_full_BAET.csv", 
-  "Multispp_temp_biomass_hyd_z_hyos_full_BAET.csv",
-  "Multispp_temp_hyd_biomass_spike_z_hyos_full_BAET.csv",
-  "Multispp_temp_biomass_hfe_z_hyos_full_BAET.csv",
-  "Multispp_temp_HFE_biomass_spike_z_hyos_full_BAET.csv", 
-  "Multispp_temp_hyd_HFE_biomass_spike_z_hyos_full_BAET.csv", 
+  biomass, 
+  biomass_spike, 
+  hyd, 
+  hyd_spike, 
+  hfe, 
+  hfe_spike, 
+  hyd_hfe, 
+  hyd_hfe_spike
 )
 
 label.names <- c(
@@ -99,15 +121,26 @@ write.csv(eta_sq_df.multi.b, "Multispp_partialetasquare_biomass_hyos_baet.csv", 
 rm(baet)
 
 
-# List of input files and their metadata
+# List of input Chironomidae files when zHydropsyche is changed
+biomass <- read.csv2("Multispp_temp_biomass_z_hyos_full_CHIR.csv")
+biomass_spike <- read.csv2("Multispp_temp_biomass_spike_z_hyos_full_CHIR.csv") 
+hyd <- read.csv2("Multispp_temp_biomass_hyd_z_hyos_full_CHIR.csv")
+hyd_spike <- read.csv2("Multispp_temp_hyd_biomass_spike_z_hyos_full_CHIR.csv")
+hfe <- read.csv2("Multispp_temp_biomass_hfe_z_hyos_full_CHIR.csv")
+hfe_spike <- read.csv2("Multispp_temp_HFE_biomass_spike_z_hyos_full_CHIR.csv")
+hyd_hfe <- read.csv2("Multispp_temp_hyd_HFE_biomass_z_hyos_full_CHIR.csv")
+hyd_hfe_spike <- read.csv2("Multispp_temp_hyd_HFE_biomass_spike_z_hyos_full_HYOS.csv")
+
+
 chir <- bind_rows(
-  "Multispp_temp_biomass_z_hyos_full_CHIR.csv",
-  "Multispp_temp_biomass_spike_z_hyos_full_CHIR.csv", 
-  "Multispp_temp_biomass_hyd_z_hyos_full_CHIR.csv",
-  "Multispp_temp_hyd_biomass_spike_z_hyos_full_CHIR.csv",
-  "Multispp_temp_biomass_hfe_z_hyos_full_CHIR.csv",
-  "Multispp_temp_HFE_biomass_spike_z_hyos_full_CHIR.csv", 
-  "Multispp_temp_hyd_HFE_biomass_spike_z_hyos_full_CHIR.csv", 
+  biomass, 
+  biomass_spike, 
+  hyd, 
+  hyd_spike, 
+  hfe, 
+  hfe_spike, 
+  hyd_hfe, 
+  hyd_hfe_spike
 )
 
 label.names <- c(
@@ -146,15 +179,27 @@ write.csv(eta_sq_df.multi.b, "Multispp_partialetasquare_biomass_hyos_chir.csv", 
 rm(chir)
 
 
-# List of input files and their metadata
+# List of input Gammarus files when zHydropsyche is changed
+# List of input Chironomidae files when zHydropsyche is changed
+biomass <- read.csv2("Multispp_temp_biomass_z_hyos_full_GAMM.csv")
+biomass_spike <- read.csv2("Multispp_temp_biomass_spike_z_hyos_full_GAMM.csv") 
+hyd <- read.csv2("Multispp_temp_biomass_hyd_z_hyos_full_GAMM.csv")
+hyd_spike <- read.csv2("Multispp_temp_hyd_biomass_spike_z_hyos_full_GAMM.csv")
+hfe <- read.csv2("Multispp_temp_biomass_hfe_z_hyos_full_GAMM.csv")
+hfe_spike <- read.csv2("Multispp_temp_HFE_biomass_spike_z_hyos_full_GAMM.csv")
+hyd_hfe <- read.csv2("Multispp_temp_hyd_HFE_biomass_z_hyos_full_GAMM.csv")
+hyd_hfe_spike <- read.csv2("Multispp_temp_hyd_HFE_biomass_spike_z_hyos_full_GAMM.csv")
+
+
 gamm <- bind_rows(
-  "Multispp_temp_biomass_z_hyos_full_GAMM.csv",
-  "Multispp_temp_biomass_spike_z_hyos_full_GAMM.csv", 
-  "Multispp_temp_biomass_hyd_z_hyos_full_GAMM.csv",
-  "Multispp_temp_hyd_biomass_spike_z_hyos_full_GAMM.csv",
-  "Multispp_temp_biomass_hfe_z_hyos_full_GAMM.csv",
-  "Multispp_temp_HFE_biomass_spike_z_hyos_full_GAMM.csv", 
-  "Multispp_temp_hyd_HFE_biomass_spike_z_hyos_full_GAMM.csv", 
+  biomass, 
+  biomass_spike, 
+  hyd, 
+  hyd_spike, 
+  hfe, 
+  hfe_spike, 
+  hyd_hfe, 
+  hyd_hfe_spike
 )
 
 label.names <- c(
@@ -193,7 +238,27 @@ write.csv(eta_sq_df.multi.b, "Multispp_partialetasquare_biomass_hyos_gamm.csv", 
 rm(gamm)
 
 
-# List of input files and their metadata
+# List of input NZMS files when zHydropsyche is changed
+biomass <- read.csv2("Multispp_temp_biomass_z_hyos_full_NZMS.csv")
+biomass_spike <- read.csv2("Multispp_temp_biomass_spike_z_hyos_full_NZMS.csv") 
+hyd <- read.csv2("Multispp_temp_biomass_hyd_z_hyos_full_NZMS.csv")
+hyd_spike <- read.csv2("Multispp_temp_hyd_biomass_spike_z_hyos_full_NZMS.csv")
+hfe <- read.csv2("Multispp_temp_biomass_hfe_z_hyos_full_NZMS.csv")
+hfe_spike <- read.csv2("Multispp_temp_HFE_biomass_spike_z_hyos_full_NZMS.csv")
+hyd_hfe <- read.csv2("Multispp_temp_hyd_HFE_biomass_z_hyos_full_NZMS.csv")
+hyd_hfe_spike <- read.csv2("Multispp_temp_hyd_HFE_biomass_spike_z_hyos_full_NZMS.csv")
+
+
+nzms <- bind_rows(
+  biomass, 
+  biomass_spike, 
+  hyd, 
+  hyd_spike, 
+  hfe, 
+  hfe_spike, 
+  hyd_hfe, 
+  hyd_hfe_spike
+)
 nzms <- bind_rows(
   "Multispp_temp_biomass_z_hyos_full_NZMS.csv",
   "Multispp_temp_biomass_spike_z_hyos_full_NZMS.csv", 
