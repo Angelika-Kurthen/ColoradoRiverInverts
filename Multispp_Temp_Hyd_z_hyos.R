@@ -34,7 +34,7 @@ flows$Discharge <- flows$Discharge / 85000
 
 # Create a sequence
 temp_seq <- c(1,1.1,1.2,1.5)
-q_seq <- c(0.5, 1, 2, 4)
+q_seq <- c(1, 2, 4, 8)
 
 # Initialize lists to store results for abundance, biomass, and annual biomass calculations
 Multispp_temp_abund <- data.frame(timesteps= numeric(), taxa = factor(), abundance=numeric(), temperature=factor(), q = factor() )
@@ -167,13 +167,13 @@ results <- mclapply(temp_seq, function(te) {
 
     # Convert to data frame & add metadata
     average_means <- data.frame(means.abund, temperature = rep(te, nrow(means.abund)), q = rep(q_val, nrow(means.abund)))
-    colnames(average_means) <- colnames(Multispp_temp_abund)
+    colnames(average_means) <- colnames(Multispp_temp_abund_spike)
 
     average_biomass <- data.frame(means.biomass, temperature = rep(te, nrow(means.biomass)), q = rep(q_val, nrow(means.biomass)))
-    colnames(average_biomass) <- colnames(Multispp_temp_biomass)
+    colnames(average_biomass) <- colnames(Multispp_temp_biomass_spike)
 
     s3biomass <- data.frame(means.s3.biomass, temperature = rep(te, nrow(means.s3.biomass)), q = rep(q_val, nrow(means.s3.biomass)))
-    colnames(s3biomass) <- colnames(MultisppS3_temp_biomass)
+    colnames(s3biomass) <- colnames(MultisppS3_temp_biomass_spike)
 
     # Ensure factor consistency
     average_means$taxa <- as.factor(average_means$taxa)
