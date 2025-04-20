@@ -277,7 +277,7 @@ tempsurv_plot <- ggarrange(nzms_surv, baet_surv, gamm_surv, hyos_surv, chir_surv
           labels = c("a", "b", "c", "d", "e"),
           ncol = 3, nrow = 2, common.legend =F)
 
-ggsave("TempSurvPlot.png", plot = tempsurv_plot, device = "png", width = 8, height = 8, dpi = "retina")
+ggsave("TempSurvPlot.png", plot = tempsurv_plot, device = "png", width = 14, height = 12, dpi = "retina")
 # plot(GAMMSurvRates$Temperature, GAMMSurvRates$Survival, col = "red", pch = 16, xlab = "Temperature", ylab = "Survival", xlim = c(0,40), ylim = c(0, 1))
 # lines(tem, TempSurv_GAMM(tem))
 #http://127.0.0.1:35901/graphics/63814419-21c3-4b1a-a8b6-ed037422e6cd.png
