@@ -90,9 +90,9 @@ BAETts <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = scale(mean.ab
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
   geom_line(data =BAET.samp.sum, aes(x = as.Date(V1, origin = "1970-01-01"), y = scale(V2), color = "Empirical"), linewidth = 1,  show.legend = T, alpha = 0.8)+
   labs(y= "Scaled Abundance", title = expression(paste(italic("Baetidae"), " spp.") ))+
-  geom_text(mapping = aes(x = as.Date("1998-01-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("1998-01-01"), y =5.75, label = paste("C = 89%")), color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("1998-01-01"), y =6.5, label = paste("Scaled RMSE = 0.96")), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("1998-01-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 5.5)+
+  geom_text(mapping = aes(x = as.Date("1998-01-01"), y =5.75, label = paste("C = 89%")), color = "black", size = 5.5)+
+  geom_text(mapping = aes(x = as.Date("1998-01-01"), y =6.5, label = paste("Scaled RMSE = 0.96")), color = "black", size = 5.5)+
     xlab("")+
   ylim(c(-4,7))+
   labs(colour=" ")+
@@ -101,8 +101,8 @@ BAETts <- ggplot(data = means.list.BAET, aes(x = `temps$dts`,  y = scale(mean.ab
   #scale_y_continuous(
     # sec.axis = sec_axis(~., name="Baetidae Larvae (inds/m2)"
     # ))+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), )+
+  theme(text = element_text(size = 15), axis.text.x = element_text(angle=45, hjust = 1, size = 15), 
+        axis.text.y = element_text(size = 15), )+
   scale_x_date(date_labels="%Y")
 
 # Thats nice but maybe n mix will be better
