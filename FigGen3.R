@@ -14,400 +14,85 @@ library(readr)
 library(lm.beta)
 library(effectsize)
 
-# 
-# #source("Multispp.R")
-# source("MultisppHydropeak.R")
-# 
-# # make sure in the correct format
-# hydropeak.abunds$`rep(hydropeak[hyd], times = 5)` <- as.numeric(hydropeak.abunds$`rep(hydropeak[hyd], times = 5)`)
-# hydropeak.abunds$avg.abund<- as.numeric(hydropeak.abunds$avg.abund)
-# hydropeak.abunds$taxa <- as.factor(hydropeak.abunds$taxa)
-# 
-# #plot
-# hyd_abund_multi <- ggplot(data = hydropeak.abunds, aes(`rep(hydropeak[hyd], times = 5)`, avg.abund, group = taxa, color = taxa))+ 
-#   geom_line(linewidth = 1, alpha = 0.8)+
-#   # geom_ribbon(data = Hydro_Abund, aes(ymin = scale(means - sd),
-#   #                 ymax = scale(means + sd), fill = V4),
-#   #                        alpha = .15,
-#   #                        show.legend = T) +
-#   scale_color_manual(name = "Taxon", labels=c("Hydropsyche spp.", "Baetidae spp.", "P. anitpodarum", "Chironomidae spp.", "G. lacustris"), values=c("#AA3377","#66CCEE","#4477AA","#228833", "#CCBB44"))+
-#   geom_vline(aes(xintercept = 0.01), linetype = "dotted", 
-#              linewidth=1)+
-#   geom_vline(aes(xintercept = 0.17 ), linetype="dashed", 
-#              linewidth=1)+
-#   geom_vline(aes(xintercept = 0.55 ), linetype = "dotdash", 
-#              linewidth=1)+
-#   scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
-#   theme_bw()+
-#   xlab("Hydropeaking Intensity")+
-#   ylab("Relative Abundance")+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-# 
-# # make sure in correct format
-# hydropeak.biomass$`rep(hydropeak[hyd], times = 5)` <- as.numeric(hydropeak.biomass$`rep(hydropeak[hyd]`)
-# hydropeak.biomass$avg.biomass <- as.numeric(hydropeak.biomass$avg.biomass)
-# hydropeak.biomass$taxa <- as.factor(hydropeak.biomass$taxa) 
-# #plot
-# hyd_ts_multi <- ggplot(data = hydropeak.biomass, aes(`rep(hydropeak[hyd], times = 5)`,avg.biomass , color = taxa)) + 
-#   # geom_ribbon(aes(ymin = sizemeans - sizesd,
-#   #                   ymax = sizemeans + sizesd),
-#   #               colour = V3,
-#   #               alpha = .15,
-#   #               show.legend = T) +
-#   geom_line(linewidth = 1, alpha = 0.8)+
-#   scale_color_manual(name = "Taxon", labels=c("Hydropsyche spp.", "Baetidae spp.", "P. anitpodarum", "Chironomidae spp.", "G. lacustris"), values=c("#AA3377","#66CCEE","#4477AA","#228833", "#CCBB44"))+
-#   geom_vline(aes(xintercept = 0.01), linewidth = 1, linetype = "dotted")+
-#   geom_vline(aes(xintercept = 0.17 ), linewidth = 1, linetype="dashed")+ 
-#   geom_vline(aes(xintercept = 0.55 ), linewidth = 1, linetype = "dotdash")+
-#   theme_bw()+
-#   xlab("Hydropeaking Intensity")+
-#   ylab("Relative Biomass (mg)")+
-#   scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-# 
-# #make sure in correct format
-# # can also make this emergent by only looking at HYOS, CHIR, and BAET
-# hydropeak.avg.annual$`rep(hydropeak[hyd], times = 5)` <- as.numeric(hydropeak.avg.annual$`rep(hydropeak[hyd], times = 5)`)
-# hydropeak.avg.annual$taxa <- as.factor(hydropeak.avg.annual$taxa)
-# hydropeak.avg.annual$`means.s3.biomass$mean.S3.biomass` <- as.numeric(hydropeak.avg.annual$`means.s3.biomass$mean.S3.biomass`)
-# hyd_yr_multi <- ggplot(data = hydropeak.avg.annual, aes(`rep(hydropeak[hyd], times = 5)`, log(`means.s3.biomass$mean.S3.biomass`), group = taxa, color = taxa)) + 
-#   # geom_ribbon(aes(ymin = sizemeans - sizesd,
-#   #                   ymax = sizemeans + sizesd),
-#   #               colour = V3,
-#   #               alpha = .15,
-#   #               show.legend = T) +
-#   geom_line(linewidth = 1, alpha = 0.8)+
-#   scale_color_manual(name = "Taxon", labels=c("Hydropsyche spp.", "Baetidae spp.", "P. anitpodarum", "Chironomidae spp.", "G. lacustris"), values=c("#AA3377","#66CCEE","#4477AA","#228833", "#CCBB44"))+
-#   geom_vline(aes(xintercept = 0.01), linewidth = 1, linetype = "dotted")+
-#   geom_vline(aes(xintercept = 0.17 ), linewidth = 1, linetype="dashed")+ 
-#   geom_vline(aes(xintercept = 0.55 ), linewidth = 1, linetype = "dotdash")+
-#   theme_bw()+
-#   scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
-#   xlab("Hydropeaking Intensity")+
-#   ylab("Log Annual S3 Biomass (mg)")+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-# 
-# ggarrange(hyd_abund_multi, hyd_ts_multi , hyd_yr_multi,
-#           labels = c("a", "b", "c"),
-#           ncol = 3, nrow = 1, common.legend = T)
-# 
-
 # increasing HFEs: 
 taxa.colors =c("#66CCEE", "#AA3377", "#228833", "#CCBB44", "#4477AA")
-# Multispp_temp_HFE_abund <- read_csv("Multispp_temp_HFE_abund.csv")
+
+# Multispp_temp_HFE_biomass <-  read_csv("Multispp_temp_HFE_biomass_increase.csv")
 # # note that I mislabeled HFE magnitude as temperature
-# Multispp_temp_HFE_abund$taxa <- as.factor(Multispp_temp_HFE_abund$taxa )
-# Multispp_temp_HFE_abund$taxa <- ordered(Multispp_temp_HFE_abund$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
-# Multispp_temp_HFE_abund$temperature <- as.factor(Multispp_temp_HFE_abund$temperature)
-# Multispp_HFE_summary <- Multispp_temp_HFE_abund %>%
-#     group_by(temperature, taxa) %>%
-#     summarise(mean_abund = mean(abundance, na.rm = TRUE),
-#               sd_abund = sd(abundance, na.rm = TRUE))
+# Multispp_temp_HFE_biomass$taxa <- as.factor(Multispp_temp_HFE_biomass$taxa)
+# Multispp_temp_HFE_biomass$taxa <- ordered(Multispp_temp_HFE_biomass$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
+# Multispp_temp_HFE_biomass$magnitude <- as.factor(Multispp_temp_HFE_biomass$magnitude)
 # 
 # 
-# hfe_abund <- ggplot(data = Multispp_HFE_summary, 
-#                       aes(x = as.factor(temperature), y = mean_abund, color = taxa, group = taxa)) +
-#   geom_errorbar(aes(ymin = mean_abund - sd_abund, ymax = mean_abund + sd_abund), 
+# Multispp_HFE_bio_summary <- Multispp_temp_HFE_biomass %>%
+#   group_by(magnitude, taxa) %>%
+#   summarise(mean_biomass = mean(biomass, na.rm = TRUE),
+#             sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
+# 
+# multispp_hfe <- ggplot(data = Multispp_HFE_bio_summary, 
+#                     aes(x = as.factor(magnitude), y = mean_biomass, color = taxa, group = taxa)) +
+#   geom_errorbar(aes(ymin = mean_biomass - sd_biomass, ymax = mean_biomass + sd_biomass), 
 #                 linewidth = 0.75, width = 0.2, position = position_dodge(0.5)) +
 #   geom_path(linewidth = 0.75, alpha = 0.7)+
 #   geom_point(size = 3, position = position_dodge(0.5)) +
 #   theme_bw() +
-#   ylim(c(0, 1))+
+#   ylim(c(0,1))+
 #   scale_color_manual(name = " ", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Hydropsyche"), " spp.")),expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")),  expression(italic("P. antipodarum"))), values=taxa.colors) +
 #   xlab("Spring HFE Magnitude") +
-#   labs(y= "Relative Abundance") +
+#   labs(y= "Relative Biomass") +
 #   theme(text = element_text(size = 13), 
 #         axis.text.x = element_text(hjust = 1, angle=45, size = 12), 
 #         axis.text.y = element_text(size = 13), 
 #         legend.key = element_rect(fill = "transparent"))
 # 
-# abund.hfe <- Multispp_temp_HFE_abund %>%
-#   group_by(taxa) %>%
-#   group_modify(~ {
-#     model <- eta_squared(aov(abundance~ temperature, data = .x))
-#   })
-
-Multispp_temp_HFE_biomass <-  read_csv("Multispp_temp_HFE_biomass_increase.csv")
-# note that I mislabeled HFE magnitude as temperature
-Multispp_temp_HFE_biomass$taxa <- as.factor(Multispp_temp_HFE_biomass$taxa)
-Multispp_temp_HFE_biomass$taxa <- ordered(Multispp_temp_HFE_biomass$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
-Multispp_temp_HFE_biomass$magnitude <- as.factor(Multispp_temp_HFE_biomass$magnitude)
-
-
-Multispp_HFE_bio_summary <- Multispp_temp_HFE_biomass %>%
-  group_by(magnitude, taxa) %>%
-  summarise(mean_biomass = mean(biomass, na.rm = TRUE),
-            sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
-
-multispp_hfe <- ggplot(data = Multispp_HFE_bio_summary, 
-                    aes(x = as.factor(magnitude), y = mean_biomass, color = taxa, group = taxa)) +
-  geom_errorbar(aes(ymin = mean_biomass - sd_biomass, ymax = mean_biomass + sd_biomass), 
-                linewidth = 0.75, width = 0.2, position = position_dodge(0.5)) +
-  geom_path(linewidth = 0.75, alpha = 0.7)+
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  theme_bw() +
-  ylim(c(0,1))+
-  scale_color_manual(name = " ", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Hydropsyche"), " spp.")),expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")),  expression(italic("P. antipodarum"))), values=taxa.colors) +
-  xlab("Spring HFE Magnitude") +
-  labs(y= "Relative Biomass") +
-  theme(text = element_text(size = 13), 
-        axis.text.x = element_text(hjust = 1, angle=45, size = 12), 
-        axis.text.y = element_text(size = 13), 
-        legend.key = element_rect(fill = "transparent"))
-
-# biomass.hfe <- Multispp_temp_HFE_biomass %>%
-#   group_by(taxa) %>%
-#   group_modify(~ {
-#     model <- eta_squared(aov(biomass ~ magnitude, data = .x))
-#   })
-
-# multispp_hfe <- ggarrange(hfe_abund, hfe_biomass, 
-        #   labels = c("a", "b"), 
-        # common.legend = T)
-ggsave("multispp_hfe.png", plot = multispp_hfe, device = "png", width = 6, height = 5 ,  dpi = "retina")
-
-
-# hyd
-# Multispp_temp_hyd_abund <- read_csv("Multispp_temp_hyd_abund.csv")
-# # note that I mislabeled HFE magnitude as temperature
-# Multispp_temp_hyd_abund$taxa <- as.factor(Multispp_temp_hyd_abund$taxa )
-# Multispp_temp_hyd_abund$taxa <- ordered(Multispp_temp_hyd_abund$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
-# Multispp_temp_hyd_abund$hi <- as.factor(Multispp_temp_hyd_abund$hi)
-# Multispp_hyd_summary <- Multispp_temp_hyd_abund %>%
+# 
+# ggsave("multispp_hfe.png", plot = multispp_hfe, device = "png", width = 6, height = 5 ,  dpi = "retina")
+# 
+# Multispp_temp_hyd_biomass <- read_csv("Multispp_temp_hyd_biomass.csv")
+# # note that I mislabeled hyd magnitude as temperature
+# Multispp_temp_hyd_biomass$taxa <- as.factor(Multispp_temp_hyd_biomass$taxa)
+# Multispp_temp_hyd_biomass$taxa <- ordered(Multispp_temp_hyd_biomass$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
+# Multispp_temp_hyd_biomass$hi <- as.factor(Multispp_temp_hyd_biomass$hi)
+# 
+# 
+# Multispp_hyd_bio_summary <- Multispp_temp_hyd_biomass %>%
 #   group_by(hi, taxa) %>%
-#   summarise(mean_abund = mean(abundance, na.rm = TRUE),
-#             sd_abund = sd(abundance, na.rm = TRUE))
+#   summarise(mean_biomass = mean(biomass, na.rm = TRUE),
+#             sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
 # 
-# 
-# hyd_abund <- ggplot(data = Multispp_hyd_summary, 
-#                     aes(x = as.factor(hi), y = mean_abund, color = taxa, group = taxa)) +
-#   geom_errorbar(aes(ymin = mean_abund - sd_abund, ymax = mean_abund + sd_abund), 
+# multispp_hyd <- ggplot(data = Multispp_hyd_bio_summary, 
+#                       aes(x = as.factor(hi), y = mean_biomass, color = taxa, group = taxa)) +
+#   geom_errorbar(aes(ymin = mean_biomass - sd_biomass, ymax = mean_biomass + sd_biomass), 
 #                 linewidth = 0.75, width = 0.2, position = position_dodge(0.5)) +
 #   geom_path(linewidth = 0.75, alpha = 0.7)+
 #   geom_point(size = 3, position = position_dodge(0.5)) +
 #   theme_bw() +
-#   ylim(c(0, 1))+
+#   ylim(c(0,1))+
 #   scale_color_manual(name = " ", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Hydropsyche"), " spp.")),expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")),  expression(italic("P. antipodarum"))), values=taxa.colors) +
 #   xlab("Hydropeaking Index") +
-#   labs(y= "Relative Abundance") +
+#   labs(y= "Relative Biomass") +
 #   theme(text = element_text(size = 13), 
 #         axis.text.x = element_text(hjust = 1, angle=45, size = 12), 
 #         axis.text.y = element_text(size = 13), 
 #         legend.key = element_rect(fill = "transparent"))
 # 
-# abund.hyd <- Multispp_temp_hyd_abund %>%
+# biomass.hyd <- Multispp_temp_hyd_biomass %>%
 #   group_by(taxa) %>%
 #   group_modify(~ {
-#     model <- eta_squared(aov(abundance~ hi, data = .x))
+#     model <- eta_squared(aov(biomass ~ hi, data = .x))
 #   })
 # 
-# Multispp_temp_hyd_abundno1 <- filter(Multispp_temp_hyd_abund, hi != 1)
-# abund.hydno1 <- Multispp_temp_hyd_abundno1 %>%
+# Multispp_temp_hyd_biomassno1 <- filter(Multispp_temp_hyd_biomass, hi != 1)
+# biomass.hydno1 <- Multispp_temp_hyd_biomassno1 %>%
 #   group_by(taxa) %>%
 #   group_modify(~ {
-#     model <- eta_squared(aov(abundance~ hi, data = .x))
+#     model <- eta_squared(aov(biomass ~ hi, data = .x))
 #   })
+# 
+# 
+# ggsave("multispp_hyd.png", plot = multispp_hyd, device = "png", width = 6, height = 5,  dpi = "retina")
+# 
 
-Multispp_temp_hyd_biomass <- read_csv("Multispp_temp_hyd_biomass.csv")
-# note that I mislabeled hyd magnitude as temperature
-Multispp_temp_hyd_biomass$taxa <- as.factor(Multispp_temp_hyd_biomass$taxa)
-Multispp_temp_hyd_biomass$taxa <- ordered(Multispp_temp_hyd_biomass$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
-Multispp_temp_hyd_biomass$hi <- as.factor(Multispp_temp_hyd_biomass$hi)
-
-
-Multispp_hyd_bio_summary <- Multispp_temp_hyd_biomass %>%
-  group_by(hi, taxa) %>%
-  summarise(mean_biomass = mean(biomass, na.rm = TRUE),
-            sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
-
-multispp_hyd <- ggplot(data = Multispp_hyd_bio_summary, 
-                      aes(x = as.factor(hi), y = mean_biomass, color = taxa, group = taxa)) +
-  geom_errorbar(aes(ymin = mean_biomass - sd_biomass, ymax = mean_biomass + sd_biomass), 
-                linewidth = 0.75, width = 0.2, position = position_dodge(0.5)) +
-  geom_path(linewidth = 0.75, alpha = 0.7)+
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  theme_bw() +
-  ylim(c(0,1))+
-  scale_color_manual(name = " ", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Hydropsyche"), " spp.")),expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")),  expression(italic("P. antipodarum"))), values=taxa.colors) +
-  xlab("Hydropeaking Index") +
-  labs(y= "Relative Biomass") +
-  theme(text = element_text(size = 13), 
-        axis.text.x = element_text(hjust = 1, angle=45, size = 12), 
-        axis.text.y = element_text(size = 13), 
-        legend.key = element_rect(fill = "transparent"))
-
-biomass.hyd <- Multispp_temp_hyd_biomass %>%
-  group_by(taxa) %>%
-  group_modify(~ {
-    model <- eta_squared(aov(biomass ~ hi, data = .x))
-  })
-
-Multispp_temp_hyd_biomassno1 <- filter(Multispp_temp_hyd_biomass, hi != 1)
-biomass.hydno1 <- Multispp_temp_hyd_biomassno1 %>%
-  group_by(taxa) %>%
-  group_modify(~ {
-    model <- eta_squared(aov(biomass ~ hi, data = .x))
-  })
-
-# multispp_hyd <- ggarrange(hyd_abund, hyd_biomass, 
-#                           labels = c("a", "b"), 
-#                           common.legend = T)
-ggsave("multispp_hyd.png", plot = multispp_hyd, device = "png", width = 6, height = 5,  dpi = "retina")
-
-
-# 8 different scenarios (proportions)
-
-# read in the csv's
-Multispp_temp_biomass <- read_csv("Multispp_temp_biomass.csv")
-Multispp_temp_abund <- read_csv("Multispp_temp_abund.csv")
-Multispp_temp_abund_spike <- read_csv("Multispp_temp_abund_spike.csv")
-Multispp_temp_biomass_spike <- read_csv("Multispp_temp_biomass_spike.csv")
-Multispp_temp_hyd_biomass <- read_csv("Multispp_temp_biomass_hyd.csv")
-Multispp_temp_hyd_biomass_spike <- read_csv("Multispp_temp_hyd_biomass_spike.csv")
-Multispp_temp_hyd_HFE_biomass_spike <- read_csv("Multispp_temp_hyd_HFE_biomass_spike.csv")
-Multispp_temp_hyd_HFE_biomass <- read_csv("Multispp_temp_hyd_HFE_biomass.csv")
-Multispp_temp_hyd_HFE_abund_spike <- read_csv("Multispp_temp_hyd_HFE_abund_spike.csv")
-Multispp_temp_HFE_abund_spike <- read_csv("Multispp_temp_HFE_abund_spike.csv")
-Multispp_temp_HFE_abund <- read_csv("Multispp_temp_HFE_abund.csv")
-Multispp_temp_HFE_biomass <- read_csv("Multispp_temp_HFE_biomass.csv")
-Multispp_temp_hyd_abund <- read_csv("Multispp_temp_abund_hyd.csv")
-Multispp_temp_HFE_biomass_spike <- read_csv("Multispp_temp_HFE_biomass_spike.csv")
-Multispp_temp_hyd_abund_spike <- read_csv("Multispp_temp_hyd_abund_spike.csv")
-Multispp_temp_hyd_HFE_abund <- read_csv("Multispp_temp_hyd_HFE_abund.csv")
-Multispp_temp_S3 <- read_csv("MultisppS3_temp_biomass.csv")
-Multispp_temp_S3_spike <- read_csv("MultisppS3_temp_biomass_spike.csv")
-
-multi_abund_combo <- bind_rows(
-  Multispp_temp_abund %>%  mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
-  Multispp_temp_abund_spike %>% mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
-  Multispp_temp_hyd_abund %>%  mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
-  Multispp_temp_hyd_abund_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
-  Multispp_temp_HFE_abund %>% mutate(source = "Temperature & HFE",  temp_spike = 0, hydropeaking = 0, HFE = 1),
-  Multispp_temp_HFE_abund_spike %>% mutate(source = "Temperature & spike & HFE",  temp_spike = 1, hydropeaking = 0, HFE = 1),
-  Multispp_temp_hyd_HFE_abund %>% mutate(source = "Temperature & hydropeaking & HFE",  temp_spike = 0, hydropeaking = 1, HFE = 1),
-  Multispp_temp_hyd_HFE_abund_spike %>% mutate(source = "Temperature & spike & hydropeaking & HFE",  temp_spike = 1, hydropeaking = 1, HFE = 1)
-)
-
-
-
-taxa.colors =c("#66CCEE", "#AA3377", "#228833", "#CCBB44", "#4477AA")
-
-label.names <- c(
-  "Temperature", 
-  "Temperature +\nSpike" , 
-  "Temperature +\nHydropeaking", 
-  "Temperature +\nSpike + Hydropeaking",
-  "Temperature +\nHFE", 
-  "Temperature +\nSpike + HFE",
-  "Temperature +\nHydropeaking + HFE", 
-  "Temperature +\nSpike + Hydropeaking + HFE"
-)
-
-multi_abund_combo$source <- ordered(multi_abund_combo$source, levels = c(
-  "Temperature", 
-  "Temperature & spike", 
-  "Temperature & hydropeaking", 
-  "Temperature & spike & hydropeaking",
-  "Temperature & HFE", 
-  "Temperature & spike & HFE",
-  "Temperature & hydropeaking & HFE", 
-  "Temperature & spike & hydropeaking & HFE"
-  ))  
-multi_abund_combo$taxa <- ordered(multi_abund_combo$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
-
-
-multi_abund_summary <- multi_abund_combo %>%
-  group_by(temperature, taxa, source) %>%
-  summarise(mean_abund = mean(abundance, na.rm = TRUE),
-            sd_abund = sd(abundance, na.rm = TRUE), .groups = "drop")
-
-head(multi_abund_summary)
-
-multi_abund <- ggplot(data = multi_abund_summary, 
-                     aes(x = as.factor(temperature), y = log(mean_abund), color = taxa)) +
-  geom_errorbar(aes(ymin = log(mean_abund - sd_abund), ymax = log(mean_abund + sd_abund)), 
-                linewidth = 0.75, width = 0.2, position = position_dodge(0.5)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-                            "1.2" = "+20%", "1.5" = "+50%")) +
-  facet_wrap(.~source, nrow = 4) +
-  theme_bw() +
-  scale_color_manual(name = " ", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Hydropsyche"), " spp.")),expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")),  expression(italic("P. antipodarum"))), values=taxa.colors) +
-  xlab("Temperature") +
-  labs(y= "Log Relative Abundance") +
-  theme(text = element_text(size = 13), 
-        axis.text.x = element_text(hjust = 1, angle=45, size = 12), 
-        axis.text.y = element_text(size = 13), 
-        legend.key = element_rect(fill = "transparent"))
-
-multi_biomass_combo <- bind_rows(
-  Multispp_temp_biomass %>%  mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
-  Multispp_temp_biomass_spike %>% mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
-  Multispp_temp_hyd_biomass %>%  mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
-  Multispp_temp_hyd_biomass_spike %>% mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
-  Multispp_temp_HFE_biomass %>% mutate(source = "Temperature & HFE",  temp_spike = 0, hydropeaking = 0, HFE = 1),
-  Multispp_temp_HFE_biomass_spike %>% mutate(source = "Temperature & spike & HFE",  temp_spike = 1, hydropeaking = 0, HFE = 1),
-  Multispp_temp_hyd_HFE_biomass %>% mutate(source = "Temperature & hydropeaking & HFE",  temp_spike = 0, hydropeaking = 1, HFE = 1),
-  Multispp_temp_hyd_HFE_biomass_spike %>% mutate(source = "Temperature & spike & hydropeaking & HFE",  temp_spike = 1, hydropeaking = 1, HFE = 1)
- )
-
-
-label.names <- c(
-  "Temperature", 
-  "Temperature +\nSpike", 
-  "Temperature +\nHydropeaking", 
-  "Temperature +\nSpike + Hydropeaking",
-  "Temperature +\nHFE", 
-  "Temperature +\nSpike + HFE",
-  "Temperature +\nHydropeaking + HFE", 
-  "Temperature +\nSpike + Hydropeaking + HFE"
-)
-
-multi_biomass_combo$source <- ordered(multi_biomass_combo$source, levels = c(
-  "Temperature", 
-  "Temperature & spike", 
-  "Temperature & hydropeaking", 
-  "Temperature & spike & hydropeaking",
-  "Temperature & HFE", 
-  "Temperature & spike & HFE",
-  "Temperature & hydropeaking & HFE", 
-  "Temperature & spike & hydropeaking & HFE"
-  ))  
-multi_biomass_combo$taxa <- ordered(multi_biomass_combo$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
-
-write.csv2(multi_abund_combo, file = "multi_abund_combo.csv")
-write.csv2(multi_biomass_combo, file = "multi_biomass_combo.csv")
-
-
-multi_biomass_summary <- multi_biomass_combo %>%
-    group_by(temperature, taxa, source) %>%
-    summarise(mean_biomass = mean(mean_biomass, na.rm = TRUE),
-              sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
-
-head(multi_biomass_summary)
-multi_biomass <- ggplot(data = multi_biomass_combo, 
-                      aes(x = as.factor(temperature), y = log(mean_biomass), color = taxa)) +
-  geom_errorbar(aes(ymin = log(mean_biomass - sd_biomass), ymax = log(mean_biomass + sd_biomass)), 
-                linewidth = 0.75, width = 0.2, position = position_dodge(0.5)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
-                            "1.2" = "+20%", "1.5" = "+50%")) +
-  facet_wrap(.~source, nrow= 4) +
-  theme_bw() +
-  scale_color_manual(name = " ", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Hydropsyche"), " spp.")),expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")),  expression(italic("P. antipodarum"))), values=taxa.colors) +
-  xlab("Temperature") +
-  labs(y= "Relative Biomass") +
-  theme(text = element_text(size = 13), 
-        axis.text.x = element_text(hjust = 1, angle=45, size = 12), 
-        axis.text.y = element_text(size = 13), 
-        legend.key = element_rect(fill = "transparent"))
-
-
-
-###
 # 8 different scenarios zi 
 
 # Load and combine all datasets, tagging them hyos
@@ -732,6 +417,7 @@ multi_biomass_combo_nzms <- bind_rows(
 taxa.colors =c("#66CCEE", "#AA3377", "#228833", "#CCBB44", "#4477AA")
 
 q_labels <- as_labeller(c(
+  "1" = "z[P.antipodarum]==1",
   "2" = "z[P.antipodarum]==2",
   "4" = "z[P.antipodarum]==4",
   "8" = "z[P.antipodarum]==8"), default = label_parsed
@@ -759,9 +445,35 @@ multi_biomass_combo_nzms$source <- ordered(multi_biomass_combo_nzms$source, leve
   "Temperature & spike & hydropeaking & HFE"
 ))  
 multi_biomass_combo_nzms$taxa <- ordered(multi_biomass_combo_nzms$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
+z_nzms <- multi_biomass_combo_nzms %>% 
+  filter(source == "Temperature" | source == "Temperature & spike & hydropeaking & HFE") %>%
+  filter(temperature == 1 | temperature == 1.5)
+multi_z_nzms <- ggplot(data = z_nzms, 
+                       aes(x = q, y = (mean_biomass), color = taxa)) +
+  geom_errorbar(aes(ymin = (mean_biomass - sd_biomass), ymax = (mean_biomass + sd_biomass)), 
+                linewidth = 0.75, width = 0.2, position = position_dodge(0.5)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_line(linewidth = 0.8, position = position_dodge(0.5))+
+  facet_wrap(. ~ source + temperature, nrow = 2, labeller = labeller(temperature = temp_labels))+
+  theme_bw() +
+  scale_color_manual(name = " ", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Hydropsyche"), " spp.")),expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")),  expression(italic("P. antipodarum"))), values=taxa.colors) +
+  scale_x_continuous(breaks = c(1, 2, 4, 8))+
+  xlab(expression(z[P.antipodarum]))+
+  labs(y= "Relative Biomass") +
+  theme(text = element_text(size = 13), 
+        axis.text.x = element_text(hjust = 1, angle=45, size = 12), 
+        axis.text.y = element_text(size = 13), 
+        legend.key = element_rect(fill = "transparent"))
+
+ggsave("z_plot_nzms.png", multi_z_nzms, device = "png", width = 9, height = 7, units = c("in"), dpi = "retina")
+
+
+
+
+
 multi_biomass_combo_nzms$q <- as.factor(multi_biomass_combo_nzms$q)
 
-multi_biomass_combo_nzms <- filter(multi_biomass_combo_nzms, q != "1")
+#multi_biomass_combo_nzms <- filter(multi_biomass_combo_nzms, q != "1")
 
 multi_biomass_nzms <- ggplot(data = multi_biomass_combo_nzms, 
                         aes(x = as.factor(temperature), y = (mean_biomass), color = taxa)) +
@@ -784,7 +496,10 @@ multi_biomass_nzms <- ggplot(data = multi_biomass_combo_nzms,
 ggsave("multi_z_nzms.png", multi_biomass_nzms, device = "png", width = 14.5, height = 12, units = "in", dpi = "retina")
 
 
+
+
 # Load and combine all datasets, tagging them
+# now when we alter all zis 
 multi_biomass_combo <- bind_rows(
   read_csv("Multispp_temp_biomass_z.csv") %>%
     mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
@@ -812,6 +527,13 @@ temp_labels <- as_labeller(c(
   "1.5" = "+5~degree*C"
 ), default = label_parsed)
 
+
+q_labels <- as_labeller(c(
+  "1" = "z[i]==1",
+  "2" = "z[i]==2",
+  "4" = "z[i]==4",
+  "8" = "z[i]==8"), default = label_parsed
+)
 label.names <- c(
   "Temperature", 
   "Temperature +\nSpike" , 
@@ -834,6 +556,7 @@ multi_biomass_combo$source <- ordered(multi_biomass_combo$source, levels = c(
   "Temperature & spike & hydropeaking & HFE"
 ))  
 multi_biomass_combo$taxa <- ordered(multi_biomass_combo$taxa, levels = c("BAET", "HYOS", "CHIR", "GAMM", "NZMS"))
+
 z_df <- multi_biomass_combo %>% 
   filter(source == "Temperature" | source == "Temperature & spike & hydropeaking & HFE") %>%
   filter(temperature == 1 | temperature == 1.5)
@@ -855,11 +578,15 @@ multi_z <- ggplot(data = z_df,
         axis.text.y = element_text(size = 13), 
         legend.key = element_rect(fill = "transparent"))
 
-ggsave("z_plot.png", multi_z, device = "png", width = 8, height = 7, units = c("in"), dpi = "retina")
+ggsave("z_plot.png", multi_z, device = "png", width = 9, height = 7, units = c("in"), dpi = "retina")
 
-multi_biomass_combo$q <- as.fadevice = multi_biomass_combo$q <- as.factor(multi_biomass_combo$q)
+multi_biomass_combo$q <- as.factor(multi_biomass_combo$q)
 multi_biomass_1s <- filter(multi_biomass_combo, q == "1")
-multi_biomass_combo <- filter(multi_biomass_combo, q != "1")
+
+
+multi_biomass_combo <- subset(multi_biomass_combo, q == "1" | q == "2")
+
+
 multi_biomass <- ggplot(data = multi_biomass_combo, 
                         aes(x = as.factor(temperature), y = (mean_biomass), color = taxa)) +
   geom_errorbar(aes(ymin = (mean_biomass - sd_biomass), ymax = (mean_biomass + sd_biomass)), 
@@ -867,8 +594,9 @@ multi_biomass <- ggplot(data = multi_biomass_combo,
   geom_point(size = 3, position = position_dodge(0.5)) +
   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
                             "1.2" = "+20%", "1.5" = "+50%")) +
-  facet_wrap(. ~ source + q, nrow = 8,
+  facet_wrap(. ~ source * q, ncol = 4,
              labeller = labeller(q = q_labels))+
+  #facet_grid(q ~ source, labeller = labeller(q = q_labels))+
   theme_bw() +
   scale_color_manual(name = " ", labels=c(expression(paste(italic("Baetidae")," spp.")), expression(paste(italic("Hydropsyche"), " spp.")),expression(paste(italic("Chironomidae"), " spp.")), expression(italic("G. lacustris")),  expression(italic("P. antipodarum"))), values=taxa.colors) +
   xlab("Temperature") +
@@ -896,11 +624,9 @@ multi_biomass1 <- ggplot(data = multi_biomass_1s,
         axis.text.y = element_text(size = 13), 
         legend.key = element_rect(fill = "transparent"))
 
+ggsave("multi_z.png", multi_biomass, device = "png", width = 15, height = 12, units = "in", dpi = "retina")
 
-
-ggsave("multi_z.png", multi_biomass, device = "png", width = 14.5, height = 12, units = "in", dpi = "retina")
-
-ggsave("multi_z1.png", multi_biomass1, device = "png", width = 6, height = 8, units = "in", dpi = "retina")
+ggsave("multi_z1.png", multi_biomass1, device = "png", width = 10, height = 10, units = "in", dpi = "retina")
 
 
 # #----------------------------------------------------------------
