@@ -179,9 +179,9 @@ HYOSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, co
   # geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*0.1), color = "green")+
   # #coord_cartesian(ylim = c(0,2000000)) +
   labs(y="Scaled Abundance")+
-  geom_text(mapping = aes(x = as.Date("2015-06-01"), y =5, label = paste('rho', "==", 0.48)), parse = T, color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2015-06-01"), y =5.75, label = paste('C = 93%')), color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2015-06-01"), y =6.5, label = paste('Scaled RMSE = 1.19')), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2015-06-01"), y =5, label = paste('rho', "==", 0.69)), parse = T, color = "black", size = 5.5)+
+  geom_text(mapping = aes(x = as.Date("2015-06-01"), y =5.75, label = paste('C = 93%')), color = "black", size = 5.5)+
+  geom_text(mapping = aes(x = as.Date("2015-06-01"), y =6.5, label = paste('Scaled RMSE = 1.19')), color = "black", size = 5.5)+
     #scale_y_continuous(
     # Features of the first axis
     # Add a second axis and specify its features
@@ -191,8 +191,8 @@ HYOSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, co
   ylim(c(-4,7))+
   labs(colour=" ", title = expression(paste(italic("Hydropsyche"), " spp.")))+
   theme_bw()+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13))+
+  theme(text = element_text(size = 15), axis.text.x = element_text(angle=45, hjust = 1, size = 15), 
+        axis.text.y = element_text(size = 15))+
   scale_x_date(date_labels="%Y")+
   scale_color_manual(values = colors)
 
