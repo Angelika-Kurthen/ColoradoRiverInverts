@@ -1,5 +1,5 @@
 ###########################################
-# Multispecies Temp + Hyd increase Simulation
+# Multispecies Temp + Hyd increase Simulation --> run on HPC
 ###########################################
 
 # Load required scripts with custom functions and models
@@ -9,6 +9,7 @@ source("MultisppFunctions.R")
 # Load necessary libraries
 library(doParallel)
 library(foreach)
+library(dataRetrieval)
 
 # Read in Lees Ferry temperature and discharge data from 2007 to 2023
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")  # Water temperature data
@@ -53,14 +54,14 @@ results <- mclapply(temp_seq, function(te) {
 
     # Run model
     out <- Multispp(flow.data = flows$Discharge, temp.data = temps, baselineK = 10000,
-                    disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 2,
+                    disturbanceK = 100000, Qmin = 0.25, extinct = 50, iteration = 1000,
                     peaklist = 0.17, peakeach = length(temps$Temperature),
                     stage_output = c("all", "biomass"), z = zs)
 
     # Process outputs
-    means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 2, value = "abund")
-    means.biomass <- partial.eta.data.frame(out$biomass, burnin = 260)
-    means.s3.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 2, value = "S3.biomass")
+    means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 1000, value = "abund")
+    means.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "biomass")
+    means.s3.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "S3.biomass")
 
     # Reset input scaling
     temps$Temperature <- temps$Temperature / te
@@ -95,7 +96,7 @@ results <- mclapply(temp_seq, function(te) {
 
   return(temp_results)
 
-}, mc.cores = detectCores() - 1)
+}, mc.cores = detectCores() - 1,  mc.preschedule = FALSE)
 
 # Flatten the nested results (convert list of lists to a single list)
 flat_results <- do.call(c, results)
@@ -105,24 +106,17 @@ Multispp_temp_abund <- do.call(rbind, lapply(flat_results, `[[`, "Multispp_temp_
 Multispp_temp_biomass <- do.call(rbind, lapply(flat_results, `[[`, "Multispp_temp_biomass"))
 MultisppS3_temp_biomass <- do.call(rbind, lapply(flat_results, `[[`, "MultisppS3_temp_biomass"))
 
-# Write results to CSV files
-write.csv(Multispp_temp_abund, "Multispp_temp_abund_hyd_z_full.csv", row.names = FALSE)
-write.csv(Multispp_temp_biomass, "Multispp_temp_biomass_hyd_z_full.csv", row.names = FALSE)
-write.csv(MultisppS3_temp_biomass, "MultisppS3_temp_hyd_z.csv", row.names = FALSE)
+Multispp_temp_biomass <- Multispp_temp_biomass %>%
+  group_by(temperature, taxa, q) %>%
+  summarise(mean_biomass = mean(biomass, na.rm = TRUE),
+            sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
 
-# Multispp_temp_abund <- Multispp_temp_abund %>%
-#   group_by(temperature, taxa, q) %>%
-#   summarise(mean_abund = mean(abundance, na.rm = TRUE),
-#             sd_abund = sd(abundance, na.rm = TRUE), .groups = "drop")
-# 
-# Multispp_temp_biomass <- Multispp_temp_biomass %>%
-#   group_by(temperature, taxa, q) %>%
-#   summarise(mean_biomass = mean(biomass, na.rm = TRUE),
-#             sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
-# 
-# # Write results to CSV files
-# write.csv(Multispp_temp_abund, "Multispp_temp_abund_hyd_z.csv", row.names = FALSE)
-# write.csv(Multispp_temp_biomass, "Multispp_temp_biomass_hyd_z.csv", row.names = FALSE)
+# Write results to CSV files
+write.csv(Multispp_temp_biomass, "Multispp_temp_biomass_hyd_z.csv", row.names = FALSE)
+
+rm(Multispp_temp_biomass)
+rm(Multispp_temp_abund)
+rm(MultisppS3_temp_biomass)
 
 ## Now we add the summer spike to temperatures
 # read in LF temp and discharge data from 2007 to 2023
@@ -159,7 +153,7 @@ results <- mclapply(temp_seq, function(te) {
 
     # Process outputs
     means.abund <- multispp.data.frame(out$N, burnin = 260, iteration = 1000, value = "abund")
-    means.biomass <- partial.eta.data.frame(out$biomass, burnin = 260)
+    means.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "biomass")
     means.s3.biomass <- multispp.data.frame(out$biomass, burnin = 260, iteration = 1000, value = "S3.biomass")
 
     # Reset input scaling
@@ -195,7 +189,7 @@ results <- mclapply(temp_seq, function(te) {
 
   return(temp_results)
 
-}, mc.cores = detectCores() - 1)
+}, mc.cores = detectCores() - 1,  mc.preschedule = FALSE)
 
 # Flatten the nested results (convert list of lists to a single list)
 flat_results <- do.call(c, results)
@@ -204,23 +198,12 @@ Multispp_temp_abund_spike <- do.call(rbind, lapply(flat_results, `[[`, "Multispp
 Multispp_temp_biomass_spike <- do.call(rbind, lapply(flat_results, `[[`, "Multispp_temp_biomass_spike"))
 MultisppS3_temp_biomass_spike <- do.call(rbind, lapply(flat_results, `[[`, "MultisppS3_temp_biomass_spike"))
 
-write.csv(Multispp_temp_abund_spike, "Multispp_temp_hyd_abund_spike_z_full.csv", row.names = FALSE)
-write.csv(Multispp_temp_biomass_spike, "Multispp_temp_hyd_biomass_spike_z_full.csv", row.names = FALSE)
-write.csv(MultisppS3_temp_biomass_spike, "MultisppS3_temp_hyd_biomass_spike_z.csv", row.names = FALSE)
+Multispp_temp_biomass_spike <- Multispp_temp_biomass_spike %>%
+  group_by(temperature, taxa, q) %>%
+  summarise(mean_biomass = mean(biomass, na.rm = TRUE),
+            sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
+
+write.csv(Multispp_temp_biomass_spike, "Multispp_temp_hyd_biomass_spike_z.csv", row.names = FALSE)
 
 
-# Multispp_temp_abund_spike <- Multispp_temp_abund_spike %>%
-#   group_by(temperature, taxa, q) %>%
-#   summarise(mean_abund = mean(abundance, na.rm = TRUE),
-#             sd_abund = sd(abundance, na.rm = TRUE), .groups = "drop")
-# 
-# Multispp_temp_biomass_spike <- Multispp_temp_biomass_spike %>%
-#   group_by(temperature, taxa, q) %>%
-#   summarise(mean_biomass = mean(biomass, na.rm = TRUE),
-#             sd_biomass = sd(biomass, na.rm = TRUE), .groups = "drop")
-# 
-# write.csv(Multispp_temp_abund_spike, "Multispp_temp_hyd_abund_spike_z.csv", row.names = FALSE)
-# write.csv(Multispp_temp_biomass_spike, "Multispp_temp_hyd_biomass_spike_z.csv", row.names = FALSE)
-# 
-# 
-# 
+
