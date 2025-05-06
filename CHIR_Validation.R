@@ -112,44 +112,33 @@ coverage <- mean(scale(cor.df$means) >= (scale(cor.df$mean.abund) - (1.96*rmse.c
 colors <- c("#228833", "black" )
 linetypes <- c("solid", "twodash")
 
-# means.list.CHIRnonas <- (means.list.CHIR)
-# point2021 <- means.list.CHIRnonas[which(means.list.CHIRnonas$timesteps == 358),]
-# means.list.CHIRnonas <- means.list.CHIRnonas[-51,]
-# means.list.CHIRnonas$Date <- as.Date(means.list.CHIRnonas$Date)
 means.list.CHIR <- means.list.CHIR[which(means.list.CHIR$Date < "2021-07-07"),]
 means.list.CHIR$Date <- as.Date(means.list.CHIR$Date)
-CHIRts <- ggplot(data = means.list.CHIR, aes(x = Date,  y = scale(mean.abund), group = 1, color = "Model")) +
+
+CHIRts <- ggplot(data = subset(means.list.CHIR[-nrow(means.list.CHIR), ], !is.na(means)), aes(x = Date,  y = scale(mean.abund), group = 1, color = "Model")) +
   geom_ribbon(aes(ymin = scale(mean.abund) - 1.96 * rmse.chir.scale,
                   ymax = scale(mean.abund) + 1.96 * rmse.chir.scale),
               colour = 'transparent',
               fill = "black",
               alpha = .15,
               show.legend = F) +
-  #geom_point(data = point2021, aes(x = Date, y = scale(mean.abund), color = "Model"))
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data = subset(means.list.CHIR, !is.na(means)),
+  geom_line(data = subset(means.list.CHIR[-nrow(means.list.CHIR), ], !is.na(means)),
             aes(x = Date, y = scale(means), color = "Empirical"), linewidth = 1,  show.legend = T, alpha = 0.8)+
-  # 
-  # geom_line(data = subset(means.list.CHIR, !is.na(means)),
-  #                         aes(x = Date, y = scale(means), color = "Chironomidae spp."), linewidth = 1,  show.legend = T, alpha = 0.8)+
-  # #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,6000)) + S1 and S2 inds/m2
-  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5, label = paste('rho', "==", 0.18)), parse = T, color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5.75, label = paste("C = 92%")), color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =6.5,label = paste("Scaled RMSE = 1.21")), color = "black", size = 4.5)+
-  #labs(y=expression(paste(italic("Chironomidae spp."), " Abund.")))+
+  #geom_point(aes(x = last(means.list.CHIR$Date), y = last(scale(means.list.CHIR$mean.abund)), color = "Model"), size = 2, show.legend = FALSE) +
+  #geom_point(aes(x = last(means.list.CHIR$Date), y = last(scale(means.list.CHIR$means)), color = "Empirical"), size = 2, show.legend = FALSE) +
+  geom_text(mapping = aes(x = as.Date("2018-01-01"), y =5, label = paste('rho', "==", 0.18)), parse = T, color = "black", size = 5.5)+
+  geom_text(mapping = aes(x = as.Date("2018-01-01"), y =5.75, label = paste("C = 92%")), color = "black", size = 5.5)+
+  geom_text(mapping = aes(x = as.Date("2018-01-01"), y =6.5,label = paste("Scaled RMSE = 1.21")), color = "black", size = 5.5)+
   ylab("Scaled Abundance")+
   xlab("")+
   ylim(c(-4, 7))+
   labs(colour=" ", title = expression(paste(italic("Chironomidae"), " spp.")))+
   theme_bw()+
   scale_color_manual(values = colors)+
-  # scale_y_continuous(
-  #   sec.axis = sec_axis(~., name="Chironomidae Larvae (inds/m3)"
-  #   ))+
-theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5),
-        axis.text.y = element_text(size = 13), )+
+
+theme(text = element_text(size = 15), axis.text.x = element_text(angle=45, hjust = 1, size = 15),
+        axis.text.y = element_text(size = 15), )+
   scale_x_date(date_labels="%Y")
 
 ##################
