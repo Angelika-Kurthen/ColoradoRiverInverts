@@ -36,7 +36,11 @@ temperature <-ggplot(temp, aes(x = as.Date(Date), y = X_00010_00003)) +
   
 #################################
 # Comparision of model output and empirical data
-
+source("BAETValidation.R")
+source("CHIR_Validation.R")
+source("GAMM_Validation.R")
+source("HYOSValidation.R")
+source("NZMS_Validation.R")
 Fig1 <- ggarrange(NZMSts, BAETts, GAMMts,temperature, 
           labels = c("a", "b", "c", "d"),
           ncol = 2, nrow = 2, common.legend =F)
