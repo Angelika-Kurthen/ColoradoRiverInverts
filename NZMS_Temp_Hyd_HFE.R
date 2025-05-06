@@ -86,8 +86,8 @@ NZMS_temp_hyd_abund_HFE <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_a
 NZMS_temp_hyd_biomass_HFE <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_biomass_HFE"))
 
 # Write results to CSV files
-write.csv(NZMS_temp_hyd_abund_HFE, "NZMS_temp_hyd_abund_HFE_2000.csv", row.names = FALSE)
-write.csv(NZMS_temp_hyd_biomass_HFE, "NZMS_temp_hyd_biomass_HFE_2000.csv", row.names = FALSE)
+write.csv(NZMS_temp_hyd_abund_HFE, "NZMS_temp_hyd_abund_HFE.csv", row.names = FALSE)
+write.csv(NZMS_temp_hyd_biomass_HFE, "NZMS_temp_hyd_biomass_HFE.csv", row.names = FALSE)
 
 # tabula rasa
 rm(temp)
@@ -145,6 +145,6 @@ NZMS_temp_hyd_abund_HFE_spike <- do.call(rbind, lapply(results, `[[`, "NZMS_temp
 NZMS_temp_hyd_biomass_HFE_spike <- do.call(rbind, lapply(results, `[[`, "NZMS_temp_hyd_biomass_HFE_spike"))
 
 # Write results to CSV files
-write.csv(NZMS_temp_hyd_abund_HFE_spike, "NZMS_temp_hyd_abund_HFE_spike_2000.csv", row.names = FALSE)
-write.csv(NZMS_temp_hyd_biomass_HFE_spike, "NZMS_temp_hyd_biomass_HFE_spike_2000.csv", row.names = FALSE)
+write.csv(NZMS_temp_hyd_abund_HFE_spike, "NZMS_temp_hyd_abund_HFE_spike.csv", row.names = FALSE)
+write.csv(NZMS_temp_hyd_biomass_HFE_spike, "NZMS_temp_hyd_biomass_HFE_spike.csv", row.names = FALSE)
 
