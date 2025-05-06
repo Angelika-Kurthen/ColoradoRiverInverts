@@ -106,36 +106,33 @@ rmse.gamm.scale <- sqrt(mean((scale(means.list.GAMMnonas$means) - scale(means.li
 coverage <- mean(scale(means.list.GAMMnonas$means) >= (scale(means.list.GAMMnonas$mean.abund) - (1.96*rmse.gamm.scale)) & scale(means.list.GAMMnonas$means) <= (scale(means.list.GAMMnonas$mean.abund) + (1.96*rmse.gamm.scale)))
 colors <- c("#CCBB44", "black" )
 
-GAMMts <- ggplot(data = means.list.GAMMnonas, aes(x = Date,  y = scale(mean.abund), group = 1, color = "Model")) +
+
+GAMMts <- ggplot(data = means.list.GAMMnonas[-nrow(means.list.GAMMnonas), ], aes(x = Date)) +
   geom_ribbon(aes(ymin = scale(mean.abund) - 1.96 * rmse.gamm.scale,
                   ymax = scale(mean.abund) + 1.96 * rmse.gamm.scale),
               colour = 'transparent',
               alpha = .1,
               fill = "black",
-              show.legend = F) +
-  geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(aes(x = Date, y = scale(means), color = "Empirical"), linewidth = 1, show.legend = T, alpha = 0.8)+
-  #geom_point(aes(x = Date, y = scale(means), color = "Empirical"))+
-  #geom_line(data = flow.magnitude, aes(x = as.Date(dts), y = X_00060_00003), color = "blue") +
-  #geom_line(data = temps, aes(x = as.Date(dts), y = Temperature*1000), color = "green")+
-  #coord_cartesian(ylim = c(0,6000)) 
-  geom_text(mapping = aes(x = as.Date("2018-12-01"), y =5, label = paste('rho', "==", 0.41)), parse = T, color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2018-12-01"), y =5.75, label = paste('C = 98%')), color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2018-12-01"), y =6.5, label = paste('Scaled RMSE = 1.21')), color = "black", size = 4.5)+
-  #labs(y = expression(~italic(G. lacustris)~ 'Abund.')) +
-  labs(y= "Scaled Abundance", title = expression(paste(italic("G. lacustris"))))+
-  xlab("")+
-  labs(colour=" ")+
-  theme_bw()+
-  ylim(c(-4,7))+
-  scale_color_manual(values = colors)+
-  # scale_y_continuous(
-  #   sec.axis = sec_axis(~., name="G. lacustris (inds/m3)"
-  #   ))+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), )+
-  scale_x_date(date_labels="%Y")
-
+              show.legend = FALSE) +
+  
+  geom_line(aes(y = scale(mean.abund), color = "Model"), linewidth = 1, alpha = 0.8) +
+  geom_line(aes(y = scale(means), color = "Empirical"), linewidth = 1, alpha = 0.8) +
+  #geom_point(aes(x = last(means.list.GAMMnonas$Date), y = last(scale(means.list.GAMMnonas$mean.abund)), color = "Model"), size = 2, show.legend = FALSE) +
+  #geom_point(aes(x = last(means.list.GAMMnonas$Date), y = last(scale(means.list.GAMMnonas$means)), color = "Empirical"), size = 2, show.legend = FALSE) +
+  geom_text(mapping = aes(x = as.Date("2017-12-01"), y = 5, label = paste('rho', "==", 0.41)), parse = TRUE, color = "black", size = 5.5) +
+  geom_text(mapping = aes(x = as.Date("2017-12-01"), y = 5.75, label = 'C = 98%'), color = "black", size = 5.5) +
+  geom_text(mapping = aes(x = as.Date("2017-12-01"), y = 6.5, label = 'Scaled RMSE = 1.21'), color = "black", size = 5.5) +
+  
+  labs(y = "Scaled Abundance", title = expression(italic("G. lacustris"))) +
+  xlab("") +
+  labs(colour = " ") +
+  theme_bw() +
+  ylim(c(-4, 7)) +
+  scale_color_manual(values = colors) +
+  theme(text = element_text(size = 15), 
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 15),
+        axis.text.y = element_text(size = 15)) +
+  scale_x_date(date_labels = "%Y")
 
 ##################
 # N mix models
