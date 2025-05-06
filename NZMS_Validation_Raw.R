@@ -111,7 +111,7 @@ rmse.nzms.scale <- sqrt(mean((scale(cor.df$V2) - scale(cor.df$mean.abund))^2))
 coverage <- mean(scale(cor.df$V2) >= (scale(cor.df$mean.abund) - (1.96*rmse.nzms.scale)) & scale(cor.df$V2) <= (scale(cor.df$mean.abund) + (1.96*rmse.nzms.scale)))
 colors <- c("#4477AA","black")
 linetypes <- c("solid", "solid")
-NZMSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, color = "Model")) +
+NZMSts <- ggplot(data = cor.df[-nrow(cor.df), ], aes(x = V1, y = scale(mean.abund), group = 1, color = "Model")) +
   geom_ribbon(aes(ymin = scale(mean.abund) - 1.96 * rmse.nzms.scale,
                   ymax = scale(mean.abund) + 1.96 * rmse.nzms.scale),
               colour = 'transparent',
@@ -119,19 +119,20 @@ NZMSts <- ggplot(data = cor.df, aes(x = V1, y = scale(mean.abund), group = 1, co
               fill = "black",
               show.legend = F)+
   geom_line(show.legend = T, linewidth = 1, alpha = 0.8) +
-  geom_line(data = cor.df, aes(x =V1, y = scale(V2), color = "Empirical"), linewidth = 1, alpha = 0.8, show.legend = T)+
-  #geom_point(data = NZMS.samp.sum[125,], aes(x = V1, y = scale(means), color = "Empirical"), show.legend = T)+
+  geom_line(data = cor.df[-nrow(cor.df), ], aes(x =V1, y = scale(V2), color = "Empirical"), linewidth = 1, alpha = 0.8, show.legend = T)+
+  #geom_point(aes(x = last(cor.df$V1), y = last(scale(cor.df$mean.abund)), color = "Model"), size = 2, show.legend = FALSE) +
+  #geom_point(aes(x = last(cor.df$V1), y = last(scale(cor.df$V2)), color = "Empirical"), size = 2, show.legend = FALSE) +
   labs(y= "Scaled Abundance", title = expression(paste(italic("P. antipodarum"))))+
   ylim(c(-4,7))+
-  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =5.75, label = paste('C = 94%')), color = "black", size = 4.5)+
-  geom_text(mapping = aes(x = as.Date("2019-06-01"), y =6.5, label = paste('Scaled RMSE = 1.19')), color = "black", size = 4.5)+
+  geom_text(mapping = aes(x = as.Date("2018-01-01"), y =5, label = paste('rho', "==", 0.63)), parse = T, color = "black", size = 5.5)+
+  geom_text(mapping = aes(x = as.Date("2018-01-01"), y =5.75, label = paste('C = 94%')), color = "black", size = 5.5)+
+  geom_text(mapping = aes(x = as.Date("2018-01-01"), y =6.5, label = paste('Scaled RMSE = 1.19')), color = "black", size = 5.5)+
   xlab("")+
   labs(colour=" ")+
   theme_bw()+
   scale_color_manual(values = colors)+
-  theme(text = element_text(size = 13), axis.text.x = element_text(angle=45, hjust = 1, size = 12.5), 
-        axis.text.y = element_text(size = 13), )+
+  theme(text = element_text(size = 15), axis.text.x = element_text(angle=45, hjust = 1, size = 15), 
+        axis.text.y = element_text(size = 15), )+
   scale_x_date(date_labels="%Y")
 ##################
 # N mix models
