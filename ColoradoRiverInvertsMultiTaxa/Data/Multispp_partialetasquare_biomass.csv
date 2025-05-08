@@ -1,0 +1,16 @@
+"Parameter","Eta2_partial","CI","CI_low","CI_high"
+"temperature:temp_spike:hydropeaking:HFE",4.4246596927118e-24,0.95,0,1
+"temperature:hydropeaking:HFE",1.53939667547746e-24,0.95,0,1
+"temperature:temp_spike:hydropeaking",1.29461450812849e-24,0.95,0,1
+"temperature:temp_spike:HFE",9.01527157798698e-25,0.95,0,1
+"temperature:HFE",4.33917976651277e-25,0.95,0,1
+"temperature:hydropeaking",2.09767256245017e-25,0.95,0,1
+"hydropeaking",1.1368438390082e-25,0.95,0,1
+"temperature",1.09265684210441e-25,0.95,0,1
+"temp_spike:HFE",6.03390736359447e-26,0.95,0,1
+"temp_spike:hydropeaking:HFE",4.02152185733426e-26,0.95,0,1
+"temperature:temp_spike",1.28662027446896e-26,0.95,0,1
+"hydropeaking:HFE",8.98751890799467e-27,0.95,0,1
+"HFE",3.69158622436417e-28,0.95,0,1
+"temp_spike",2.70788779606651e-28,0.95,0,1
+"temp_spike:hydropeaking",1.73909080025422e-29,0.95,0,1
