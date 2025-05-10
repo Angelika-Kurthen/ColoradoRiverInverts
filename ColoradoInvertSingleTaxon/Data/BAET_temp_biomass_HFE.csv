@@ -1,9 +1,3 @@
-"biomass","temperature","taxa"
-"2470.34925811411","1","BAET"
-"2510.12925523004","1","BAET"
-"2641.15809805061","1.1","BAET"
-"2625.06336228906","1.1","BAET"
-"3577.13597264388","1.2","BAET"
-"3606.95534495312","1.2","BAET"
-"2764.97419322702","1.5","BAET"
-"2894.48752144196","1.5","BAET"
+version https://git-lfs.github.com/spec/v1
+oid sha256:e57b39dc058112d35f1f08a81cffc2b30ccb8b7a0db0f7fe3afbaae9c6f2a7a9
+size 283
