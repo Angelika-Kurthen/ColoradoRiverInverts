@@ -18,7 +18,7 @@ options(digits = 3)
 
 #############################
 # Temperature plot
-source("1spFunctions.R")
+source("ColoradoInvertSingleTaxon/Scripts/1spFunctions.R")
 temp <- readNWISdv("09380000", "00010", "2015-10-01", "2022-05-01")
 
 temperature <-ggplot(temp, aes(x = as.Date(Date), y = X_00010_00003)) +
@@ -36,11 +36,11 @@ temperature <-ggplot(temp, aes(x = as.Date(Date), y = X_00010_00003)) +
   
 #################################
 # Comparision of model output and empirical data
-source("BAETValidation.R")
-source("CHIR_Validation.R")
-source("GAMM_Validation.R")
-source("HYOSValidation.R")
-source("NZMS_Validation.R")
+source("ColoradoInvertSingleTaxon/Scripts/")
+source("ColoradoInvertSingleTaxon/Scripts/CHIR_Validation.R")
+source("ColoradoInvertSingleTaxon/Scripts/GAMM_Validation.R")
+source("ColoradoInvertSingleTaxon/Scripts/HYOSValidation.R")
+source("ColoradoInvertSingleTaxon/Scripts/NZMS_Validation.R")
 Fig1 <- ggarrange(NZMSts, BAETts, GAMMts,temperature, 
           labels = c("a", "b", "c", "d"),
           ncol = 2, nrow = 2, common.legend =F)
@@ -48,11 +48,11 @@ ggsave(filename = "fig3.1.png", Fig1, device = "png", dpi = "retina", height = 9
 
 
 # # hydropeaking intensity 
-source("BAET_Hydropeaking.R")
-source("HYOS_Hydropeaking.R")
-source("NZMS_Hydropeaking.R")
-source("GAMM_Hydropeaking.R")
-source("CHIR_Hydropeaking.R")
+source("ColoradoInvertSingleTaxon/Scripts/BAET_Hydropeaking.R")
+source("ColoradoInvertSingleTaxon/Scripts/HYOS_Hydropeaking.R")
+source("ColoradoInvertSingleTaxon/Scripts/NZMS_Hydropeaking.R")
+source("ColoradoInvertSingleTaxon/Scripts/GAMM_Hydropeaking.R")
+source("ColoradoInvertSingleTaxon/Scripts/CHIR_Hydropeaking.R")
 
 hyos_hydropeaking <- read_csv("hyos_hydropeaking_results.csv")
 hyos_hydropeaking$Taxa <- rep("HYOS", times = length(hyos_hydropeaking$Hydropeak))
@@ -223,11 +223,11 @@ regime <- ggplot(data = temperature.regime, aes(x = as.Date(dts), y = Temperatur
   theme(text = element_text(size = 11), axis.text.x = element_text(hjust = 1, size = 10, angle = 0), 
         axis.text.y = element_text(size = 10), legend.key = element_rect(fill = "transparent"))
 
-hyos_abund <- read_csv("HYOS_temp_abund.csv")
-baet_abund <- read_csv("BAET_temp_abund.csv")
-chir_abund <- read_csv("CHIR_temp_abund.csv")
-gamm_abund <- read_csv("GAMM_temp_abund.csv")
-nzms_abund <- read_csv("NZMS_temp_abund.csv")
+hyos_abund <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_abund.csv")
+baet_abund <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_abund.csv")
+chir_abund <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_abund.csv")
+gamm_abund <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_abund.csv")
+nzms_abund <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_abund.csv")
 
 
 # with spike
@@ -266,11 +266,11 @@ spikeregime <- ggplot(data = temperature.regime, aes(x = as.Date(dts), y = Tempe
 
 ############################
 # Temperature Survival Curves
-source("GAMMSurvivorship.R")
-source("HYOSSurvivorship.R")
-source("BAETSurvivorship.R")
-source("NZMSSurvivorship.R")
-source("CHIRSurvivorship.R")
+source("ColoradoInvertSingleTaxon/Scripts/GAMMSurvivorship.R")
+source("ColoradoInvertSingleTaxon/Scripts/HYOSSurvivorship.R")
+source("ColoradoInvertSingleTaxon/Scripts/BAETSurvivorship.R")
+source("ColoradoInvertSingleTaxon/Scripts/NZMSSurvivorship.R")
+source("ColoradoInvertSingleTaxon/Scripts/CHIRSurvivorship.R")
 
 gamm_surv <- ggplot(data = GAMMSurvRates, aes(x = Temperature, y = Survival, color = "Taxa"))+
   geom_point(aes(color = "data"), size = 1.5, alpha = 1, show.legend = T)+
@@ -329,26 +329,26 @@ ggsave("TempSurvPlot.png", plot = tempsurv_plot, device = "png", width = 14, hei
 
 ##############################################
 # Hydropysche spp Scenario
-hyos_abund <- read_csv("HYOS_temp_abund.csv")
-hyos_pc <- read_csv("HYOS_temp_percapita.csv")
-hyos_biomass <- read_csv("HYOS_temp_biomass.csv")
-hyos_abund_sp <- read_csv("HYOS_temp_abund_spike.csv")
-hyos_pc_sp <- read_csv("HYOS_temp_percapita_spike.csv")
-hyos_biomass_sp <- read_csv("HYOS_temp_biomass_spike.csv")
-hyos_abund_t.h <- read_csv("HYOS_temp_hyd_abund.csv")
-hyos_biomass_t.h <- read_csv("HYOS_temp_hyd_biomass.csv")
-hyos_abund_t.h_spike <- read_csv("HYOS_temp_hyd_abund_spike.csv")
-hyos_biomass_t.h_spike <- read_csv("HYOS_temp_hyd_biomass_spike.csv")
-hyos_abund_HFE <- read_csv("HYOS_temp_abund_HFE.csv")
-hyos_biomass_HFE <- read_csv("HYOS_temp_biomass_HFE.csv")
-hyos_biomass_HFE_sp <- read_csv("HYOS_temp_biomass_HFE_spike.csv")
-hyos_abund_HFE_sp <- read_csv("HYOS_temp_abund_HFE_spike.csv")
-hyos_abund_hyd_HFE <- read_csv("HYOS_temp_hyd_abund_HFE.csv")
-hyos_biomass_hyd_HFE <- read_csv("HYOS_temp_hyd_biomass_HFE.csv")
-hyos_abund_hyd_HFE.sp <- read_csv("HYOS_temp_hyd_abund_HFE_spike.csv")
-hyos_biomass_hyd_HFE.sp <- read_csv("HYOS_temp_hyd_biomass_HFE_spike.csv")
-hyos_pc_hfe <- read_csv("HYOS_temp_percapita_HFE.csv")
-hyos_pc_hfe_sp <- read_csv("HYOS_temp_percapita_HFE_spike.csv")
+hyos_abund <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_abund.csv")
+hyos_pc <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_percapita.csv")
+hyos_biomass <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_biomass.csv")
+hyos_abund_sp <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_abund_spike.csv")
+hyos_pc_sp <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_percapita_spike.csv")
+hyos_biomass_sp <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_biomass_spike.csv")
+hyos_abund_t.h <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_hyd_abund.csv")
+hyos_biomass_t.h <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_hyd_biomass.csv")
+hyos_abund_t.h_spike <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_hyd_abund_spike.csv")
+hyos_biomass_t.h_spike <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_hyd_biomass_spike.csv")
+hyos_abund_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_abund_HFE.csv")
+hyos_biomass_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_biomass_HFE.csv")
+hyos_biomass_HFE_sp <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_biomass_HFE_spike.csv")
+hyos_abund_HFE_sp <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_abund_HFE_spike.csv")
+hyos_abund_hyd_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_hyd_abund_HFE.csv")
+hyos_biomass_hyd_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_hyd_biomass_HFE.csv")
+hyos_abund_hyd_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_hyd_abund_HFE_spike.csv")
+hyos_biomass_hyd_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_hyd_biomass_HFE_spike.csv")
+hyos_pc_hfe <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_percapita_HFE.csv")
+hyos_pc_hfe_sp <- read_csv("ColoradoInvertSingleTaxon/Data/HYOS_temp_percapita_HFE_spike.csv")
 
 # abundance
 hyos_abund_combo <- bind_rows(
@@ -479,8 +479,9 @@ h_plot <- wrap_plots(h.abund, h.biomass) +
     legend.key.height = unit(1.25, "cm")
   )
 # Read the PNG image
-caddis <- readPNG("caddisfly.png")
+caddis <- readPNG("ColoradoInvertSingleTaxon/Data/caddisfly.png")
 caddis_grob <- rasterGrob(caddis, x = 0.78, y = 0.92, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
+caddis_grob.pc <- rasterGrob(caddis, x = 0.7, y = 0.85, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
 
 # Overlay the image on the plot
 h.fig <- ggdraw() +
@@ -504,28 +505,30 @@ h.pc <- ggplot(data = hyos_pc_combo, aes(x = as.factor(temperature), y = percapi
   labs(y="Adult Biomass (mg)", title = expression(paste(italic("Hydropsyche"), " spp.")))+
   theme(text = element_text(size = 13), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
+# h.pc <- ggdraw() +
+#   draw_plot(h.pc) +
+#   draw_grob(caddis_grob.pc)
 ###########################################
 ## Baetidae spp. Scenarios
-baet_abund <- read_csv("BAET_temp_abund.csv")
-baet_pc <- read_csv("BAET_temp_percapita.csv")
-baet_biomass <- read_csv("BAET_temp_biomass.csv")
-baet_abund_sp <- read_csv("BAET_temp_abund_spike.csv")
-baet_pc_sp <- read_csv("BAET_temp_percapita_spike.csv")
-baet_abund_t.h <- read_csv("BAET_temp_hyd_abund.csv")
-baet_biomass_sp <- read_csv("BAET_temp_biomass_spike.csv")
-baet_biomass_t.h <- read_csv("BAET_temp_hyd_biomass.csv")
-baet_abund_t.h_spike <- read_csv("BAET_temp_hyd_abund_spike.csv")
-baet_biomass_t.h_spike <- read_csv("BAET_temp_hyd_biomass_spike.csv")
-baet_abund_HFE <- read_csv("BAET_temp_abund_HFE.csv")
-baet_biomass_HFE <- read_csv("BAET_temp_biomass_HFE.csv")
-baet_abund_HFE_sp <- read_csv("BAET_temp_abund_HFE_spike.csv")
-baet_biomass_HFE.sp <- read_csv("BAET_temp_biomass_HFE_spike.csv")
-baet_abund_HFE_sp <- read_csv("BAET_temp_abund_HFE_spike.csv")
-baet_abund_hyd_HFE <- read_csv("BAET_temp_hyd_abund_HFE.csv")
-baet_biomass_hyd_HFE <- read_csv("BAET_temp_hyd_biomass_HFE.csv")
-baet_abund_hyd_HFE.sp <- read_csv("BAET_temp_hyd_abund_HFE_spike.csv")
-baet_biomass_hyd_HFE.sp <- read_csv("BAET_temp_hyd_biomass_HFE_spike.csv")
+baet_abund <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_abund.csv")
+baet_pc <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_percapita.csv")
+baet_biomass <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_biomass.csv")
+baet_abund_sp <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_abund_spike.csv")
+baet_pc_sp <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_percapita_spike.csv")
+baet_abund_t.h <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_hyd_abund.csv")
+baet_biomass_sp <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_biomass_spike.csv")
+baet_biomass_t.h <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_hyd_biomass.csv")
+baet_abund_t.h_spike <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_hyd_abund_spike.csv")
+baet_biomass_t.h_spike <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_hyd_biomass_spike.csv")
+baet_abund_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_abund_HFE.csv")
+baet_biomass_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_biomass_HFE.csv")
+baet_abund_HFE_sp <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_abund_HFE_spike.csv")
+baet_biomass_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_biomass_HFE_spike.csv")
+baet_abund_HFE_sp <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_abund_HFE_spike.csv")
+baet_abund_hyd_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_hyd_abund_HFE.csv")
+baet_biomass_hyd_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_hyd_biomass_HFE.csv")
+baet_abund_hyd_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_hyd_abund_HFE_spike.csv")
+baet_biomass_hyd_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/BAET_temp_hyd_biomass_HFE_spike.csv")
 
 
 # abundance
@@ -636,8 +639,9 @@ b_plot <- wrap_plots(b.abund, b.biomass) +
     legend.key.height = unit(1.25, "cm")
   )
 # Read the PNG image
-mayfly <- readPNG("mayfly.png")
+mayfly <- readPNG("ColoradoInvertSingleTaxon/Data/mayfly.png")
 mayfly_grob <- rasterGrob(mayfly, x = 0.825, y = 0.92, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
+mayfly_grob.pc <- rasterGrob(mayfly, x = 0.9, y = 0.85, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
 
 # Overlay the image on the plot
 b.fig <- ggdraw() +
@@ -665,28 +669,31 @@ b.pc <- ggplot(data = baet_pc_combo, aes(x = as.factor(temperature), y = percapi
   labs(y="Adult Biomass (mg)", title = expression(paste(italic("Baetidae"), " spp.")))+
   theme(text = element_text(size = 13), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# b.pc <- ggdraw() +
+#   draw_plot(b.pc) +
+#   draw_grob(mayfly_grob.pc)
 
 ################################################
 # Chironomidae spp Scenarios
-chir_abund <- read_csv("CHIR_temp_abund.csv")
-chir_pc <- read_csv("CHIR_temp_percapita.csv")
-chir_biomass <- read_csv("CHIR_temp_biomass.csv")
-chir_abund_sp <- read_csv("CHIR_temp_abund_spike.csv")
-chir_pc_sp <- read_csv("CHIR_temp_percapita_spike.csv")
-chir_biomass_sp <- read_csv("CHIR_temp_biomass_spike.csv")
-chir_abund_t.h <- read_csv("CHIR_temp_hyd_abund.csv")
-chir_biomass_t.h <- read_csv("CHIR_temp_hyd_biomass.csv")
-chir_abund_t.h_spike <- read_csv("CHIR_temp_hyd_abund_spike.csv")
-chir_biomass_t.h_spike <- read_csv("CHIR_temp_hyd_biomass_spike.csv")
-chir_abund_HFE <- read_csv("CHIR_temp_abund_HFE.csv")
-chir_biomass_HFE <- read_csv("CHIR_temp_biomass_HFE.csv")
-chir_abund_HFE_sp <- read_csv("CHIR_temp_abund_HFE_spike.csv")
-chir_biomass_HFE.sp <- read_csv("CHIR_temp_biomass_HFE_spike.csv")
-chir_abund_HFE_sp <- read_csv("CHIR_temp_abund_HFE_spike.csv")
-chir_abund_hyd_HFE <- read_csv("CHIR_temp_hyd_abund_HFE.csv")
-chir_biomass_hyd_HFE <- read_csv("CHIR_temp_hyd_biomass_HFE.csv")
-chir_abund_hyd_HFE.sp <- read_csv("CHIR_temp_hyd_abund_HFE_spike.csv")
-chir_biomass_hyd_HFE.sp <- read_csv("CHIR_temp_hyd_biomass_HFE_spike.csv")
+chir_abund <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_abund.csv")
+chir_pc <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_percapita.csv")
+chir_biomass <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_biomass.csv")
+chir_abund_sp <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_abund_spike.csv")
+chir_pc_sp <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_percapita_spike.csv")
+chir_biomass_sp <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_biomass_spike.csv")
+chir_abund_t.h <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_hyd_abund.csv")
+chir_biomass_t.h <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_hyd_biomass.csv")
+chir_abund_t.h_spike <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_hyd_abund_spike.csv")
+chir_biomass_t.h_spike <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_hyd_biomass_spike.csv")
+chir_abund_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_abund_HFE.csv")
+chir_biomass_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_biomass_HFE.csv")
+chir_abund_HFE_sp <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_abund_HFE_spike.csv")
+chir_biomass_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_biomass_HFE_spike.csv")
+chir_abund_HFE_sp <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_abund_HFE_spike.csv")
+chir_abund_hyd_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_hyd_abund_HFE.csv")
+chir_biomass_hyd_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_hyd_biomass_HFE.csv")
+chir_abund_hyd_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_hyd_abund_HFE_spike.csv")
+chir_biomass_hyd_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/CHIR_temp_hyd_biomass_HFE_spike.csv")
 
 # abundance
 chir_abund_combo <- bind_rows(
@@ -777,8 +784,9 @@ c_plot <- wrap_plots(c.abund, c.biomass) +
     legend.key.height = unit(1.25, "cm")
   )
 # Read the PNG image
-chiro <- readPNG("chironomidae.png")
+chiro <- readPNG("ColoradoInvertSingleTaxon/Data/chironomidae.png")
 chiro_grob <- rasterGrob(chiro, x = 0.825, y = 0.92, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
+chiro_grob.pc <- rasterGrob(chiro, x = 0.92, y = 0.85, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
 
 # Overlay the image on the plot
 c.fig <- ggdraw() +
@@ -788,8 +796,8 @@ ggsave("cfig.png", plot = c.fig, device = "png", width = 8.44, height = 6, units
 
 
 chir_pc_combo <- bind_rows(
-  baet_pc %>% mutate(source = "Temperature"),
-  baet_pc_sp %>% mutate(source = "Temperature & spike"),
+  chir_pc %>% mutate(source = "Temperature"),
+  chir_pc_sp %>% mutate(source = "Temperature & spike"),
 )
 
 c.pc <- ggplot(data = chir_pc_combo, aes(x = as.factor(temperature), y = percapita, group = source, color = source))+
@@ -807,28 +815,30 @@ c.pc <- ggplot(data = chir_pc_combo, aes(x = as.factor(temperature), y = percapi
   theme(text = element_text(size = 13), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-
+# c.pc <- ggdraw() +
+#   draw_plot(c.pc) +
+#   draw_grob(chiro_grob.pc)
 ###########################################
 # G. lacustris Scenaruis
-gamm_abund <- read_csv("GAMM_temp_abund.csv")
-gamm_pc <- read_csv("GAMM_temp_percapita.csv")
-gamm_biomass <- read_csv("GAMM_temp_biomass.csv")
-gamm_abund_sp <- read_csv("GAMM_temp_abund_spike.csv")
-gamm_pc_sp <- read_csv("GAMM_temp_percapita_spike.csv")
-gamm_biomass_sp <- read_csv("GAMM_temp_biomass_spike.csv")
-gamm_abund_t.h <- read_csv("GAMM_temp_hyd_abund.csv")
-gamm_biomass_t.h <- read_csv("GAMM_temp_hyd_biomass.csv")
-gamm_abund_t.h_spike <- read_csv("GAMM_temp_hyd_abund_spike.csv")
-gamm_biomass_t.h_spike <- read_csv("GAMM_temp_hyd_biomass_spike.csv")
-gamm_abund_HFE <- read_csv("GAMM_temp_abund_HFE.csv")
-gamm_biomass_HFE <- read_csv("GAMM_temp_biomass_HFE.csv")
-gamm_abund_HFE_sp <- read_csv("GAMM_temp_abund_HFE_spike.csv")
-gamm_biomass_HFE.sp <- read_csv("GAMM_temp_biomass_HFE_spike.csv")
-gamm_abund_HFE_sp <- read_csv("GAMM_temp_abund_HFE_spike.csv")
-gamm_abund_hyd_HFE <- read_csv("GAMM_temp_hyd_abund_HFE.csv")
-gamm_biomass_hyd_HFE <- read_csv("GAMM_temp_hyd_biomass_HFE.csv")
-gamm_abund_hyd_HFE.sp <- read_csv("GAMM_temp_hyd_abund_HFE_spike.csv")
-gamm_biomass_hyd_HFE.sp <- read_csv("GAMM_temp_hyd_biomass_HFE_spike.csv")
+gamm_abund <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_abund.csv")
+gamm_pc <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_percapita.csv")
+gamm_biomass <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_biomass.csv")
+gamm_abund_sp <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_abund_spike.csv")
+gamm_pc_sp <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_percapita_spike.csv")
+gamm_biomass_sp <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_biomass_spike.csv")
+gamm_abund_t.h <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_hyd_abund.csv")
+gamm_biomass_t.h <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_hyd_biomass.csv")
+gamm_abund_t.h_spike <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_hyd_abund_spike.csv")
+gamm_biomass_t.h_spike <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_hyd_biomass_spike.csv")
+gamm_abund_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_abund_HFE.csv")
+gamm_biomass_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_biomass_HFE.csv")
+gamm_abund_HFE_sp <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_abund_HFE_spike.csv")
+gamm_biomass_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_biomass_HFE_spike.csv")
+gamm_abund_HFE_sp <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_abund_HFE_spike.csv")
+gamm_abund_hyd_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_hyd_abund_HFE.csv")
+gamm_biomass_hyd_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_hyd_biomass_HFE.csv")
+gamm_abund_hyd_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_hyd_abund_HFE_spike.csv")
+gamm_biomass_hyd_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/GAMM_temp_hyd_biomass_HFE_spike.csv")
 
 # abundance
 gamm_abund_combo <- bind_rows(
@@ -941,8 +951,9 @@ g_plot <- wrap_plots(g.abund, g.biomass) +
     legend.key.height = unit(1.25, "cm")
   )
 # Read the PNG image
-gamm <- readPNG("Gammarus.png")
+gamm <- readPNG("ColoradoInvertSingleTaxon/Data/Gammarus.png")
 gamm_grob <- rasterGrob(gamm, x = 0.825, y = 0.92, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
+gamm_grob.pc <- rasterGrob(gamm, x = 0.9, y = 0.85, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
 
 # Overlay the image on the plot
 g.fig <- ggdraw() +
@@ -966,49 +977,32 @@ g.pc <- ggplot(data = gamm_pc_combo, aes(x = as.factor(temperature), y = percapi
   labs(y="Proportion Adult", title = expression(paste(italic("G. lacustris"))))+
   theme(text = element_text(size = 13), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
+# 
+# g.pc <- ggdraw() +
+#   draw_plot(g.pc) +
+#   draw_grob(gamm_grob.pc)
 #############################################
 # NZMS Scenarios
 
-nzms_abund <- read_csv("NZMS_temp_abund.csv")
-nzms_pc <- read_csv("NZMS_temp_percapita.csv")
-nzms_biomass <- read_csv("NZMS_temp_biomass.csv")
-nzms_abund_sp <- read_csv("NZMS_temp_abund_spike.csv")
-nzms_pc_sp <- read_csv("NZMS_temp_percapita_spike.csv")
-nzms_biomass_sp <- read_csv("NZMS_temp_biomass_spike.csv")
-nzms_abund_t.h <- read_csv("NZMS_temp_hyd_abund.csv")
-nzms_biomass_t.h <- read_csv("NZMS_temp_hyd_biomass.csv")
-nzms_abund_t.h_spike <- read_csv("NZMS_temp_hyd_abund_spike.csv")
-nzms_biomass_t.h_spike <- read_csv("NZMS_temp_hyd_biomass_spike.csv")
-nzms_abund_HFE <- read_csv("NZMS_temp_abund_HFE.csv")
-nzms_biomass_HFE <- read_csv("NZMS_temp_biomass_HFE.csv")
-nzms_abund_HFE_sp<- read_csv("NZMS_temp_abund_HFE_spike.csv")
-nzms_biomass_HFE.sp <- read_csv("NZMS_temp_biomass_HFE_spike.csv")
-nzms_abund_HFE_sp<- read_csv("NZMS_temp_abund_HFE_spike.csv")
-nzms_abund_hyd_HFE <- read_csv("NZMS_temp_hyd_abund_HFE.csv")
-nzms_biomass_hyd_HFE <- read_csv("NZMS_temp_hyd_biomass_HFE.csv")
-nzms_abund_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_abund_HFE_spike.csv")
-nzms_biomass_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_biomass_HFE_spike.csv")
-# 
-# nzms_abund <- read_csv("NZMS_temp_abund_2000.csv")
-# nzms_pc <- read_csv("NZMS_temp_percapita_2000.csv")
-# nzms_biomass <- read_csv("NZMS_temp_biomass_2000.csv")
-# nzms_abund_sp <- read_csv("NZMS_temp_abund_spike_2000.csv")
-# nzms_pc_sp <- read_csv("NZMS_temp_percapita_spike_2000.csv")
-# nzms_biomass_sp <- read_csv("NZMS_temp_biomass_spike_2000.csv")
-# nzms_abund_t.h <- read_csv("NZMS_temp_hyd_abund_2000.csv")
-# nzms_biomass_t.h <- read_csv("NZMS_temp_hyd_biomass_2000.csv")
-# nzms_abund_t.h_spike <- read_csv("NZMS_temp_hyd_abund_spike_2000.csv")
-# nzms_biomass_t.h_spike <- read_csv("NZMS_temp_hyd_biomass_spike_2000.csv")
-# nzms_abund_HFE <- read_csv("NZMS_temp_abund_HFE_2000.csv")
-# nzms_biomass_HFE <- read_csv("NZMS_temp_biomass_HFE_2000.csv")
-# nzms_abund_HFE_sp<- read_csv("NZMS_temp_abund_HFE_spike_2000.csv")
-# nzms_biomass_HFE.sp <- read_csv("NZMS_temp_biomass_HFE_spike_2000.csv")
-# nzms_abund_HFE_sp<- read_csv("NZMS_temp_abund_HFE_spike_2000.csv")
-# nzms_abund_hyd_HFE <- read_csv("NZMS_temp_hyd_abund_HFE_2000.csv")
-# nzms_biomass_hyd_HFE <- read_csv("NZMS_temp_hyd_biomass_HFE_2000.csv")
-# nzms_abund_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_abund_HFE_spike_2000.csv")
-# nzms_biomass_hyd_HFE.sp <- read_csv("NZMS_temp_hyd_biomass_HFE_spike_2000.csv")
+nzms_abund <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_abund.csv")
+nzms_pc <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_percapita.csv")
+nzms_biomass <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_biomass.csv")
+nzms_abund_sp <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_abund_spike.csv")
+nzms_pc_sp <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_percapita_spike.csv")
+nzms_biomass_sp <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_biomass_spike.csv")
+nzms_abund_t.h <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_hyd_abund.csv")
+nzms_biomass_t.h <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_hyd_biomass.csv")
+nzms_abund_t.h_spike <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_hyd_abund_spike.csv")
+nzms_biomass_t.h_spike <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_hyd_biomass_spike.csv")
+nzms_abund_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_abund_HFE.csv")
+nzms_biomass_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_biomass_HFE.csv")
+nzms_abund_HFE_sp<- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_abund_HFE_spike.csv")
+nzms_biomass_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_biomass_HFE_spike.csv")
+nzms_abund_HFE_sp<- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_abund_HFE_spike.csv")
+nzms_abund_hyd_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_hyd_abund_HFE.csv")
+nzms_biomass_hyd_HFE <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_hyd_biomass_HFE.csv")
+nzms_abund_hyd_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_hyd_abund_HFE_spike.csv")
+nzms_biomass_hyd_HFE.sp <- read_csv("ColoradoInvertSingleTaxon/Data/NZMS_temp_hyd_biomass_HFE_spike.csv")
 
 #abundance
 nzms_abund_combo <- bind_rows(
@@ -1098,8 +1092,9 @@ n_plot <- wrap_plots(n.abund, n.biomass) +
     legend.key.height = unit(1.25, "cm")
   )
 # Read the PNG image
-nzms <- readPNG("nzms.png")
+nzms <- readPNG("ColoradoInvertSingleTaxon/Data/nzms.png")
 nzms_grob <- rasterGrob(nzms, x = 0.825, y = 0.92, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
+nzms_grob.pc <- rasterGrob(nzms, x = 0.9, y = 0.85, width = 0.135, height = 0.135)  # Adjust x, y, width, and height
 
 # Overlay the image on the plot
 n.fig <- ggdraw() +
@@ -1123,6 +1118,9 @@ n.pc <- ggplot(data = nzms_pc_combo, aes(x = as.factor(temperature), y = percapi
   theme(text = element_text(size = 13), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(color = "transparent"))
 
+# n.pc <- ggdraw() +
+#   draw_plot(n.pc) +
+#   draw_grob(nzms_grob.pc)
 
 # read in Lees Ferry temp and discharge data from 2007 to 2023
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
