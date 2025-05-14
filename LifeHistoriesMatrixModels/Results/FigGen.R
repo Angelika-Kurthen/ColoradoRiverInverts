@@ -8,17 +8,17 @@ library(svglite)
 
 
 # code for temperature regime shift 
-source("A_sp_Temp_Toggle.R")
-source("Bsp_Temp_Toggle.R")
-source("CspTempToggle.R")
-source("D_sp_TempToggle.R")
+source("LifeHistoriesMatrixModels/Scripts/A_sp_Temp_Toggle.R")
+source("LifeHistoriesMatrixModels/Scripts/Bsp_Temp_Toggle.R")
+source("LifeHistoriesMatrixModels/Scripts/CspTempToggle.R")
+source("LifeHistoriesMatrixModels/Scripts/D_sp_TempToggle.R")
 
 temp_df <- rbind(a_temp_adjust_df, b_temp_adjust_df ,c_temp_adjust_df ,d_temp_adjust_df)
 # Reorder factor levels for correct legend order
 temp_df$V3 <- factor(temp_df$V3, levels = c("B", "C", "A", "D"))
 
 # create the plot
-abund <- ggplot(data = temp_df, aes(temp_regime, temp_means/10000, color = V3))+
+abund <- ggplot(data = temp_df, aes(temp_regime, log(temp_means), color = V3))+
   geom_line(size = 1, alpha = 0.8)+
   scale_color_manual(name = "Strategy", labels=c("Boom", "Fast", "Moderate", "Slow"), values=c("#228833", "#CCBB44","#66CCEE", "#AA3377"))+
   theme_bw()+
@@ -26,7 +26,7 @@ abund <- ggplot(data = temp_df, aes(temp_regime, temp_means/10000, color = V3))+
              size=1)+
   xlab(" ")+
   scale_y_continuous(labels = scales::number_format(accuracy = 1))+
-  ylab("Relativized Abundance")+
+  ylab("Log Abundance")+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 
@@ -42,7 +42,7 @@ biomass <- ggplot(data = size_df, aes(temp_regime, stage3s_means, color = V4))+
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
   xlab(" ")+
-  ylab("Final Body Mass (mg)")+
+  ylab("Per-capita Biomass (mg)")+
   scale_y_continuous(labels = scales::number_format(accuracy = 0.1))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
@@ -56,7 +56,7 @@ totbiomass <- ggplot(data = size_df, aes(temp_regime, totbiomass/1000, color = V
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
   xlab("Mean Annual Water Temperature in C")+
-  ylab("Total Biomass (g)")+
+  ylab("Standing Biomass (g)")+
   scale_y_continuous(labels = scales::number_format(accuracy = 0.1), n.breaks = 3)+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
@@ -65,9 +65,6 @@ x11()
 Fig2<- ggarrange(abund, biomass, totbiomass, 
           labels = c("a", "b", "c"),
           ncol = 1, nrow = 3, common.legend = T)
-
-ggsave(filename = "Fig2stage3.png", plot = Fig2, device = "png", width = 6.5, height = 8.5, dpi = "retina")
-ggsave(filename = "Fig2stagebiomass.png", plot = Fig2, device = "png", width = 6.5, height = 8.5, dpi = "retina")
 
 ggsave(filename = "Fig2.png", plot = Fig2, device = "png", width = 6.5, height = 8.5, dpi = "retina")
 
@@ -108,20 +105,19 @@ es <- ggplot(data = temp_size, aes(x = temp_regime, y = size_means/1000, color =
   geom_point()+
   theme_bw()+
   xlab("Mean Annual Water Temperature in C")+
-  ylab("Total Biomass (g)")+
+  ylab("Standing Biomass (g)")+
   facet_grid(.~season, scales = "free_y", labeller = labeller(season = supp.labs))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
 x11()
 Fig4 <- ggarrange(d, es, nrow  = 2, labels = c("a","b"))
 ggsave(filename = "Fig4.png", plot = Fig4, device = "png", width = 7.5, height = 8.5, dpi = "retina")
-ggsave(filename = "Fig4stage3.png", plot = Fig4, device = "png", width = 7.5, height = 8.5, dpi = "retina")
 
 
 ########################################
 # Create figure with density independence, 
 # density dependence, and temperature dependence
-source("Annual.R")
+source("LifeHistoriesMatrixModels/Scripts/Annual.R")
 
 yr4temp <- ggplot(data = subset(temp, dts >= "2031-07-21" & dts <= "2033-12-20"), aes(as.Date(dts), Temperature))+
   geom_line(size = 0.8)+
@@ -148,7 +144,7 @@ logthreeyearplot <- ggplot(data = threeyear, aes(x = Date, y  =
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
 
-source("DensIndependence.R")
+source("LifeHistoriesMatrixModels/Scripts/DensIndependence.R")
 dens.ind$Taxa <- factor(dens.ind$Taxa, levels = c("B", "C", "A", "D"))
 DensInd <- ggplot(data = dens.ind, aes(x = Date, y  =log(Abundance), color = Taxa))+
   geom_point(size = 1, alpha = 0.5)+
@@ -161,7 +157,7 @@ DensInd <- ggplot(data = dens.ind, aes(x = Date, y  =log(Abundance), color = Tax
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-source("DensityDependence.R")
+source("LifeHistoriesMatrixModels/Scripts/DensityDependence.R")
 dens.dep$Taxa <- factor(dens.dep$Taxa, levels = c("B","C", "A", "D"))
 DensDep <- ggplot(data = dens.dep, aes(x = Date, y  =(Abundance), color = Taxa))+
   geom_point(size = 1, alpha = 0.5)+
@@ -169,6 +165,7 @@ DensDep <- ggplot(data = dens.dep, aes(x = Date, y  =(Abundance), color = Taxa))
   xlab("Month")+
   ylab("Abundance")+
   scale_color_manual(name = "Strategy", labels=c("Boom", "Fast", "Moderate", "Slow"), values=c("#228833", "#CCBB44","#66CCEE", "#AA3377"))+
+  scale_y_continuous( breaks = c(0, 1e5, 2e5, 3e5), labels = scales::scientific)+
   scale_x_date(date_labels="%B", date_breaks  ="3 month")+
   theme_bw()+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
@@ -181,10 +178,10 @@ Fig1 <- ggarrange(DensInd, DensDep, logthreeyearplot, yr4temp,
 ggsave(filename = "Fig1.png", plot= Fig1, width = 6.5, height= 8.5, device = "png", dpi = "retina" )
 
 # multivoltinism
-source("SpA_Multivolt.R")
-source("SpB_Multivolt.R")
-source("SpC_Multivolt.R")
-source("SPD_Multivolt.R")
+source("LifeHistoriesMatrixModels/Scripts/SpA_Multivolt.R")
+source("LifeHistoriesMatrixModels/Scripts/SpB_Multivolt.R")
+source("LifeHistoriesMatrixModels/Scripts/SpC_Multivolt.R")
+source("LifeHistoriesMatrixModels/Scripts/SPD_Multivolt.R")
 
 oneyear <- rbind(B.oneyear, C.oneyear, A.oneyear, D.oneyear)
 
@@ -226,7 +223,7 @@ Fig3 <- ggplot(data = oneyear, aes(x = Date, y = log(Abund), group = as.factor(M
 ggsave(filename = "Fig3.png", Fig3, height = 5, width = 5, device = "png", dpi = "retina")
 
 # chaos plots
-source("HilbertMetric.R")
+source("LifeHistoriesMatrixModels/Scripts/HilbertMetric.R")
 
 chaostestplot <- ggplot(data = chaostestdf, aes(x = fecs, y = chaos1))+
   geom_point(alpha = 0.8)+
@@ -285,32 +282,32 @@ FigS1 <- ggarrange(chaostestplot,
 ggsave(filename = "FigS1.png", FigS1, height = 8.5, width = 6.5, device = "png", dpi = "retina")
 
 # press disturbance magnitude
-source("A_sp_press_mag.R")
-source("B_sp_press_mag.R")
-source("C_sp_press_mag.R")
-source("D_sp_press_mag.R")
-
-press_mag_df <- rbind(a_magnitude_df, b_magnitude_df, c_magnitude_df, d_magnitude_df)
-press_mag_df$magnitudes <- as.numeric(press_mag_df$magnitudes)
-press_mag_df$mag_response <- as.numeric(press_mag_df$mag_response)
-press_mag_df$V3 <- factor(press_mag_df$V3, levels = c("B", "C", "A", "D"))
-FigS2 <- ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000, color = V3))+
-  geom_point(size = 1, alpha = 0.5)+
-  geom_line(linewidth = 1, alpha = 0.8)+
-  #stat_smooth(size = 1, span = 0.3, se = F)+
-  scale_color_manual(name = "Strategy", labels=c("Boom", "Fast", "Moderate", "Slow"), values=c("#228833", "#CCBB44","#66CCEE", "#AA3377"))+
-  xlab("Press Magnitude (Hydropeaking Index)")+
-  ylab("Relatived Abundance")+
-  theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-ggsave("FigS2.png", plot = FigS2, width = 6, height = 5, device = "png", dpi = "retina")
+# source("LifeHistoriesMatrixModels/Scripts/A_sp_press_mag.R")
+# source("LifeHistoriesMatrixModels/Scripts/B_sp_press_mag.R")
+# source("LifeHistoriesMatrixModels/Scripts/C_sp_press_mag.R")
+# source("LifeHistoriesMatrixModels/Scripts/D_sp_press_mag.R")
+# 
+# press_mag_df <- rbind(a_magnitude_df, b_magnitude_df, c_magnitude_df, d_magnitude_df)
+# press_mag_df$magnitudes <- as.numeric(press_mag_df$magnitudes)
+# press_mag_df$mag_response <- as.numeric(press_mag_df$mag_response)
+# press_mag_df$V3 <- factor(press_mag_df$V3, levels = c("B", "C", "A", "D"))
+# FigS2 <- ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000, color = V3))+
+#   geom_point(size = 1, alpha = 0.5)+
+#   geom_line(linewidth = 1, alpha = 0.8)+
+#   #stat_smooth(size = 1, span = 0.3, se = F)+
+#   scale_color_manual(name = "Strategy", labels=c("Boom", "Fast", "Moderate", "Slow"), values=c("#228833", "#CCBB44","#66CCEE", "#AA3377"))+
+#   xlab("Press Magnitude (Hydropeaking Index)")+
+#   ylab("Relatived Abundance")+
+#   theme_bw()+
+#   theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
+#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+# 
+# ggsave("FigS2.png", plot = FigS2, width = 6, height = 5, device = "png", dpi = "retina")
 # code for fecundity sensitivity analysis
-source("A_sp_Fecundity_Toggle.R")
-source("B_sp_fecundity_Toggle.R")
-source("C_sp_FecundityToggle.R")
-source("D_sp_Fecundity_Toggle.R")
+source("LifeHistoriesMatrixModels/Scripts/A_sp_Fecundity_Toggle.R")
+source("LifeHistoriesMatrixModels/Scripts/B_sp_fecundity_Toggle.R")
+source("LifeHistoriesMatrixModels/Scripts/C_sp_FecundityToggle.R")
+source("LifeHistoriesMatrixModels/Scripts/D_sp_Fecundity_Toggle.R")
 
 fec_df <- rbind(a_fec_df, b_fec_df, c_fec_df, d_fec_df)
 fec_df$V3 <- factor(fec_df$V3, levels = c("B", "C", "A", "D"))
@@ -339,10 +336,10 @@ ggsave(filename = "FigS3.png", plot = FigS3, device = "png", width = 6, height =
 
 
 # code for degree day sensitivity analysis
-source("A_sp_DD_toggle.R")
-source("B_sp_DD_toggle.R")
-source("CspDDToggle.R")
-source("D_sp_DD_Toggle.R")
+source("LifeHistoriesMatrixModels/Scripts/A_sp_DD_toggle.R")
+source("LifeHistoriesMatrixModels/Scripts/B_sp_DD_toggle.R")
+source("LifeHistoriesMatrixModels/Scripts/CspDDToggle.R")
+source("LifeHistoriesMatrixModels/Scripts/D_sp_DD_Toggle.R")
 
 dd_df <- rbind(add_df, bdd_df, cdd_df, ddd_df)
 dd_df$V3 <- factor(dd_df$V3, levels = c("B", "C", "A", "D"))
@@ -369,15 +366,15 @@ FigS4 <- ggplot(data = dd_df, aes(dd_seq, dd_means/10000, color = V3)) +
 ggsave(filename = "FigS4.png", plot = FigS4, device = "png", width = 6, height = 5, dpi = "retina")
 
 #code to make heatmap for K in response to Disturbance and time post disturbance
-source("Kwireplot.R")
+source("LifeHistoriesMatrixModels/Scripts/Kwireplot.R")
 FigS5 <- ggplot(data = KQT, aes(x = t , y = Q))+
   geom_raster(aes(fill = K), interpolate = T)+
   scale_fill_viridis_c(option = "magma") +
   scale_color_grey()+
   labs(shape = "") +
   theme_bw()+
-  xlab("Timesteps Post Disturbance")+
-  ylab("Disturbance Magnitude")+
+  xlab("LifeHistoriesMatrixModels/Scripts/Timesteps Post Disturbance")+
+  ylab("LifeHistoriesMatrixModels/Scripts/Disturbance Magnitude")+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
   guides(fill=guide_legend(title="K (carrying capacity)"))+
@@ -390,11 +387,11 @@ ggsave(filename = "FigS5.png", FigS5, height = 5, width = 6, device = "png", dpi
 
 
 # code for temperature regime used in most runs where temp isn't adjusted
-source("SpA_PulseMagnitude.R")
+source("LifeHistoriesMatrixModels/Scripts/SpA_PulseMagnitude.R")
 temp$dts <- as.Date(temp$dts, origin = "1970-01-01")
 
 # code for Temperature-Mortality relationship  
-source("NegExpSurv.R")
+source("LifeHistoriesMatrixModels/Scripts/NegExpSurv.R")
 FigS6 <- ggplot(data = tempsurvdf, aes(x = tem, y = temSurv))+
   geom_line(size = 1)+
   xlab("Temperature C")+
@@ -403,4 +400,4 @@ FigS6 <- ggplot(data = tempsurvdf, aes(x = tem, y = temSurv))+
   theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
-ggsave(filename = "FigS6.png", plot= FigS6, width = 5, height = 5, device= "png", dpi = "retina")
+ggsave(filename = "FigS6.png", plot= FigS6, width = 7, height = 5, device= "png", dpi = "retina")
