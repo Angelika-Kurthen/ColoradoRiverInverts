@@ -2,8 +2,8 @@
 # Multivoltinism Sp D
 ######################
 
-source("D_1sp_Model.R")
-source("NegExpSurv.R")
+source("LifeHistoriesMatrixModels/Scripts/D_1sp_Model.R")
+source("LifeHistoriesMatrixModels/Scripts/NegExpSurv.R")
 
 Time <- c(1:36500)
 Date <- rep(1:365, times = 100)

@@ -2,8 +2,8 @@
 # Multivoltinism Sp C
 ######################
 
-source("C_1sp_Model.R")
-source("NegExpSurv.R")
+source("LifeHistoriesMatrixModels/Scripts/C_1sp_Model.R")
+source("LifeHistoriesMatrixModels/Scripts/NegExpSurv.R")
 
 
 Time <- c(1:36500)
