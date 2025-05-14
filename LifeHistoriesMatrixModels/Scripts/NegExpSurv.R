@@ -64,7 +64,7 @@ df <- as.data.frame(rbind(high.df, med.df, low.df))
 # https://besjournals.onlinelibrary.wiley.com/doi/10.1111/1365-2435.12906
 # adjusted that to fit a known survival curve (neg binom dist)
 
-HYOSSurvRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Survival Rates ")
+HYOSSurvRates <- read_excel("LifeHistoriesMatrixModels/Data/VitalRates.xlsx", sheet = "Hydropsyche Survival Rates ")
 HYOSSurvRates <- as.data.frame(HYOSSurvRates)
 
 TempSurv <- function(n){

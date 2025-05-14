@@ -7,9 +7,9 @@ library(lubridate)
 
 
 
-source("B_1sp_Model.R")
-source("1spFunctions.R")
-source("NegExpSurv.R")
+source("LifeHistoriesMatrixModels/Scripts/B_1sp_Model.R")
+source("LifeHistoriesMatrixModels/Scripts/1spFunctions.R")
+source("LifeHistoriesMatrixModels/Scripts/NegExpSurv.R")
 
 Time <- c(1:36500)
 Date <- rep(1:365, times = 100)

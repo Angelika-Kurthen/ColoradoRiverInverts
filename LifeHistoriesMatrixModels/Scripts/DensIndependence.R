@@ -3,11 +3,11 @@
 ####################
 
 library(lubridate)
-source("A_1sp_Model.R")
-source("B_1sp_Model.R")
-source("C_1sp_Model.R")
-source("D_1sp_Model.R")
-source("1spFunctions.R")
+source("LifeHistoriesMatrixModels/Scripts/A_1sp_Model.R")
+source("LifeHistoriesMatrixModels/Scripts/B_1sp_Model.R")
+source("LifeHistoriesMatrixModels/Scripts/C_1sp_Model.R")
+source("LifeHistoriesMatrixModels/Scripts/D_1sp_Model.R")
+source("LifeHistoriesMatrixModels/Scripts/1spFunctions.R")
 Time <- c(1:36500)
 Date <- rep(1:365, times = 100)
 Day <- seq(as.Date("2022-01-01"), as.Date("2121-12-31"), by="days")

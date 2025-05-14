@@ -29,7 +29,7 @@ library(dataRetrieval)
 # library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
-source("1spFunctions.R")
+source("LifeHistoriesMatrixModels/Scripts/1spFunctions.R")
 
 #------------------------------------------------------------
 # Set up location specific data
@@ -71,7 +71,7 @@ source("1spFunctions.R")
 Dmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, fecundity = 300, dds = 1500, stage_output = "all", dens.dep = T){
   
   # set up model
-  source("NegExpSurv.R")
+  source("LifeHistoriesMatrixModels/Scripts/NegExpSurv.R")
   Q <- as.numeric(flow.data)
   temps <- temp.data
   
