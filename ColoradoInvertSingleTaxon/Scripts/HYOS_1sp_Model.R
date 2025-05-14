@@ -11,7 +11,7 @@ library(dplyr)
 library(ggplot2)
 # data retrieval tool from USGS
 library(dataRetrieval)
-source("1spFunctions.R")
+source("ColoradoInvertSingleTaxon/Scripts/1spFunctions.R")
 
 # Code for HPC - tidyverse has some issues on our HPC because one of the packages is deprecated
 # We have to manually load all tidyverse packages
@@ -77,7 +77,7 @@ source("1spFunctions.R")
 HYOSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, stage_output = "all"){
 #---------------------------------------------------------------
 # set up model
-source("HYOSSurvivorship.R")
+source("ColoradoInvertSingleTaxon/Scripts/HYOSSurvivorship.R")
 
 Q <- as.numeric(flow.data)
 temps <- temp.data

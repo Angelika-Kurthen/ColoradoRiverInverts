@@ -7,7 +7,7 @@ library(minpack.lm)
 library(tidyverse)
 #library(car)
 library(boot)
-CHIRVitalRates <- read_excel("VitalRates.xlsx", sheet = "Chiro Mortality Rates")
+CHIRVitalRates <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "Chiro Mortality Rates")
 CHIRVitalRates <- as.data.frame(CHIRVitalRates)
 
 flow.surv.fit <- function(magnitude, mortality, Qmin){
@@ -46,7 +46,7 @@ surv.df.CHIR <- flow.surv.rate(surv.fit.CHIR$m$getPars()[2] , surv.fit.CHIR$m$ge
 # }
 
 # Calculate Temperature Dependent Survival
-CHIRSurvRate <- read_excel("VitalRates.xlsx", sheet = "Chiro Survival")
+CHIRSurvRate <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "Chiro Survival")
 CHIRSurvRate <- as.data.frame(CHIRSurvRate)
 #fit <- nlsLM(logit(Survival) ~ a*Temp^4 + b*Temp^3 + c*Temp^2 + d*Temp + e, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1, d = 1, e = 1))
 #fit1 <- nlsLM(logit(Survival) ~ a*Temp^2 + b*Temp + c, data = CHIRSurvRate, start = c(a = 1, b = 1, c = 1))

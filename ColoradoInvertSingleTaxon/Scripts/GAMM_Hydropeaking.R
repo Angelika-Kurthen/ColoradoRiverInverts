@@ -6,8 +6,8 @@ library(doParallel)
 library(foreach)
 
 # Load custom functions and data
-source("1spFunctions.R")
-source("GAMM_1sp_model.R")
+source("ColoradoInvertSingleTaxon/Scripts/1spFunctions.R")
+source("ColoradoInvertSingleTaxon/Scripts/GAMM_1sp_model.R")
 
 
 # read in Lees Ferry temp and discharge data from 2007 to 2023

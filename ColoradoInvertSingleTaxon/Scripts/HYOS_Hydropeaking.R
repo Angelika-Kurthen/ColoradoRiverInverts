@@ -7,8 +7,8 @@ library(foreach)
 
 # Load custom functions and data
 
-source("1spFunctions.R")
-source("HYOS_1sp.R")
+source("ColoradoInvertSingleTaxon/Scripts/1spFunctions.R")
+source("ColoradoInvertSingleTaxon/Scripts/HYOS_1sp.R")
 
 
 # read in LF temp and discharge data from 2007 to 2023

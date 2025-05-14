@@ -24,8 +24,8 @@ library(dataRetrieval)
 # library(dplyr, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(ggplot2, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 # library(dataRetrieval, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
-source("1spFunctions.R")
-source("NZMS_shell_length_fecundity.R")
+source("ColoradoInvertSingleTaxon/Scripts/1spFunctions.R")
+source("ColoradoInvertSingleTaxon/Scripts/NZMS_shell_length_fecundity.R")
 # #read in flow data from USGS gauge at Lees Ferry, AZ between 1985 to the end of the last water year
 # temp <- readNWISdv("09380000", "00010", "2007-10-01", "2021-09-30")
 # temps <- average.yearly.temp(temp, "X_00010_00003", "Date")
@@ -43,7 +43,7 @@ source("NZMS_shell_length_fecundity.R")
 
 NZMSmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL){
   # source functions
-  source("NZMSSurvivorship.R")
+  source("ColoradoInvertSingleTaxon/Scripts/NZMSSurvivorship.R")
   Q <- as.numeric(flow.data)
   temps <- temp.data
   

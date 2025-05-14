@@ -25,7 +25,7 @@ library(tidyverse)
 #library(car)
 library(boot)
 library(data.table)
-HYOSVitalRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Mortality Rates")
+HYOSVitalRates <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "Hydropsyche Mortality Rates")
 HYOSVitalRates <- as.data.frame(HYOSVitalRates)
 
 flow.surv.fit <- function(magnitude, mortality, Qmin){
@@ -57,7 +57,7 @@ ggplot(surv.df.HYOS, aes(x = Q, y = surv))+
   xlab('`Max Event Discharge/Bankfull Discharge`')
 
 # Calculate temperature dependent development time
-HYOSDevRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Development Rates")
+HYOSDevRates <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "Hydropsyche Development Rates")
 HYOSDevRates <- as.data.frame(HYOSDevRates)
 
 polyfit <- nlsLM(logit(MaturationRate) ~ a*Temperature^2 + b*Temperature + c, data = HYOSDevRates, start = c(a = 1, b = 1, c = 1))
@@ -67,7 +67,7 @@ devtime <- function(x){
   return(1/inv.logit(y))
 }
 # 
-HYOSSurvRates <- read_excel("VitalRates.xlsx", sheet = "Hydropsyche Survival Rates ")
+HYOSSurvRates <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "Hydropsyche Survival Rates ")
 HYOSSurvRates <- as.data.frame(HYOSSurvRates)
 # fit <- nlsLM(logit(Survival)~ a*Temperature^2 + b*Temperature + c, data = HYOSSurvRates, start = c(a= 1, b=1, c = 1))
 # 

@@ -25,8 +25,8 @@ library(foodbase)
 
 getwd()
 
-source("1spFunctions.R")
-source("CHIR_1sp_Model.R")
+source("ColoradoInvertSingleTaxon/Scripts/1spFunctions.R")
+source("ColoradoInvertSingleTaxon/Scripts/CHIR_1sp_Model.R")
 
 
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")

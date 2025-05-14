@@ -21,8 +21,8 @@ library(ggplot2)
 library(dataRetrieval)
 library(foodbase)
 
-source("1spFunctions.R")
-source("GAMM_1sp_model.R")
+source("ColoradoInvertSingleTaxon/Scripts/1spFunctions.R")
+source("ColoradoInvertSingleTaxon/Scripts/GAMM_1sp_model.R")
 
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")
 temps <- TimestepTemperature(temp)

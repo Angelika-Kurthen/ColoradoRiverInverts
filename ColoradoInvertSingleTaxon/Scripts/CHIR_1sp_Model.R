@@ -14,8 +14,8 @@ library(dataRetrieval)
 CHIRmodel <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin, extinct, iteration, peaklist = NULL, peakeach = NULL, stage_output = "all"){
   
   # set up model
-  source("1spFunctions.R")
-  source("CHIRSurvivorship.R")
+  source("ColoradoInvertSingleTaxon/Scripts/1spFunctions.R")
+  source("ColoradoInvertSingleTaxon/Scripts/CHIRSurvivorship.R")
   Q <- as.numeric(flow.data)
   temps <- temp.data
   

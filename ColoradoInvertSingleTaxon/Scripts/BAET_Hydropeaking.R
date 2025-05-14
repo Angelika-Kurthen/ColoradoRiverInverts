@@ -6,8 +6,8 @@ library(doParallel)
 library(foreach)
 
 # Load custom functions and data
-source("1spFunctions.R")
-source("BAET_1sp_Model.R")
+source("ColoradoInvertSingleTaxon/Scripts/1spFunctions.R")
+source("ColoradoInvertSingleTaxon/Scripts/BAET_1sp_Model.R")
 
 # Read in Lees Ferry temp and discharge data from 2007 to 2023
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")

@@ -13,7 +13,7 @@ library(rjags)
 library(MCMCvis)
 
 # load Baet model
-source("BAET_1sp_Model.R")
+source("ColoradoInvertSingleTaxon/Scripts/BAET_1sp_Model.R")
 # pull discharge and temps from below flaming gorge dam
 discharge <- readNWISdv("09234500", "00060", "1986-10-01", "1999-10-06")
 # Bankfull discharge for Green River from https://digitalcommons.usu.edu/cgi/viewcontent.cgi?article=7604&context=etd
@@ -28,7 +28,7 @@ temps$dts <- flow.magnitude$dts
 out <- BAETmodel(flow.data = flow.magnitude$Discharge, temp.data = temps, disturbanceK = 40000, baselineK = 5000, Qmin = 0.1, extinct = 50, iteration = 1000, peaklist = 0.13, peakeach = length(temps$Temperature), stage_output = "larvae")
 
 # upload larval baet data from Flaming Gorge Dam 
-bugdata <- read_delim("bugdata.txt", delim = "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
+bugdata <- read_delim("ColoradoInvertSingleTaxon/Data/bugdata.txt", delim = "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
 bugdata <- as.data.frame(bugdata[-c(1:6, 3732:3740),])
 names(bugdata) <- c("Sample", "Location", "Date", "Citation", "Method", "Area", "Density", "Phylum", "Class", "Order", "Family", "Subfamily", "Genus", "Species")
 bugdata <- bugdata[which(bugdata$Location == "0.8KDD" | bugdata$Location == "6KDD" | bugdata$Location == "12KDD"),]

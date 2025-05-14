@@ -8,7 +8,7 @@ library(tidyverse)
 # library(car)
 library(boot)
 
-BAETVitalRates <- read_excel("VitalRates.xlsx", sheet = "Baetid Mortality Rates")
+BAETVitalRates <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "Baetid Mortality Rates")
 BAETVitalRates <- as.data.frame(BAETVitalRates)
 
 flow.surv.fit <- function(magnitude, mortality, Qmin){
@@ -32,7 +32,7 @@ surv.fit.BAET <- flow.surv.fit(BAETVitalRates$`Max Event Discharge/Bankfull Disc
 surv.df.BAET <- flow.surv.rate(surv.fit.BAET$m$getPars()[2] , surv.fit.BAET$m$getPars()[1], 4, 0.001, 0.001, 0.25)
 
 # Calculate Development Time Based on Literature
-BAETDevRates <- read_excel("VitalRates.xlsx", sheet = "Baetid Development")
+BAETDevRates <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "Baetid Development")
 BAETDevRates <- as.data.frame(BAETDevRates)
 polyfit <- nlsLM(DevelopmentTime ~ a*Temperature^4 + b* Temperature ^3 + c*Temperature ^2 +d*Temperature  + e, data = BAETDevRates, start = c(a = 1, b =1, c = 1, d = 1, e = 1))
 
@@ -47,7 +47,7 @@ MaturationRate <- function(x){
 }
 
 # Calculate Temperature Dependent Survival
-BAETSurvRate <- read_excel("VitalRates.xlsx", sheet = "Baetid Survival Rates")
+BAETSurvRate <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "Baetid Survival Rates")
 BAETSurvRate <- as.data.frame(BAETSurvRate)
 #fit <- nlsLM(logit(Survival) ~ a*Temperature^4 + b*Temperature^3 + c*Temperature^2 + d*Temperature + e, data = BAETSurvRate, start = c(a = 1, b = 1, c = 1, d = 1, e = 1))
 #inv.logit(predict(fit))

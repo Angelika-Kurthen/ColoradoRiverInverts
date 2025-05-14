@@ -2,8 +2,8 @@
 # Hydropeaking Sensitivity BAET
 #############################
 
-source("1spFunctions.R")
-source("BAET_1sp_Model.R")
+source("ColoradoInvertSingleTaxon/Scripts/1spFunctions.R")
+source("ColoradoInvertSingleTaxon/Scripts/BAET_1sp_Model.R")
 
 
 # read in Lees Ferry temp and discharge data from 2007 to 2023

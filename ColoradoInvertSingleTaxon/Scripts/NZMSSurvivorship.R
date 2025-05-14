@@ -7,7 +7,7 @@ library(minpack.lm)
 library(tidyverse)
 #library(car)
 library(boot)
-NZMSVitalRates <- read_excel("VitalRates.xlsx", sheet = "NZMS Mortality Rates")
+NZMSVitalRates <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "NZMS Mortality Rates")
 NZMSVitalRates <- as.data.frame(NZMSVitalRates)
 
 flow.surv.fit <- function(magnitude, mortality, Qmin){
@@ -53,7 +53,7 @@ ggplot(surv.df.NZMS, aes(x = Q, y = surv))+
 # eq = y = -0.0001427(x - 17.5)^4 + 1 * F 
 
 # Calculating Temperature Dependent Mortality
-NZMSSurvRates <- read_excel("VitalRates.xlsx", sheet = "NZMS Survival Rates")
+NZMSSurvRates <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "NZMS Survival Rates")
 NZMSSurvRates <- as.data.frame(NZMSSurvRates)
 fit <- nlsLM(logit(Survival) ~ a*Temperature^2+ b*Temperature + c, data = NZMSSurvRates, start = c(a = 1, b = 1, c = 1))
 TempSurv_NZMS <- function(x){

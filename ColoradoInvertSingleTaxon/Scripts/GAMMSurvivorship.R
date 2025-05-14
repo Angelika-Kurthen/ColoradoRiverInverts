@@ -7,7 +7,7 @@ library(minpack.lm)
 library(tidyverse)
 #library(car)
 library(boot)
-GAMMVitalRates <- read_excel("VitalRates.xlsx", sheet = "Gammarus Mortality Rates")
+GAMMVitalRates <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "Gammarus Mortality Rates")
 GAMMVitalRates <- as.data.frame(GAMMVitalRates)
 
 flow.surv.fit <- function(magnitude, mortality, Qmin){
@@ -39,7 +39,7 @@ surv.df.GAMM <- flow.surv.rate(surv.fit.GAMM$m$getPars()[2] , surv.fit.GAMM$m$ge
 #   xlab('`Max Event Discharge/Bankfull Discharge`')
 
 # Calculating Temperature Dependent Mortality
-GAMMSurvRates <- read_excel("VitalRates.xlsx", sheet = "Gammarus Survival Rates")
+GAMMSurvRates <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx", sheet = "Gammarus Survival Rates")
 GAMMSurvRates <- as.data.frame(GAMMSurvRates)
 fit <- nlsLM(logit(Survival) ~ a*Temperature^4+ b*Temperature^3 + c*Temperature^2 + d*Temperature + e, data = GAMMSurvRates, start = c(a = 1, b = 1, c = 1, d= 1, e = 1))
 #fit1 <- nlsLM(logit(Survival)~ a*Temperature^2 + b*Temperature + c, data = GAMMSurvRates, start = c(a =1, b=1, c=1))
