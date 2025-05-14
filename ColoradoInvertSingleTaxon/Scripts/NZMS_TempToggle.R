@@ -2,8 +2,8 @@
 # Temperature Sensitivity NZMS
 #############################
 
-source("1spFunctions.R")
-source("NZMS_1sp_Model.R")
+source("ColoradoInvertSingleTaxon/Scripts/1spFunctions.R")
+source("ColoradoInvertSingleTaxon/Scripts/NZMS_1sp_Model.R")
 
 
 # read in Lees Ferry temp and discharge data from 2007 to 2023

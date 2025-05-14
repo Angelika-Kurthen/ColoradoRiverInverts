@@ -34,7 +34,7 @@ shell.growth(0.994, 0.029, 0.5)
 # on day 266, length ~ 3.9538776 - [stage 2 = 3.2 - 3.9538776] in about 14 weeks or 7 timesteps
 # that means [stage 3 = 3.9538776+] for about 14 weeks or 7 timesteps
 # growth is related to temperature
-VitalRates <- read_excel("VitalRates.xlsx",  sheet = "Sheet3")
+VitalRates <- read_excel("ColoradoInvertSingleTaxon/Data/VitalRates.xlsx",  sheet = "Sheet3")
 
 growth <- lm(VitalRates$`NZMS Growth Rate (mm/mo)`~VitalRates$Temperature)
 
