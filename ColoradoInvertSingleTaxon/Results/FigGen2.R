@@ -13,6 +13,7 @@ library(lm.beta)
 library(effectsize)
 library(flextable)
 library(officer)
+library(ggimage)
 # Set global options for digits
 options(digits = 3)
 
@@ -490,7 +491,7 @@ h.fig <- ggdraw() +
 
 ggsave("hfig.png", plot = h.fig, device = "png", width = 8.44, height = 6, units = c("in"), dpi = "retina")
 
-h.pc <- ggplot(data = hyos_pc_combo, aes(x = as.factor(temperature), y = percapita, group = source, color = source))+
+h.pc <- ggplot(data = hyos_pc_combo, aes(x = as.factor(temperature), y = percapita, group = source, linetype = source,color = source))+
   stat_summary(fun.data = mean_sdl, geom = "errorbar", linewidth = 0.75, width = 0.2) +
   stat_summary(fun = mean, geom = "point", size = 3)+
   stat_summary(fun = mean, geom = "line", size = 0.75) +
@@ -655,7 +656,7 @@ baet_pc_combo <- bind_rows(
   baet_pc %>% mutate(source = "Temperature"),
   baet_pc_sp %>% mutate(source = "Temperature & spike"),
 )
-b.pc <- ggplot(data = baet_pc_combo, aes(x = as.factor(temperature), y = percapita, group = source, color = source))+
+b.pc <- ggplot(data = baet_pc_combo, aes(x = as.factor(temperature), y = percapita, group = source,linetype = source, color = source))+
   stat_summary(fun.data = mean_sdl, geom = "errorbar", linewidth = 0.75, width = 0.2, show.legend = F) +
   stat_summary(fun = mean, geom = "point", size = 3, show.legend = F)+
   stat_summary(fun = mean, geom = "line", size = 0.75, show.legend = F) +
@@ -800,7 +801,7 @@ chir_pc_combo <- bind_rows(
   chir_pc_sp %>% mutate(source = "Temperature & spike"),
 )
 
-c.pc <- ggplot(data = chir_pc_combo, aes(x = as.factor(temperature), y = percapita, group = source, color = source))+
+c.pc <- ggplot(data = chir_pc_combo, aes(x = as.factor(temperature), y = percapita, group = source, linetype = source, color = source))+
   stat_summary(fun.data = mean_sdl, geom = "errorbar", linewidth = 0.75, width = 0.2, show.legend = F) +
   stat_summary(fun = mean, geom = "point", size = 3, show.legend = F)+
   stat_summary(fun = mean, geom = "line", size = 0.75, show.legend = F) +
@@ -963,7 +964,7 @@ g.fig <- ggdraw() +
 ggsave("gfig.png", plot = g.fig, device = "png", width = 8.44, height = 6, units = c("in"), dpi = "retina")
 
 
-g.pc <- ggplot(data = gamm_pc_combo, aes(x = as.factor(temperature), y = percapita, group = source, color = source))+
+g.pc <- ggplot(data = gamm_pc_combo, aes(x = as.factor(temperature), y = percapita, group = source, linetype = source, color = source))+
   stat_summary(fun.data = mean_sdl, geom = "errorbar", linewidth = 0.75, width = 0.2, show.legend = F) +
   stat_summary(fun = mean, geom = "point", size = 3, show.legend = F)+
   stat_summary(fun = mean, geom = "line", size = 0.75, show.legend = F) +
@@ -1104,7 +1105,7 @@ n.fig <- ggdraw() +
 ggsave("nfig.png", plot = n.fig, device = "png", width = 8.44, height = 6, units = c("in"), dpi = "retina")
 
 
-n.pc <- ggplot(data = nzms_pc_combo, aes(x = as.factor(temperature), y = percapita, group = source, color = source))+
+n.pc <- ggplot(data = nzms_pc_combo, aes(x = as.factor(temperature), y = percapita, group = source, linetype = source, color = source))+
   stat_summary(fun = mean, geom = "point", size = 3, show.legend = F)+
   stat_summary(fun = mean, geom = "line", size = 0.75, show.legend = F) +
   scale_x_discrete(labels=c("1" = "Baseline", "1.1" = "+10%",
@@ -1117,6 +1118,7 @@ n.pc <- ggplot(data = nzms_pc_combo, aes(x = as.factor(temperature), y = percapi
   labs(y="Proportion Adult", title = expression(paste(italic("P. antipodarum"))))+
   theme(text = element_text(size = 13), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(color = "transparent"))
+
 
 # n.pc <- ggdraw() +
 #   draw_plot(n.pc) +
@@ -1198,7 +1200,7 @@ regimes <- ggplot(data = temp_combo, aes(x = as.Date(dts), y = Temperature, colo
   scale_x_date(date_labels="%b", date_breaks  ="4 month")+
   xlab("Date")+
   labs(title = "Temperature")+
-  guides(linetype=guide_legend(title="Scenario"))+
+  guides(linetype="none")+
   theme(text = element_text(size = 13), axis.text.x = element_text(hjust = 1, size = 12.5, angle = 0), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
 
