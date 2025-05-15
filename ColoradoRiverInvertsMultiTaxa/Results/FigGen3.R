@@ -18,21 +18,21 @@ taxa.colors =c("#66CCEE", "#AA3377", "#228833", "#CCBB44", "#4477AA")
 # 8 different scenarios zi 
 # Load and combine all datasets, tagging them hyos
 multi_biomass_combo_hyos <- bind_rows(
-  read_csv("Multispp_temp_biomass_z_hyos.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_z_hyos.csv") %>%
     mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_spike_z_hyos.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_spike_z_hyos.csv") %>%
     mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_hyd_z_hyos.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hyd_z_hyos.csv") %>%
     mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_hyd_biomass_spike_z_hyos.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_biomass_spike_z_hyos.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_biomass_hfe_z_hyos.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hfe_z_hyos.csv") %>%
     mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_HFE_biomass_spike_z_hyos.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_HFE_biomass_spike_z_hyos.csv") %>%
     mutate(source = "Temperature & spike & HFE", temp_spike = 1, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_z_hyos.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_z_hyos.csv") %>%
     mutate(source = "Temperature & hydropeaking & HFE", temp_spike = 0, hydropeaking = 1, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_spike_z_hyos.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_spike_z_hyos.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking & HFE", temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
@@ -95,21 +95,21 @@ ggsave("multi_z_hyos.png", multi_biomass_hyos, device = "png", width = 14.5, hei
 
 # Load and combine all datasets, tagging them baet
 multi_biomass_combo_baet <- bind_rows(
-  read_csv("Multispp_temp_biomass_z_baet.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_z_baet.csv") %>%
     mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_spike_z_baet.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_spike_z_baet.csv") %>%
     mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_hyd_z_baet.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hyd_z_baet.csv") %>%
     mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_hyd_biomass_spike_z_baet.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_biomass_spike_z_baet.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_biomass_hfe_z_baet.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hfe_z_baet.csv") %>%
     mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_HFE_biomass_spike_z_baet.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_HFE_biomass_spike_z_baet.csv") %>%
     mutate(source = "Temperature & spike & HFE", temp_spike = 1, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_z_baet.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_z_baet.csv") %>%
     mutate(source = "Temperature & hydropeaking & HFE", temp_spike = 0, hydropeaking = 1, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_spike_z_baet.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_spike_z_baet.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking & HFE", temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
@@ -168,21 +168,21 @@ ggsave("multi_z_baet.png", multi_biomass_baet, device = "png", width = 14.5, hei
 
 # Load and combine all datasets, tagging them chir
 multi_biomass_combo_chir <- bind_rows(
-  read_csv("Multispp_temp_biomass_z_chir.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_z_chir.csv") %>%
     mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_spike_z_chir.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_spike_z_chir.csv") %>%
     mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_hyd_z_chir.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hyd_z_chir.csv") %>%
     mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_hyd_biomass_spike_z_chir.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_biomass_spike_z_chir.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_biomass_hfe_z_chir.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hfe_z_chir.csv") %>%
     mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_HFE_biomass_spike_z_chir.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_HFE_biomass_spike_z_chir.csv") %>%
     mutate(source = "Temperature & spike & HFE", temp_spike = 1, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_z_chir.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_z_chir.csv") %>%
     mutate(source = "Temperature & hydropeaking & HFE", temp_spike = 0, hydropeaking = 1, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_spike_z_chir.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_spike_z_chir.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking & HFE", temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
@@ -243,21 +243,21 @@ ggsave("multi_z_chir.png", multi_biomass_chir, device = "png", width = 14.5, hei
 
 # Load and combine all datasets, tagging them gamm
 multi_biomass_combo_gamm <- bind_rows(
-  read_csv("Multispp_temp_biomass_z_gamm.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_z_gamm.csv") %>%
     mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_spike_z_gamm.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_spike_z_gamm.csv") %>%
     mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_hyd_z_gamm.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hyd_z_gamm.csv") %>%
     mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_hyd_biomass_spike_z_gamm.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_biomass_spike_z_gamm.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_biomass_hfe_z_gamm.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hfe_z_gamm.csv") %>%
     mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_HFE_biomass_spike_z_gamm.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_HFE_biomass_spike_z_gamm.csv") %>%
     mutate(source = "Temperature & spike & HFE", temp_spike = 1, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_z_gamm.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_z_gamm.csv") %>%
     mutate(source = "Temperature & hydropeaking & HFE", temp_spike = 0, hydropeaking = 1, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_spike_z_gamm.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_spike_z_gamm.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking & HFE", temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
@@ -316,21 +316,21 @@ ggsave("multi_z_gamm.png", multi_biomass_gamm, device = "png", width = 14.5, hei
 
 # Load and combine all datasets, tagging them nzms
 multi_biomass_combo_nzms <- bind_rows(
-  read_csv("Multispp_temp_biomass_z_nzms.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_z_nzms.csv") %>%
     mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_spike_z_nzms.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_spike_z_nzms.csv") %>%
     mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_hyd_z_nzms.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hyd_z_nzms.csv") %>%
     mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_hyd_biomass_spike_z_nzms.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_biomass_spike_z_nzms.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_biomass_hfe_z_nzms.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hfe_z_nzms.csv") %>%
     mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_HFE_biomass_spike_z_nzms.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_HFE_biomass_spike_z_nzms.csv") %>%
     mutate(source = "Temperature & spike & HFE", temp_spike = 1, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_z_nzms.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_z_nzms.csv") %>%
     mutate(source = "Temperature & hydropeaking & HFE", temp_spike = 0, hydropeaking = 1, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_spike_z_nzms.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_spike_z_nzms.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking & HFE", temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
@@ -416,21 +416,21 @@ ggsave("multi_z_nzms.png", multi_biomass_nzms, device = "png", width = 14.5, hei
 # Load and combine all datasets, tagging them
 # now when we alter all zis 
 multi_biomass_combo <- bind_rows(
-  read_csv("Multispp_temp_biomass_z.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_z.csv") %>%
     mutate(source = "Temperature", temp_spike = 0, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_spike_z.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_spike_z.csv") %>%
     mutate(source = "Temperature & spike", temp_spike = 1, hydropeaking = 0, HFE = 0),
-  read_csv("Multispp_temp_biomass_hyd_z.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hyd_z.csv") %>%
     mutate(source = "Temperature & hydropeaking", temp_spike = 0, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_hyd_biomass_spike_z.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_biomass_spike_z.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking", temp_spike = 1, hydropeaking = 1, HFE = 0),
-  read_csv("Multispp_temp_biomass_hfe_z.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_biomass_hfe_z.csv") %>%
     mutate(source = "Temperature & HFE", temp_spike = 0, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_HFE_biomass_spike_z.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_HFE_biomass_spike_z.csv") %>%
     mutate(source = "Temperature & spike & HFE", temp_spike = 1, hydropeaking = 0, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_z.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_z.csv") %>%
     mutate(source = "Temperature & hydropeaking & HFE", temp_spike = 0, hydropeaking = 1, HFE = 1),
-  read_csv("Multispp_temp_hyd_HFE_biomass_spike_z.csv") %>%
+  read_csv("ColoradoRiverInvertsMultiTaxa/Data/Multispp_temp_hyd_HFE_biomass_spike_z.csv") %>%
     mutate(source = "Temperature & spike & hydropeaking & HFE", temp_spike = 1, hydropeaking = 1, HFE = 1)
 )
 
