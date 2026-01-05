@@ -127,8 +127,8 @@ le[fec] <- max(lyapun)
 # }
 # 
 # plot(fecs, le)
-# install.packages("Chaos01")
-# library(Chaos01)
+install.packages("Chaos01")
+library(Chaos01)
 
 chaos1 <- vector()
 fecs <- seq(1200, 100000, by = 2000)
