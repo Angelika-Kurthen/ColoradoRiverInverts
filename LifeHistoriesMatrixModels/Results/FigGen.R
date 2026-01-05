@@ -1,12 +1,143 @@
-###########################
+###########################################
 ##Code to produce figures for Manuscript 1
-##########################
+###########################################
 
 library(ggpubr)
 library(patchwork)
 library(svglite)
+library(renv)
+
+renv::init()
+renv::snapshot()
 
 
+strategy_colors <- c(
+  Boom = "#228833",
+  Fast = "#CCBB44",
+  Moderate = "#66CCEE",
+  Slow = "#AA3377"
+)
+
+strategy_scale <- scale_color_manual(
+  name = "Strategy",
+  values = strategy_colors
+)
+
+#----------------------------------------
+# Produce Figure 1
+#----------------------------------------
+source("LifeHistoriesMatrixModels/Scripts/Annual.R")
+
+yr4temp <- ggplot(data = subset(temp, dts >= "2031-07-21" & dts <= "2033-12-20"), aes(as.Date(dts), Temperature))+
+  geom_line(size = 0.8)+
+  xlab("Month")+
+  ylab("Temperature C")+
+  theme_bw()+
+  scale_x_date(date_labels="%B", date_breaks  ="3 months")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5, angle = 45), 
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+
+
+threeyear$Taxa <- factor(threeyear$Taxa, levels = c("B", "C", "A", "D"))
+logthreeyearplot <- ggplot(data = threeyear, aes(x = Date, y  =
+                                                   (Abundance), color = Taxa))+
+  geom_line(size = 0.8, alpha = 0.7)+
+  
+  xlab("Month")+
+  ylab("Abundance")+
+  scale_color_manual(name = "Strategy", labels=c("Boom", "Fast", "Moderate", "Slow"), values=c("#228833", "#CCBB44","#66CCEE", "#AA3377"))+
+  scale_x_date(date_labels="%B", date_breaks  ="3 month")+
+  theme_bw()+
+  theme(text = element_text(size = 13.5), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+
+source("LifeHistoriesMatrixModels/Scripts/DensIndependence.R")
+dens.ind$Taxa <- factor(dens.ind$Taxa, levels = c("B", "C", "A", "D"))
+DensInd <- ggplot(data = dens.ind, aes(x = Date, y  =log(Abundance), color = Taxa))+
+  geom_point(size = 1, alpha = 0.5)+
+  geom_line(size = 1)+
+  xlab("Month")+
+  ylab("Log Abundance")+
+  scale_color_manual(name = "Strategy", labels=c("Boom", "Fast", "Moderate", "Slow"), values=c("#228833", "#CCBB44","#66CCEE", "#AA3377"))+
+  scale_x_date(date_labels="%B", date_breaks  ="3 month")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+source("LifeHistoriesMatrixModels/Scripts/DensityDependence.R")
+dens.dep$Taxa <- factor(dens.dep$Taxa, levels = c("B","C", "A", "D"))
+DensDep <- ggplot(data = dens.dep, aes(x = Date, y  =(Abundance), color = Taxa))+
+  geom_point(size = 1, alpha = 0.5)+
+  geom_line(size = 1, alpha = 0.7)+
+  xlab("Month")+
+  ylab("Abundance")+
+  scale_color_manual(name = "Strategy", labels=c("Boom", "Fast", "Moderate", "Slow"), values=c("#228833", "#CCBB44","#66CCEE", "#AA3377"))+
+  scale_y_continuous( breaks = c(0, 1e5, 2e5, 3e5), labels = scales::scientific)+
+  scale_x_date(date_labels="%B", date_breaks  ="3 month")+
+  theme_bw()+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
+        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
+
+Fig1 <- ggarrange(DensDep, logthreeyearplot,
+                  labels = c("a", "b"), hjust = 0, vjust = 0.5,
+                  ncol = 1, nrow = 2, common.legend = T)
+ggsave(filename = "Fig1.png", plot= Fig1, width = 6.5, height= 8.5, device = "png", dpi = "retina" )
+
+
+#-----------------------------------------
+# Produce Figure 2
+#-----------------------------------------
+
+source("LifeHistoriesMatrixModels/Scripts/SpA_Multivolt.R")
+source("LifeHistoriesMatrixModels/Scripts/SpB_Multivolt.R")
+source("LifeHistoriesMatrixModels/Scripts/SpC_Multivolt.R")
+source("LifeHistoriesMatrixModels/Scripts/SPD_Multivolt.R")
+
+oneyear <- rbind(B.oneyear, C.oneyear, A.oneyear, D.oneyear)
+
+
+# Define arrow positions
+arrow_data <- data.frame(
+  Strategy = c("Boom", "Boom", "Boom", "Boom", "Boom", "Boom", "Boom", "Boom",
+               "Fast", "Fast", "Fast", "Fast", "Fast", "Fast",
+               "Moderate","Moderate","Moderate", "Slow","Slow", "Slow"),  # Adjust these to match your facet variable levels
+  MeanTemp = c(1,1,1, 2, 2,2,2,2,
+               1,1,2,2,2,2, 
+               1,2,2,1,2,2),
+  x_start = as.Date(c("2035-07-17", "2035-08-28", "2035-10-23", "2035-02-27", "2035-05-22", "2035-07-31", "2035-09-25", "2035-12-28",
+                      "2035-08-14", "2035-06-19", "2035-01-16", "2035-05-08", "2035-07-17", "2035-09-11",
+                      "2035-09-11", "2035-04-24", "2035-10-09", "2035-08-28", "2035-05-08","2035-10-09")),  
+  y_end = c(9.5, 9.5, 9.5, 9.8, 9.8, 9.8, 9.8, 9.8,
+            8.75, 8.75, 10.05, 10.5, 10.5, 10.5, 
+            7, 7, 7, 7, 7, 7),  # Adjust y positions
+  x_end =as.Date(c("2035-07-17", "2035-08-28", "2035-10-23", "2035-02-27", "2035-05-22", "2035-07-31", "2035-09-25", "2035-12-28",
+                   "2035-08-14", "2035-06-19", "2035-01-16", "2035-05-08", "2035-07-17", "2035-09-11",
+                   "2035-09-11", "2035-04-24", "2035-10-09", "2035-08-28", "2035-05-08","2035-10-09")),  
+  y_start = c(11.5, 11.5, 11.5, 11.8, 11.8, 11.8, 11.8, 11.8,
+              10.75, 10.75, 12.05, 12.05,12.05, 12.05, 
+              9, 9, 9, 9, 9, 9)  # Adjust arrow end points
+)
+
+Fig2 <- ggplot(data = oneyear, aes(x = Date, y = log(Abund), group = as.factor(MeanTemp), color = as.factor(MeanTemp)))+
+  geom_line(size = 1, alpha = 0.8)+
+  scale_color_manual(name = "Mean Temperature (C)", labels = c("12", "20"), values = c("#4477AA", "#EE6677"))+
+  ylab("Log Adult Abundance") + 
+  theme_bw()+
+  scale_x_date(date_labels="%B", date_breaks  ="2 month")+
+  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
+        axis.text.y = element_text(size = 13),legend.position = "bottom", legend.key = element_rect(fill = "transparent"))+
+  facet_wrap(~Strategy)+
+  geom_segment(data = arrow_data, aes(x = x_start, y = y_start, xend = x_end, yend = y_end, color = as.factor(MeanTemp)), 
+               arrow = arrow(type = "closed", length = unit(0.1, "inches")), 
+               inherit.aes = FALSE, show.legend = F)
+ggsave(filename = "Fig2.png", Fig2, height = 5, width = 5, device = "png", dpi = "retina")
+
+
+#----------------------------------
+# Produce Figure 3
+#----------------------------------
 # code for temperature regime shift 
 source("LifeHistoriesMatrixModels/Scripts/A_sp_Temp_Toggle.R")
 source("LifeHistoriesMatrixModels/Scripts/Bsp_Temp_Toggle.R")
@@ -42,7 +173,7 @@ biomass <- ggplot(data = size_df, aes(temp_regime, stage3s_means, color = V4))+
   geom_vline(xintercept = mean(a_temp_adjust_df$temp_regime), linetype="dotted", 
              size=1)+
   xlab(" ")+
-  ylab("Per-capita Biomass (mg)")+
+  ylab("Individual Biomass (mg)")+
   scale_y_continuous(labels = scales::number_format(accuracy = 0.1))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
@@ -60,15 +191,16 @@ totbiomass <- ggplot(data = size_df, aes(temp_regime, totbiomass/1000, color = V
   scale_y_continuous(labels = scales::number_format(accuracy = 0.1), n.breaks = 3)+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
-x11()
 
-Fig2<- ggarrange(abund, biomass, totbiomass, 
+Fig3<- ggarrange(abund, biomass, totbiomass, 
           labels = c("a", "b", "c"),
           ncol = 1, nrow = 3, common.legend = T)
 
-ggsave(filename = "Fig2.png", plot = Fig2, device = "png", width = 6.5, height = 8.5, dpi = "retina")
+ggsave(filename = "Fig3.png", plot = Fig3, device = "png", width = 6.5, height = 8.5, dpi = "retina")
 
-
+#----------------------------------
+## Produce Figure 4
+#----------------------------------
 temp_dist <- bind_rows(temp_dist_a, temp_dist_b, temp_dist_c, temp_dist_d, .id = "taxa")
 
 # deltatemp <- subset(temp_dist, season == 3)
@@ -109,120 +241,14 @@ es <- ggplot(data = temp_size, aes(x = temp_regime, y = size_means/1000, color =
   facet_grid(.~season, scales = "free_y", labeller = labeller(season = supp.labs))+
   theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5), 
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"), plot.margin = margin(5,5,5,20))
-x11()
+
 Fig4 <- ggarrange(d, es, nrow  = 2, labels = c("a","b"))
+
 ggsave(filename = "Fig4.png", plot = Fig4, device = "png", width = 7.5, height = 8.5, dpi = "retina")
 
-
-########################################
-# Create figure with density independence, 
-# density dependence, and temperature dependence
-source("LifeHistoriesMatrixModels/Scripts/Annual.R")
-
-yr4temp <- ggplot(data = subset(temp, dts >= "2031-07-21" & dts <= "2033-12-20"), aes(as.Date(dts), Temperature))+
-  geom_line(size = 0.8)+
-  xlab("Month")+
-  ylab("Temperature C")+
-  theme_bw()+
-  scale_x_date(date_labels="%B", date_breaks  ="3 months")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, size = 12.5, angle = 45), 
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-
-
-threeyear$Taxa <- factor(threeyear$Taxa, levels = c("B", "C", "A", "D"))
-logthreeyearplot <- ggplot(data = threeyear, aes(x = Date, y  =
-                                                (Abundance), color = Taxa))+
-  geom_line(size = 0.8, alpha = 0.7)+
-
-  xlab("Month")+
-  ylab("Abundance")+
-  scale_color_manual(name = "Strategy", labels=c("Boom", "Fast", "Moderate", "Slow"), values=c("#228833", "#CCBB44","#66CCEE", "#AA3377"))+
-  scale_x_date(date_labels="%B", date_breaks  ="3 month")+
-  theme_bw()+
-  theme(text = element_text(size = 13.5), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-
-source("LifeHistoriesMatrixModels/Scripts/DensIndependence.R")
-dens.ind$Taxa <- factor(dens.ind$Taxa, levels = c("B", "C", "A", "D"))
-DensInd <- ggplot(data = dens.ind, aes(x = Date, y  =log(Abundance), color = Taxa))+
-  geom_point(size = 1, alpha = 0.5)+
-  geom_line(size = 1)+
-  xlab("Month")+
-  ylab("Log Abundance")+
-  scale_color_manual(name = "Strategy", labels=c("Boom", "Fast", "Moderate", "Slow"), values=c("#228833", "#CCBB44","#66CCEE", "#AA3377"))+
-  scale_x_date(date_labels="%B", date_breaks  ="3 month")+
-  theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-source("LifeHistoriesMatrixModels/Scripts/DensityDependence.R")
-dens.dep$Taxa <- factor(dens.dep$Taxa, levels = c("B","C", "A", "D"))
-DensDep <- ggplot(data = dens.dep, aes(x = Date, y  =(Abundance), color = Taxa))+
-  geom_point(size = 1, alpha = 0.5)+
-  geom_line(size = 1)+
-  xlab("Month")+
-  ylab("Abundance")+
-  scale_color_manual(name = "Strategy", labels=c("Boom", "Fast", "Moderate", "Slow"), values=c("#228833", "#CCBB44","#66CCEE", "#AA3377"))+
-  scale_y_continuous( breaks = c(0, 1e5, 2e5, 3e5), labels = scales::scientific)+
-  scale_x_date(date_labels="%B", date_breaks  ="3 month")+
-  theme_bw()+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle = 45, size = 12.5),
-        axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-
-Fig1 <- ggarrange(DensInd, DensDep, logthreeyearplot, yr4temp,
-          labels = c("a", "b", "c","d"), hjust = 0, vjust = 0.5,
-          ncol = 2, nrow = 2, common.legend = T)
-
-ggsave(filename = "Fig1.png", plot= Fig1, width = 6.5, height= 8.5, device = "png", dpi = "retina" )
-
-# multivoltinism
-source("LifeHistoriesMatrixModels/Scripts/SpA_Multivolt.R")
-source("LifeHistoriesMatrixModels/Scripts/SpB_Multivolt.R")
-source("LifeHistoriesMatrixModels/Scripts/SpC_Multivolt.R")
-source("LifeHistoriesMatrixModels/Scripts/SPD_Multivolt.R")
-
-oneyear <- rbind(B.oneyear, C.oneyear, A.oneyear, D.oneyear)
-
-
-# Define arrow positions
-arrow_data <- data.frame(
-  Strategy = c("Boom", "Boom", "Boom", "Boom", "Boom", "Boom", "Boom", "Boom",
-               "Fast", "Fast", "Fast", "Fast", "Fast", "Fast",
-               "Moderate","Moderate","Moderate", "Slow","Slow", "Slow"),  # Adjust these to match your facet variable levels
-  MeanTemp = c(1,1,1, 2, 2,2,2,2,
-               1,1,2,2,2,2, 
-               1,2,2,1,2,2),
-  x_start = as.Date(c("2035-07-17", "2035-08-28", "2035-10-23", "2035-02-27", "2035-05-22", "2035-07-31", "2035-09-25", "2035-12-28",
-                      "2035-08-14", "2035-06-19", "2035-01-16", "2035-05-08", "2035-07-17", "2035-09-11",
-                      "2035-09-11", "2035-04-24", "2035-10-09", "2035-08-28", "2035-05-08","2035-10-09")),  
-  y_end = c(9.5, 9.5, 9.5, 9.8, 9.8, 9.8, 9.8, 9.8,
-              8.75, 8.75, 10.05, 10.5, 10.5, 10.5, 
-              7, 7, 7, 7, 7, 7),  # Adjust y positions
-  x_end =as.Date(c("2035-07-17", "2035-08-28", "2035-10-23", "2035-02-27", "2035-05-22", "2035-07-31", "2035-09-25", "2035-12-28",
-                              "2035-08-14", "2035-06-19", "2035-01-16", "2035-05-08", "2035-07-17", "2035-09-11",
-                              "2035-09-11", "2035-04-24", "2035-10-09", "2035-08-28", "2035-05-08","2035-10-09")),  
-  y_start = c(11.5, 11.5, 11.5, 11.8, 11.8, 11.8, 11.8, 11.8,
-            10.75, 10.75, 12.05, 12.05,12.05, 12.05, 
-            9, 9, 9, 9, 9, 9)  # Adjust arrow end points
-)
-
-Fig3 <- ggplot(data = oneyear, aes(x = Date, y = log(Abund), group = as.factor(MeanTemp), color = as.factor(MeanTemp)))+
-  geom_line(size = 1, alpha = 0.8)+
-  scale_color_manual(name = "Mean Temperature (C)", labels = c("12", "20"), values = c("#4477AA", "#EE6677"))+
-  ylab("Log Adult Abundance") + 
-  theme_bw()+
-  scale_x_date(date_labels="%B", date_breaks  ="2 month")+
-  theme(text = element_text(size = 14), axis.text.x = element_text(hjust = 1, angle=45, size = 12.5), 
-        axis.text.y = element_text(size = 13),legend.position = "bottom", legend.key = element_rect(fill = "transparent"))+
-  facet_wrap(~Strategy)+
-  geom_segment(data = arrow_data, aes(x = x_start, y = y_start, xend = x_end, yend = y_end, color = as.factor(MeanTemp)), 
-               arrow = arrow(type = "closed", length = unit(0.1, "inches")), 
-                inherit.aes = FALSE, show.legend = F)
-ggsave(filename = "Fig3.png", Fig3, height = 5, width = 5, device = "png", dpi = "retina")
-
-# chaos plots
+#--------------------------------
+## Produce Figure S1
+#--------------------------------
 source("LifeHistoriesMatrixModels/Scripts/HilbertMetric.R")
 
 chaostestplot <- ggplot(data = chaostestdf, aes(x = fecs, y = chaos1))+
@@ -273,37 +299,13 @@ stablen <- ggplot(data = stabledf, aes(x = log(V1), y = log(V2)))+
         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))+
   theme_bw()
 
-x11()
-FigS1 <- ggarrange(chaostestplot,
+FigS3 <- ggarrange(chaostestplot,
           ggarrange(chaosn, chaosts, stablen, stablets, ncol = 2, nrow = 2, vjust = 0.5, labels = c("b", "c", "d", "e")),
           labels = "a",
           nrow = 2, common.legend = T)
 
-ggsave(filename = "FigS1.png", FigS1, height = 8.5, width = 6.5, device = "png", dpi = "retina")
+ggsave(filename = "FigS3.png", FigS3, height = 8.5, width = 6.5, device = "png", dpi = "retina")
 
-# press disturbance magnitude
-# source("LifeHistoriesMatrixModels/Scripts/A_sp_press_mag.R")
-# source("LifeHistoriesMatrixModels/Scripts/B_sp_press_mag.R")
-# source("LifeHistoriesMatrixModels/Scripts/C_sp_press_mag.R")
-# source("LifeHistoriesMatrixModels/Scripts/D_sp_press_mag.R")
-# 
-# press_mag_df <- rbind(a_magnitude_df, b_magnitude_df, c_magnitude_df, d_magnitude_df)
-# press_mag_df$magnitudes <- as.numeric(press_mag_df$magnitudes)
-# press_mag_df$mag_response <- as.numeric(press_mag_df$mag_response)
-# press_mag_df$V3 <- factor(press_mag_df$V3, levels = c("B", "C", "A", "D"))
-# FigS2 <- ggplot(data = press_mag_df, aes(x = magnitudes, y = mag_response/10000, color = V3))+
-#   geom_point(size = 1, alpha = 0.5)+
-#   geom_line(linewidth = 1, alpha = 0.8)+
-#   #stat_smooth(size = 1, span = 0.3, se = F)+
-#   scale_color_manual(name = "Strategy", labels=c("Boom", "Fast", "Moderate", "Slow"), values=c("#228833", "#CCBB44","#66CCEE", "#AA3377"))+
-#   xlab("Press Magnitude (Hydropeaking Index)")+
-#   ylab("Relatived Abundance")+
-#   theme_bw()+
-#   theme(text = element_text(size = 14), axis.text.x = element_text(size = 12.5), 
-#         axis.text.y = element_text(size = 13), legend.key = element_rect(fill = "transparent"))
-# 
-# ggsave("FigS2.png", plot = FigS2, width = 6, height = 5, device = "png", dpi = "retina")
-# code for fecundity sensitivity analysis
 source("LifeHistoriesMatrixModels/Scripts/A_sp_Fecundity_Toggle.R")
 source("LifeHistoriesMatrixModels/Scripts/B_sp_fecundity_Toggle.R")
 source("LifeHistoriesMatrixModels/Scripts/C_sp_FecundityToggle.R")
