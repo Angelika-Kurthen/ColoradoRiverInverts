@@ -7,7 +7,7 @@
 #library(lubridate, lib.loc = "/home/ib/kurthena/R_libs/4.2.1")
 
 library(lubridate)
-
+library(ggpubr)
 
 source("LifeHistoriesMatrixModels/Scripts/B_1sp_Model.R")
 source("LifeHistoriesMatrixModels/Scripts/1spFunctions.R")
