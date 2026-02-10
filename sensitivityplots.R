@@ -96,8 +96,6 @@ Multispp_mh_sens_temps <- read_csv("Multispp_mh_sens_temps.csv")
 sens_hyd <- Multispp_mh_sens_temps %>% 
   filter(TemperatureFactor == 1)
 
-mod  <- lm(sens_hyd$Abundance ~ sens_hyd$SensitivityIncrement)
-mod_sum <- summary(mod)
 p2 <- ggplot(sens_hyd, aes(x = SensitivityIncrement,
                            y = Abundance,
                            color = StageGroup)) +
@@ -170,12 +168,10 @@ ggplot(sens_hyd_slopes, aes(x = Parameter,
   ) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-Multispp_mT_sens_temps <- read_csv("Multispp_mT_sens_temps0.01.csv")
+Multispp_mT_sens_temps <- read_csv("Multispp_mT_sens_temps.csv")
 sens_temp <- Multispp_mT_sens_temps %>% 
   filter(TemperatureFactor == 1)
 
-mod  <- lm(sens_temp$Abundance ~ sens_temp$SensitivityIncrement)
-mod_sum <- summary(mod)
 p2 <- ggplot(sens_temp, aes(x = SensitivityIncrement,
                            y = Abundance,
                            color = StageGroup)) +
@@ -247,3 +243,4 @@ ggplot(sens_temp_slopes, aes(x = Parameter,
     limits = c(-1, 1)  # fix min and max
   ) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+

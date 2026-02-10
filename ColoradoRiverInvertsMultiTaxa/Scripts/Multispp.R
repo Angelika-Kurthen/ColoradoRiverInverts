@@ -118,19 +118,7 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   flood.mort_GAMM <- sapply(Q, flood.mortality, N = 1, k = GAMM_k, h = GAMM_h, Qmin = Qmin)
   flood.mort_NZMS <- sapply(Q, flood.mortality, N = 1, k = NZMS_k, h = NZMS_h, Qmin = Qmin)
   
-  if (!is.null(modify_parameter) && nzchar(modify_parameter)) {
-    # List of valid parameter names
-  valid_parameters <- c("flood.mort_HYOS", "flood.mort_BAET", "flood.mort_GAMM", "flood.mort_NZMS", "flood.mort_CHIR")
-  
-  # Check if modify_parameter is a valid parameter name
-  if (modify_parameter %in% valid_parameters) {
-        current_value <- get(modify_parameter)
-        sens <- checkpos(current_value + increment)
-       sens <- ifelse(sens > 1, 1, sens)
-        assign(modify_parameter, sens, envir = .GlobalEnv)  
-    
-  }}
-  
+
   # temperature dependent survival
   TempSurvival_HYOS <- sapply(temps$Temperature, TempSurv_HYOS)
   TempSurvival_BAET <- sapply(temps$Temperature, TempSurv_BAET)
@@ -138,7 +126,20 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   TempSurvival_CHIR <- sapply(temps$Temperature, TempSurv_CHIR)
   TempSurvival_GAMM <- sapply(temps$Temperature, TempSurv_GAMM)
   
-
+  if (!is.null(modify_parameter) && nzchar(modify_parameter)) {
+    # List of valid parameter names
+    valid_parameters <- c("flood.mort_HYOS", "flood.mort_BAET", "flood.mort_GAMM", "flood.mort_NZMS", "flood.mort_CHIR", 
+                          "TempSurvival_HYOS", "TempSurvival_BAET", "TempSurvival_NZMS", "TempSurvival_CHIR", "TempSurvival_GAMM")
+    
+    # Check if modify_parameter is a valid parameter name
+    if (modify_parameter %in% valid_parameters) {
+      current_value <- get(modify_parameter)
+      sens <- checkpos(current_value + increment)
+      sens <- ifelse(sens > 1, 1, sens)
+      assign(modify_parameter, sens, envir = .GlobalEnv)  
+      
+    }}
+  
   # Calculate how many timesteps emerging adults have matured
   emergetime_HYOS <- sapply(timestep, back.count.degreedays, criticaldegreedays = 1680, degreedays)
   emergetime_BAET <- sapply(timestep, back.count.degreedays, criticaldegreedays = 250, degreedays)

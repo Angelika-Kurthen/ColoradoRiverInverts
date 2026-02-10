@@ -104,7 +104,7 @@ run_model_with_modification <- function(param, inc) {
 # 
 
 
-numCores <- detectCores() - 1
+numCores <- 3
 cl <- makeCluster(numCores)
 clusterSetRNGStream(cl, 123)
 
@@ -113,6 +113,16 @@ clusterSetRNGStream(cl, 123)
 clusterExport(cl,varlist = c("scenario_grid", "run_scenario", "run_model_with_modification", "param_grid", "temps", "flows","Multispp"),
   envir = environment()
 )
+clusterCall(cl, function() c(source("1spFunctions.R"),
+            source("ColoradoRiverInvertsMultiTaxa/Scripts/HYOSSurvivorship.R"),
+            source("ColoradoRiverInvertsMultiTaxa/Scripts/BAETSurvivorship.R"),
+            source("ColoradoRiverInvertsMultiTaxa/Scripts/NZMS_shell_length_fecundity.R"),
+            source("ColoradoRiverInvertsMultiTaxa/Scripts/NZMSSurvivorship.R"),
+            source("ColoradoRiverInvertsMultiTaxa/Scripts/CHIRSurvivorship.R"),
+            source("ColoradoRiverInvertsMultiTaxa/Scripts/GAMMSurvivorship.R"),
+            source("ColoradoRiverInvertsMultiTaxa/Scripts/MultisppFunctions.R"),
+            source("ColoradoRiverInvertsMultiTaxa/Scripts/Multispp.R")))
+
 
 # Create a grid of all temperature factors and parameter modifications
 scenario_grid <- expand.grid(temp_factor = temp_seq, param_idx = 1:nrow(param_grid))
@@ -140,21 +150,17 @@ run_scenario <- function(idx) {
 }
 
 # Run in parallel
+start.time <- Sys.time()
 mT_results <- parLapply(
   cl,
   1:nrow(scenario_grid),
   run_scenario
 )
-
-
-start.time <- Sys.time()
-test <- lapply(1:3, run_scenario)
-str(test)
 end.time <- Sys.time()
 
 stopCluster(cl)
 
-final_results <- do.call(rbind, all_results)
+final_results <- do.call(rbind, mT_results)
 
 write.csv(
   final_results,
@@ -171,7 +177,7 @@ write.csv(
 
 # Run all scenarios in parallel
 library(parallel)
-numCores <- detectCores() - 1  # Use available cores minus 1 for safety
+numCores <- 3  # Use available cores minus 1 for safety
 all_results <- mclapply(1:nrow(scenario_grid), run_scenario, mc.cores = numCores)
 #all_results <- mclapply(1:3, run_scenario, mc.cores = 1)
 
