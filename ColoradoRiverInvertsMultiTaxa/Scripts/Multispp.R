@@ -51,11 +51,6 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   hydro.mort_NZMS <- hydropeaking.mortality(lower = 0, upper = 1, h = unique(hp))
   hydro.mort_CHIR <- hydropeaking.mortality(lower = 0, upper = 0.6, h = unique(hp))  
   
-  # mortality_lookup <- sapply(unique_h, function(hp, lower, upper) {
-  #   hydropeaking.mortality(lower = X, upper = Y, h = h)
-  # })
-  # names(mortality_lookup) <- unique_h  # Name the vector for fast lookup
-  # specify iterations
   iterations <- iteration
   
   # baseline K in the absence of disturbance
@@ -129,7 +124,8 @@ Multispp <- function(flow.data, temp.data, baselineK, disturbanceK, Qmin,
   if (!is.null(modify_parameter) && nzchar(modify_parameter)) {
     # List of valid parameter names
     valid_parameters <- c("flood.mort_HYOS", "flood.mort_BAET", "flood.mort_GAMM", "flood.mort_NZMS", "flood.mort_CHIR", 
-                          "TempSurvival_HYOS", "TempSurvival_BAET", "TempSurvival_NZMS", "TempSurvival_CHIR", "TempSurvival_GAMM")
+                          "TempSurvival_HYOS", "TempSurvival_BAET", "TempSurvival_NZMS", "TempSurvival_CHIR", "TempSurvival_GAMM", 
+                          "hydro.mort_HYOS", "hydro.mort_BAET", "hydro.mort_GAMM", "hydro.mort_NZMS", "hydro.mort_CHIR" )
     
     # Check if modify_parameter is a valid parameter name
     if (modify_parameter %in% valid_parameters) {
