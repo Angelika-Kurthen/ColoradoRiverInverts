@@ -7,21 +7,26 @@ library(dataRetrieval)
 library(parallel)
 
 source("1spFunctions.R")
-source("HYOSSurvivorship.R")
-source("BAETSurvivorship.R")
-source("NZMS_shell_length_fecundity.R")
-source("NZMSSurvivorship.R")
-source("CHIRSurvivorship.R")
-source("GAMMSurvivorship.R")
-source("MultisppFunctions.R")
-source("Multispp.R")
+source("ColoradoRiverInvertsMultiTaxa/Scripts/HYOSSurvivorship.R")
+source("ColoradoRiverInvertsMultiTaxa/Scripts/BAETSurvivorship.R")
+source("ColoradoRiverInvertsMultiTaxa/Scripts/NZMS_shell_length_fecundity.R")
+source("ColoradoRiverInvertsMultiTaxa/Scripts/NZMSSurvivorship.R")
+source("ColoradoRiverInvertsMultiTaxa/Scripts/CHIRSurvivorship.R")
+source("ColoradoRiverInvertsMultiTaxa/Scripts/GAMMSurvivorship.R")
+source("ColoradoRiverInvertsMultiTaxa/Scripts/MultisppFunctions.R")
+source("ColoradoRiverInvertsMultiTaxa/Scripts/Multispp.R")
 
 # Read in Lees Ferry temperature and discharge data from 2007 to 2023
 temp <- readNWISdv("09380000", "00010", "2007-10-01", "2023-05-01")  # Water temperature data
 discharge <- readNWISdv("09380000", "00060", "2007-10-01", "2023-05-01")  # River discharge data
+# read in from csv to save time
+#temp <- read.csv2("LFtemp2007to2023.csv", header= T)
+#discharge <- read.csv2("LFdischarge2007to2023.csv", header = T)
+
 
 # Calculate average yearly flows from discharge data
 flow <- average.yearly.flows(flowdata = discharge, flow.column_name = "X_00060_00003", date.column_name = "Date")
+
 
 # Calculate average yearly temperatures from temperature data
 temps <- average.yearly.temp(tempdata = temp, temp.column_name = "X_00010_00003", date.column_name = "Date")
@@ -39,13 +44,12 @@ flows$dts <- as.Date(temps$dts)
 flows$Discharge <- flows$Discharge / 85000
 
 # Define your species-stage parameters
-parameters <- c("G1_HYOS", "G1_BAET", "G1_NZMS", "G1_GAMM", "G1_CHIR", 
-                "G2_HYOS", "G2_BAET", "G2_NZMS", "G2_GAMM", "G2_CHIR")
-
+parameters <- c("hydro.mort_HYOS", "hydro.mort_BAET", "hydro.mort_CHIR", "hydro.mort_NZMS", "hydro.mort_GAMM")
 # Sensitivity increments from -0.01 to +0.01 in 0.001 steps
-increments <- seq(-0.001, 0.001, by = 0.0001)
+increments <- seq(-0.01, 0.01, by = 0.001)
 
-temp_seq <- c(1, 1.1, 1.2, 1.5)
+temp_seq <- c(1)
+
 # # Create a grid of all parameter/increment combinations
 param_grid <- expand.grid(Parameter = parameters, Increment = increments, 
                           stringsAsFactors = FALSE)
@@ -54,28 +58,28 @@ param_grid <- expand.grid(Parameter = parameters, Increment = increments,
 run_model_with_modification <- function(param, inc) {
   # Modify the model based on param and increment (Replace this with your actual model function)
   modified_model <- Multispp(flow.data = flows$Discharge, temp.data = temps,
-                            baselineK =10000 , disturbanceK = 100000, Qmin = 0.25,
-                            extinct = 50, iteration = 1000, peaklist = 0.17,
-                            peakeach = length(temps$Temperature), stage_output = c("all", "biomass"),
-                            modify_parameter = param, increment =inc)
-
-    average_abundance <- apply(modified_model$N[-c(1:259),,,], c(2, 4), function(x) mean(x, na.rm = TRUE))
-    average_biomass <- apply(modified_model$N[-c(1:259),,,], c(2, 4), function(x) mean(x, na.rm = TRUE))
-    # Create a data frame from the average abundances + biomass
-    average_abundance_df <- as.data.frame(as.table(average_abundance))
-    average_biomass_df <- as.data.frame(as.table(average_biomass))
-    output <- cbind(average_abundance_df, average_biomass_df$Freq)
-    colnames(output) <- c("Var1", "Var2", "Abundance", "Biomass")
-    # Combine stage and taxon into a single column
-    output$StageGroup <- paste(output$Var1,"_",output$Var2, sep = "")
-    # Rename columns for clarity
-    output <- as.data.frame(cbind(output[ , c("StageGroup", "Abundance", "Biomass")],
-                                                rep(param, times = length(output$Var1)),
-                                                rep(inc,times = length(output$Var1))))
-    colnames(output) <- c("StageGroup", "Abundance", "Biomass", "Parameter", "SensitivityIncrement")
-    # Extract relevant values (ensure your model function returns these)
-    data.frame(
-      output
+                             baselineK =10000 , disturbanceK = 100000, Qmin = 0.25,
+                             extinct = 50, iteration = 1000, peaklist = 0,
+                             peakeach = length(temps$Temperature), stage_output = c("all", "biomass"),
+                             modify_parameter = param, increment =inc)
+  
+  average_abundance <- apply(modified_model$N[-c(1:259),,,], c(2, 4), function(x) mean(x, na.rm = TRUE))
+  average_biomass <- apply(modified_model$biomass[-c(1:259),,,], c(2, 4), function(x) mean(x, na.rm = TRUE))
+  # Create a data frame from the average abundances + biomass
+  average_abundance_df <- as.data.frame(as.table(average_abundance))
+  average_biomass_df <- as.data.frame(as.table(average_biomass))
+  output <- cbind(average_abundance_df, average_biomass_df$Freq)
+  colnames(output) <- c("Var1", "Var2", "Abundance", "Biomass")
+  # Combine stage and taxon into a single column
+  output$StageGroup <- paste(output$Var1,"_",output$Var2, sep = "")
+  # Rename columns for clarity
+  output <- as.data.frame(cbind(output[ , c("StageGroup", "Abundance", "Biomass")],
+                                rep(param, times = length(output$Var1)),
+                                rep(inc,times = length(output$Var1))))
+  colnames(output) <- c("StageGroup", "Abundance", "Biomass", "Parameter", "SensitivityIncrement")
+  # Extract relevant values (ensure your model function returns these)
+  data.frame(
+    output
   )
 }
 # 
@@ -99,24 +103,45 @@ run_model_with_modification <- function(param, inc) {
 # 
 # 
 
+
+numCores <- 3
+cl <- makeCluster(numCores)
+clusterSetRNGStream(cl, 123)
+
+
+# Make sure workers know about everything they need
+clusterExport(cl,varlist = c("scenario_grid", "run_scenario", "run_model_with_modification", "param_grid", "temps", "flows","Multispp"),
+              envir = environment()
+)
+clusterCall(cl, function() c(source("1spFunctions.R"),
+                             source("ColoradoRiverInvertsMultiTaxa/Scripts/HYOSSurvivorship.R"),
+                             source("ColoradoRiverInvertsMultiTaxa/Scripts/BAETSurvivorship.R"),
+                             source("ColoradoRiverInvertsMultiTaxa/Scripts/NZMS_shell_length_fecundity.R"),
+                             source("ColoradoRiverInvertsMultiTaxa/Scripts/NZMSSurvivorship.R"),
+                             source("ColoradoRiverInvertsMultiTaxa/Scripts/CHIRSurvivorship.R"),
+                             source("ColoradoRiverInvertsMultiTaxa/Scripts/GAMMSurvivorship.R"),
+                             source("ColoradoRiverInvertsMultiTaxa/Scripts/MultisppFunctions.R"),
+                             source("ColoradoRiverInvertsMultiTaxa/Scripts/Multispp.R")))
+
+
 # Create a grid of all temperature factors and parameter modifications
 scenario_grid <- expand.grid(temp_factor = temp_seq, param_idx = 1:nrow(param_grid))
 
 run_scenario <- function(idx) {
   temp_factor <- scenario_grid$temp_factor[idx]
   param_idx <- scenario_grid$param_idx[idx]  # Ensure single index extraction
-
+  
   # Modify temperature dataset
   temps_modified <- temps
   temps_modified$Temperature <- temps_modified$Temperature * temp_factor
-
+  
   # Extract parameter modification details (Ensure single values!)
   param <- as.character(param_grid$Parameter[[param_idx]])
   inc <- param_grid$Increment[[param_idx]]
-
+  
   # Run the model
   result <- run_model_with_modification(param, inc)
-
+  
   # Add metadata to results
   result$TemperatureFactor <- temp_factor
   result$Parameter <- param
@@ -124,15 +149,23 @@ run_scenario <- function(idx) {
   return(result)
 }
 
-# Run all scenarios in parallel
-library(parallel)
-numCores <- detectCores() - 1  # Use available cores minus 1 for safety
+# Run in parallel
+start.time <- Sys.time()
+mH_results <- parLapply(
+  cl,
+  1:nrow(scenario_grid),
+  run_scenario
+)
+end.time <- Sys.time()
 
-all_results <- mclapply(1:nrow(scenario_grid), run_scenario, mc.cores = numCores)
+stopCluster(cl)
 
-# Combine results into a single dataframe
-final_results <- do.call(rbind, all_results)
+final_results <- do.call(rbind, mH_results)
 
-# Save to CSV
-write.csv(final_results, "Multispp_G_sens_temps_hyd.csv", row.names = FALSE)
+write.csv(
+  final_results,
+  "Multispp_hyd_sens_temps.csv",
+  row.names = FALSE
+)
+
 
