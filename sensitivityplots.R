@@ -19,7 +19,7 @@ p1 <- ggplot(sens_hfe, aes(x = SensitivityIncrement,
                y = Abundance,
                color = StageGroup)) +
   geom_point(alpha = 0.5) +
-  facet_grid(rows = vars(StageGroup), cols = vars(Parameter), scales = "free_x")+
+  facet_grid(rows = vars(StageGroup), cols = vars(Parameter), scales = "free")+
   geom_vline(xintercept = 0, linetype = "dashed") +
   theme_bw() +
   labs(
@@ -74,6 +74,9 @@ ggplot(sens_hfe_slopes, aes(x = Parameter,
     midpoint = 0,      # center at 0
     limits = c(-1, 1)  # fix min and max
   ) +
+  ylab("Stage")+
+  xlab("Parameter")+
+  theme_classic()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
@@ -91,12 +94,10 @@ ggplot(sens_hfe_slopes, aes(x = Parameter,
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # 
-Multispp_mh_sens_temps <- read_csv("Multispp_mh_sens_temps.csv")
+Multispp_mh_sens_temps <- read_csv("Multispp_hyd_sens_temps.csv")
 # we did this for all temperautres, but mainly want to look at baseline right now
-sens_hyd <- Multispp_mh_sens_temps %>% 
-  filter(TemperatureFactor == 1)
 
-p2 <- ggplot(sens_hyd, aes(x = SensitivityIncrement,
+p2 <- ggplot(Multispp_mh_sens_temps, aes(x = SensitivityIncrement,
                            y = Abundance,
                            color = StageGroup)) +
   geom_point(alpha = 0.5) +
@@ -108,22 +109,22 @@ p2 <- ggplot(sens_hyd, aes(x = SensitivityIncrement,
     y = "Species Stage Abundance"
   )
 
-sens_hyd_scaled <- sens_hyd %>%
-  mutate(
-    SensitivityIncrement_s = scale(SensitivityIncrement),
-    Abundance_s = scale(Abundance),
-    Biomass_s = scale(Biomass)
-  )
 
-sens_hyd_slopes <- sens_hyd_scaled %>%
+sens_hyd_slopes <- Multispp_mh_sens_temps %>%
   group_by(StageGroup, Parameter) %>%
   summarise(
-    scale_abund_slope =
-      coef(lm(Abundance_s ~ SensitivityIncrement_s))[2],
-    scale_biomass_slope =
-      coef(lm(Biomass_s ~ SensitivityIncrement_s))[2],
+    scale_abund_slope = coef(lm(scale(Abundance) ~ scale(SensitivityIncrement)))[2],
+    R_abund = coef(summary(lm((Abundance) ~ (SensitivityIncrement))))[8],
+    p_abund = summary(lm((Abundance) ~ (SensitivityIncrement)))[9],
+    scale_biomass_slope = coef(lm(scale(Biomass) ~ scale(SensitivityIncrement)))[2],
+    R_biomass = coef(summary(lm((Biomass) ~ (SensitivityIncrement))))[8],
+    p_biomass = summary(lm((Biomass) ~ (SensitivityIncrement)))[9],
     .groups = "drop"
   )
+sens_hyd_slopes <- sens_hyd_slopes %>%
+  mutate(Parameter = forcats::fct_reorder(
+    Parameter, abs(scale_abund_slope), .fun = max
+  ))
 
 
 sens_hyd_slopes <- sens_hyd_slopes %>%
@@ -169,38 +170,24 @@ ggplot(sens_hyd_slopes, aes(x = Parameter,
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 Multispp_mT_sens_temps <- read_csv("Multispp_mT_sens_temps.csv")
-sens_temp <- Multispp_mT_sens_temps %>% 
-  filter(TemperatureFactor == 1)
 
-p2 <- ggplot(sens_temp, aes(x = SensitivityIncrement,
-                           y = Abundance,
-                           color = StageGroup)) +
-  geom_point(alpha = 0.5) +
-  facet_grid(rows = vars(StageGroup), cols = vars(Parameter), scales = "free_x")+
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw() +
-  labs(
-    x = "Sensitivity Increment to Temperature Mortality",
-    y = "Species Stage Abundance"
-  )
 
-sens_temp_scaled <- sens_temp %>%
-  mutate(
-    SensitivityIncrement_s = scale(SensitivityIncrement),
-    Abundance_s = scale(Abundance),
-    Biomass_s = scale(Biomass)
-  )
 
-sens_temp_slopes <- sens_temp_scaled %>%
+sens_temp_slopes <- Multispp_mT_sens_temps %>%
   group_by(StageGroup, Parameter) %>%
   summarise(
-    scale_abund_slope =
-      coef(lm(Abundance_s ~ SensitivityIncrement_s))[2],
-    scale_biomass_slope =
-      coef(lm(Biomass_s ~ SensitivityIncrement_s))[2],
+    scale_abund_slope = coef(lm(scale(Abundance) ~ scale(SensitivityIncrement)))[2],
+    R_abund = coef(summary(lm((Abundance) ~ (SensitivityIncrement))))[8],
+    p_abund = summary(lm((Abundance) ~ (SensitivityIncrement)))[9],
+    scale_biomass_slope = coef(lm(scale(Biomass) ~ scale(SensitivityIncrement)))[2],
+    R_biomass = coef(summary(lm((Biomass) ~ (SensitivityIncrement))))[8],
+    p_biomass = summary(lm((Biomass) ~ (SensitivityIncrement)))[9],
     .groups = "drop"
   )
-
+sens_temp_slopes <- sens_temp_slopes %>%
+  mutate(Parameter = forcats::fct_reorder(
+    Parameter, abs(scale_abund_slope), .fun = max
+  ))
 
 sens_temp_slopes <- sens_temp_slopes %>%
   mutate(
@@ -214,6 +201,18 @@ sens_temp_slopes <- sens_temp_slopes %>%
       abs(scale_biomass_slope) < 0.5 ~ "moderate",
       TRUE ~ "large"
     )
+  )
+
+p2 <- ggplot(Multispp_mT_sens_temps, aes(x = SensitivityIncrement,
+                           y = Abundance,
+                           color = StageGroup)) +
+  geom_point(alpha = 0.5) +
+  facet_grid(rows = vars(StageGroup), cols = vars(Parameter), scales = "free")+
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw() +
+  labs(
+    x = "Sensitivity Increment to Temperature Mortality",
+    y = "Species Stage Abundance"
   )
 
 
