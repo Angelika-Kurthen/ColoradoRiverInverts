@@ -168,22 +168,3 @@ write.csv(
   row.names = FALSE
 )
 
-
-
-
-
-
-
-
-# Run all scenarios in parallel
-library(parallel)
-numCores <- 3  # Use available cores minus 1 for safety
-all_results <- mclapply(1:nrow(scenario_grid), run_scenario, mc.cores = numCores)
-#all_results <- mclapply(1:3, run_scenario, mc.cores = 1)
-
-# Combine results into a single dataframe
-final_results <- do.call(rbind, all_results)
-
-# Save to CSV
-write.csv(final_results, "Multispp_mT_sens_temps.csv", row.names = FALSE)
-
